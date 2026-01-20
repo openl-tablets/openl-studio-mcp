@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "openl-remote": {
+      "comment": "RECOMMENDED: OpenL Tablets MCP Server via remote HTTPS using SSE transport. Replace <path-to-node> with your Node.js executable path (use 'which node' to find it) and <path-to-mcp-remote> with your mcp-remote executable path (usually in the same directory as node). Replace <your-pat-token> with your Personal Access Token from OpenL Tablets UI.",
+      "command": "<path-to-node>",
+      "args": [
+        "<path-to-mcp-remote>",
+        "https://<your-openl-server>/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
+    },
+    "openl-remote-example": {
+      "comment": "Example configuration with nvm paths. Replace with your actual paths.",
+      "command": "/Users/username/.nvm/versions/node/v22.16.0/bin/node",
+      "args": [
+        "/Users/username/.nvm/versions/node/v22.16.0/bin/mcp-remote",
+        "https://<your-openl-server>/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
+    },
+    "openl-local": {
+      "comment": "Local MCP Server via stdio transport. This connects directly to the MCP server process running locally. Replace <path-to-node> with your Node.js path and <path-to-project> with your OpenL Tablets project directory. Replace <your-pat-token> with your Personal Access Token from OpenL Tablets UI.",
+      "command": "<path-to-node>",
+      "args": [
+        "<path-to-project>/dist/index.js"
+      ],
+      "env": {
+        "OPENL_BASE_URL": "https://<your-openl-server>/studio/rest",
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
+        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-1"
+      }
+    },
+    "openl-local-dev": {
+      "comment": "Local development: MCP server connects to local OpenL instance. Replace <path-to-node> with your Node.js path and <path-to-project> with your OpenL Tablets project directory. Replace <your-pat-token> with your Personal Access Token from OpenL Tablets UI.",
+      "command": "<path-to-node>",
+      "args": [
+        "<path-to-project>/dist/index.js"
+      ],
+      "env": {
+        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
+        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-local"
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+services:
+  mcp-server:
+    # Use pre-built image (production) or build from source (development)
+    # Production: docker compose --profile production up -d
+    # Development: docker compose --profile development up -d --build
+    image: ${MCP_IMAGE:-ghcr.io/openl-tablets/mcp-server:x}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: always
+    container_name: mcp-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MCP_PORT:-3000}:3000"
+    # Add custom host mapping if needed (e.g., for VPN or internal DNS)
+    # extra_hosts:
+      # - "<your-openl-host>:host-gateway"
+    environment:
+      PORT: 3000
+      OPENL_BASE_URL: ${OPENL_BASE_URL:-http://host.docker.internal:8080/rest}
+      NODE_ENV: ${NODE_ENV:-production}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Stdin/TTY for stdio transport (if needed)
+    stdin_open: true
+    tty: true
