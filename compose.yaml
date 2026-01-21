@@ -1,13 +1,15 @@
 services:
   mcp-server:
     # Use pre-built image (production) or build from source (development)
-    # Production: docker compose --profile production up -d
-    # Development: docker compose --profile development up -d --build
-    image: ${MCP_IMAGE:-ghcr.io/openl-tablets/mcp-server:x}
+    # Production: MCP_IMAGE=ghcr.io/openl-tablets/mcp-server:x docker compose up -d
+    # Development (local build): docker compose up -d --build
+    # By default, builds from local source. Set MCP_IMAGE to use pre-built image.
+    # If MCP_IMAGE is not set, image will be built locally and named: openl-studio-mcp-mcp-server
+    image: ${MCP_IMAGE:-openl-studio-mcp-mcp-server:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    pull_policy: always
+    pull_policy: ${MCP_PULL_POLICY:-missing}
     container_name: mcp-server
     restart: unless-stopped
     ports:

@@ -31,7 +31,7 @@ docker compose up -d mcp-server
 ## Step 2: Verify Availability
 
 ```bash
-curl http://localhost:3333/health
+curl http://localhost:3000/health
 ```
 
 Should return `{"status":"ok",...}`
@@ -52,7 +52,7 @@ PAT is passed through a separate `headers` field - cleaner approach.
 
 ```json
 {
-  "url": "http://localhost:3333/mcp/sse",
+  "url": "http://localhost:3000/mcp/sse",
   "transport": "sse",
   "headers": {
     "Authorization": "Token <your-pat-token>"
@@ -70,7 +70,7 @@ If Cursor doesn't support headers, use query parameters:
 
 ```json
 {
-  "url": "http://localhost:3333/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>",
+  "url": "http://localhost:3000/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>",
   "transport": "sse"
 }
 ```
@@ -89,7 +89,7 @@ If Docker container is on a remote server:
 1. Replace `localhost` with server IP or domain name:
    ```json
    {
-     "url": "http://your-server-ip:3333/mcp/sse",
+     "url": "http://your-server-ip:3000/mcp/sse",
      "transport": "sse",
      "headers": {
        "Authorization": "Token your-token-here"
@@ -99,7 +99,7 @@ If Docker container is on a remote server:
    
    **Note:** Base URL (`OPENL_BASE_URL`) must be configured in Docker container environment variables on the server.
 
-2. Make sure port 3333 is open in firewall
+2. Make sure port 3000 is open in firewall
 
 ## Troubleshooting
 
@@ -116,5 +116,5 @@ docker compose exec mcp-server curl http://studio:8080/rest/repos
 
 ## Additional Information
 
-- [Full Docker + PAT Guide](./CURSOR-DOCKER-PAT.md)
+- [Full Docker + PAT Guide](./MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) - Complete Docker setup guide
 - [Authentication Guide](../guides/AUTHENTICATION.md)

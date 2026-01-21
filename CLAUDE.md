@@ -20,7 +20,7 @@ The OpenL Tablets MCP Server enables Claude AI to interact with OpenL Tablets Bu
 ## Getting Started
 
 1. **Set up MCP Server** - Follow the setup guides in `docs/setup/`
-2. **Configure Claude Desktop** - See `docs/setup/CLAUDE-DESKTOP.md` or `docs/setup/CLAUDE-DESKTOP-PAT.md`
+2. **Configure Claude Desktop** - See `docs/setup/MCP-CONNECTION-GUIDE.md` (Scenarios 3 and 4)
 3. **Read Agent Guide** - See [AGENTS.md](./AGENTS.md) for detailed agent configuration, prompts, and workflows
 
 ## Documentation

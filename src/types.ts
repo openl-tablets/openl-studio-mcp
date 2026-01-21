@@ -2,35 +2,7 @@
  * TypeScript types for OpenL Tablets REST API
  */
 
-export type AuthMethod = "basic" | "oauth2" | "pat";
-
-export interface OAuth2Config {
-  clientId: string;
-  clientSecret?: string; // Optional for PKCE flow (public clients)
-  tokenUrl: string;
-  authorizationUrl?: string;
-  scope?: string;
-  grantType?: "client_credentials" | "authorization_code" | "refresh_token";
-  refreshToken?: string;
-  useBasicAuth?: boolean; // Use Basic Auth header instead of form data for client credentials
-  audience?: string; // OAuth2 audience parameter (required by some providers like Auth0, Ping Identity)
-  resource?: string; // OAuth2 resource parameter (required by some providers)
-  // PKCE (Proof Key for Code Exchange) parameters
-  codeVerifier?: string; // Random string for PKCE (43-128 characters, URL-safe)
-  codeChallenge?: string; // SHA256(codeVerifier) encoded as base64url
-  codeChallengeMethod?: "S256" | "plain"; // Default: S256
-  authorizationCode?: string; // Authorization code from authorization endpoint
-  redirectUri?: string; // Redirect URI registered with OAuth provider
-}
-
-export interface OAuth2Token {
-  access_token: string;
-  token_type: string;
-  expires_in?: number;
-  refresh_token?: string;
-  scope?: string;
-  expires_at?: number; // Calculated expiration timestamp
-}
+export type AuthMethod = "basic" | "pat";
 
 export interface OpenLConfig {
   baseUrl: string;
@@ -39,8 +11,6 @@ export interface OpenLConfig {
   password?: string;
   // Personal Access Token Authentication
   personalAccessToken?: string;
-  // OAuth 2.1 Authentication
-  oauth2?: OAuth2Config;
   // Client Document ID (for request tracking)
   clientDocumentId?: string;
   // Request timeout in milliseconds

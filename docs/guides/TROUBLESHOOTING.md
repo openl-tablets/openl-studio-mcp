@@ -6,7 +6,6 @@ This guide covers common issues and their solutions when working with the OpenL 
 
 - [Viewing Debug Logs](#viewing-debug-logs)
 - [Common Issues](#common-issues)
-- [OAuth 2.1 Issues](#oauth-21-issues)
 - [Connection Issues](#connection-issues)
 - [Configuration Issues](#configuration-issues)
 
@@ -72,10 +71,6 @@ node dist/index.js
 tail -f ~/Library/Logs/Claude/*.log | grep -i "openl\|401\|unauthorized\|connection"
 ```
 
-**OAuth2 Errors:**
-```bash
-tail -f ~/Library/Logs/Claude/*.log | grep -i "oauth2\|token\|authorization"
-```
 
 **Configuration Errors:**
 ```bash
@@ -88,7 +83,6 @@ All MCP server logs have prefixes for easy filtering:
 
 - `[Config]` - configuration logs
 - `[Auth]` - authentication logs
-- `[OAuth2]` - OAuth2 logs
 - `[Browser]` - browser interaction logs
 - `[Error]` - errors
 
@@ -97,8 +91,6 @@ All MCP server logs have prefixes for easy filtering:
 # Errors only
 tail -f ~/Library/Logs/Claude/*.log | grep "\[Error\]"
 
-# OAuth2 logs only
-tail -f ~/Library/Logs/Claude/*.log | grep "\[OAuth2\]"
 
 # Configuration logs only
 tail -f ~/Library/Logs/Claude/*.log | grep "\[Config\]"
@@ -149,7 +141,6 @@ You should see initialization logs:
 ```
 [Config] Loading configuration from environment variables...
 [Config] Authentication methods:
-[Config]   - OAuth2: not configured
 [Config]   - API Key: not configured
 [Config]   - Basic Auth: configured (username: admin)
 ```
@@ -170,7 +161,7 @@ grep -i error ~/Library/Logs/Claude/*.log | tail -20
 
 **Monitor logs in real-time:**
 ```bash
-tail -f ~/Library/Logs/Claude/*.log | grep --color=always -E "error|Error|ERROR|\[Error\]|\[Auth\]|\[OAuth2\]|\[Config\]"
+tail -f ~/Library/Logs/Claude/*.log | grep --color=always -E "error|Error|ERROR|\[Error\]|\[Auth\]|\[Config\]"
 ```
 
 **Save logs to file:**
@@ -241,164 +232,6 @@ Then open `debug.log` to view all errors.
 1. Check MCP server status in settings (should be "Connected")
 2. Try explicitly asking the AI to use the tool
 3. Check logs for errors
-
----
-
-## OAuth 2.1 Issues
-
-### Error: `unauthorized_client`
-
-#### Symptoms
-```
-Failed to obtain OAuth 2.1 token: Request failed with status code 400
-Response: {"error":"unauthorized_client"}
-```
-
-#### Root Causes
-
-The `unauthorized_client` error typically indicates one of the following issues:
-
-1. **Client not configured for client_credentials grant type**
-   - The OAuth client is not configured to allow `client_credentials` grant type
-   - **Solution**: Check OAuth provider admin console → Applications → Your Client → Grant Types → Enable "Client Credentials"
-
-2. **Missing required parameters**
-   - Some OAuth providers require additional parameters like `scope` or `audience`
-   - **Solution**: Add required parameters to configuration:
-     ```yaml
-     OPENL_OAUTH2_SCOPE: "openl:read openl:write"
-     # or
-     OPENL_OAUTH2_AUDIENCE: "https://api.example.com"
-     ```
-
-3. **Incorrect client credentials**
-   - Client ID or Client Secret is incorrect
-   - **Solution**: Verify credentials in OAuth provider admin console
-
-4. **Client not enabled**
-   - The OAuth client is disabled
-   - **Solution**: Enable the client in OAuth provider admin console
-
-#### Diagnostic Steps
-
-1. **Verify Client Configuration:**
-   - Login to OAuth provider admin console
-   - Navigate to: Applications → Your Client
-   - Check:
-     - ✓ Client is enabled
-     - ✓ Grant Types includes "Client Credentials"
-     - ✓ Client ID matches your configured value
-     - ✓ Client Secret matches your configuration
-
-2. **Check Required Parameters:**
-   - Review OAuth provider documentation for required parameters
-   - Common requirements:
-     - `scope`: May be required even if empty
-     - `audience`: May be required for API access
-     - `resource`: May be required for resource-based access
-
-3. **Test with curl:**
-   
-   **Note**: Set `CLIENT_ID` and `CLIENT_SECRET` environment variables before running these commands. Never commit credentials to version control.
-   
-   ```bash
-   # Set your credentials (do not commit these values)
-   export CLIENT_ID="your-client-id"
-   export CLIENT_SECRET="your-client-secret"
-   
-   # Test Basic Auth with client credentials
-   curl -X POST https://your-oauth-server.example.com/oauth/token \
-     -H "Authorization: Basic $(echo -n '${CLIENT_ID}:${CLIENT_SECRET}' | base64)" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "grant_type=client_credentials"
-   
-   # If scope is required:
-   curl -X POST https://your-oauth-server.example.com/oauth/token \
-     -H "Authorization: Basic $(echo -n '${CLIENT_ID}:${CLIENT_SECRET}' | base64)" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "grant_type=client_credentials&scope=openl:read"
-   ```
-
-4. **Check MCP Server Logs:**
-   - Look for detailed error messages
-   - Verify Basic Auth header is being sent
-   - Check request parameters being sent
-
-#### Common Solutions
-
-**Solution 1: Add Scope Parameter**
-```yaml
-environment:
-  OPENL_OAUTH2_SCOPE: "openl:read openl:write"
-```
-
-**Solution 2: Add Audience Parameter**
-```yaml
-environment:
-  OPENL_OAUTH2_AUDIENCE: "https://api.example.com"
-```
-
-**Solution 3: Verify Client Configuration**
-- Ensure client is enabled
-- Ensure `client_credentials` grant type is allowed
-- Verify client ID and secret are correct
-
-### Error: Token Endpoint 404
-
-**Symptoms:**
-```
-Failed to obtain OAuth 2.1 token: Request failed with status code 404
-```
-
-**Solutions:**
-1. Check the token endpoint URL is correct for your OAuth provider:
-   - **Ping Identity**: Use `/as/token.oauth2` (e.g., `https://auth.example.com/as/token.oauth2`)
-   - **Spring Security OAuth2**: Use `/oauth/token` (e.g., `https://auth.example.com/oauth/token`)
-   - **Standard OAuth2**: Use `/token` (e.g., `https://auth.example.com/token`)
-2. If using `OPENL_OAUTH2_ISSUER_URI`, override with explicit `OPENL_OAUTH2_TOKEN_URL`
-3. Verify the issuer URI is correct (no trailing slash)
-4. Check OAuth provider documentation for the correct token endpoint path
-
-### Error: Token Endpoint 400
-
-**Symptoms:**
-```
-Failed to obtain OAuth 2.1 token: Request failed with status code 400
-```
-
-**Solutions:**
-1. **Try Basic Auth**: Some OAuth providers (like Ping Identity) require Basic Authentication header instead of credentials in the request body:
-   ```bash
-   OPENL_OAUTH2_USE_BASIC_AUTH=true
-   ```
-
-2. **Check request format**: Verify the Content-Type header is correct (`application/x-www-form-urlencoded`)
-
-3. **Verify grant type**: Ensure `OPENL_OAUTH2_GRANT_TYPE` matches what your OAuth provider expects
-
-4. **Check required parameters**: Some providers require additional parameters:
-   - **Audience**: Some providers require an `audience` parameter:
-     ```bash
-     OPENL_OAUTH2_AUDIENCE=https://api.example.com
-     ```
-   - **Resource**: Some providers require a `resource` parameter:
-     ```bash
-     OPENL_OAUTH2_RESOURCE=https://api.example.com
-     ```
-   - **Scope**: Ensure required scopes are specified:
-     ```bash
-     OPENL_OAUTH2_SCOPE=openl:read openl:write
-     ```
-
-5. **Review error response**: Check logs for the actual error message from the OAuth provider
-
-**Common Error Codes:**
-- `unauthorized_client`: Client not authorized for this grant type
-- `invalid_client`: Invalid client credentials
-- `invalid_scope`: Invalid or missing scope
-- `invalid_grant`: Invalid grant type or grant expired
-
-For more OAuth 2.1 details, see [Authentication Guide](AUTHENTICATION.md).
 
 ---
 

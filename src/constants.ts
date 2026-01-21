@@ -8,12 +8,6 @@
 export const DEFAULTS = {
   /** Default timeout for HTTP requests (30 seconds) */
   TIMEOUT: 30000,
-
-  /** Token expiration buffer in seconds (refresh 60s before expiry) */
-  TOKEN_EXPIRATION_BUFFER: 60,
-
-  /** Default OAuth 2.1 grant type */
-  OAUTH2_GRANT_TYPE: "client_credentials" as const,
 } as const;
 
 /**
@@ -22,9 +16,6 @@ export const DEFAULTS = {
 export const API_ENDPOINTS = {
   /** List all design repositories */
   REPOSITORIES: "/repos",
-
-  /** OAuth 2.1 token acquisition (placeholder - actual URL from config) */
-  OAUTH2_TOKEN: "/oauth/token",
 } as const;
 
 /**

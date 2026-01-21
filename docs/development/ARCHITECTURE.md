@@ -81,7 +81,7 @@ Contains MCP server settings (path, environment variables)
 ```text
 dist/index.js          # Compiled server
 src/                   # Source code
-docs/setup/examples/claude-desktop-config.example.json  # Configuration template
+docs/setup/MCP-CONNECTION-GUIDE.md  # Complete configuration guide with examples
 ```
 
 ### OpenL Tablets
@@ -125,10 +125,9 @@ MCP Server uses one of three methods:
    OPENL_PERSONAL_ACCESS_TOKEN=your-pat-token
    ```
 
-3. **OAuth 2.1**
+3. **Personal Access Token**
    ```env
-   OPENL_OAUTH2_CLIENT_ID=...
-   OPENL_OAUTH2_CLIENT_SECRET=...
+   OPENL_PERSONAL_ACCESS_TOKEN=your-pat-token
    ```
 
 ## Health Check

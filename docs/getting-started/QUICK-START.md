@@ -49,9 +49,8 @@ You should see a page with links to Studio and Services.
 ### Step 3: Configure MCP Server
 
 Follow the setup guide for your AI client:
-- **Claude Desktop**: See [Claude Desktop Setup](../setup/CLAUDE-DESKTOP.md)
-- **Cursor IDE**: See [Cursor Setup](../setup/CLAUDE-DESKTOP.md#cursor-ide-setup)
-- **Cursor with Docker**: See [Cursor Docker Setup](../setup/CURSOR-DOCKER.md)
+- **Claude Desktop**: See [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-3-connecting-to-remote-mcp-using-claude-desktop) (Remote) or [Docker Setup](../setup/MCP-CONNECTION-GUIDE.md#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop) (Docker)
+- **Cursor IDE**: See [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-1-connecting-to-remote-mcp-using-cursor) (Remote) or [Docker Setup](../setup/MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) (Docker)
 
 ### Step 4: Test Connection
 

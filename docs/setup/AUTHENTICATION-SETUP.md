@@ -1,6 +1,6 @@
 # Authentication Configuration for MCP Server
 
-**IMPORTANT**: Authentication variables (tokens, passwords, OAuth credentials) **MUST NOT** be set in Docker configuration or server environment variables. They should be configured **only** in the MCP client configuration when connecting through Cursor or Claude Desktop.
+**IMPORTANT**: Authentication variables (tokens, passwords) **MUST NOT** be set in Docker configuration or server environment variables. They should be configured **only** in the MCP client configuration when connecting through Cursor or Claude Desktop.
 
 ## How It Works
 
@@ -57,7 +57,7 @@ When connecting via HTTP, authentication is passed through:
 
 1. **Query parameters** in URL:
    ```
-   http://localhost:3333/mcp/sse?OPENL_BASE_URL=http://studio:8080/rest&OPENL_PERSONAL_ACCESS_TOKEN=your_token_here
+   http://localhost:3000/mcp/sse?OPENL_BASE_URL=http://studio:8080/rest&OPENL_PERSONAL_ACCESS_TOKEN=your_token_here
    ```
 
 2. **HTTP headers** (X-OPENL-*):
@@ -105,27 +105,12 @@ environment:
 }
 ```
 
-### OAuth 2.1
-
-```json
-{
-  "env": {
-    "OPENL_BASE_URL": "http://localhost:8080/rest",
-    "OPENL_OAUTH2_CLIENT_ID": "your-client-id",
-    "OPENL_OAUTH2_CLIENT_SECRET": "your-client-secret",
-    "OPENL_OAUTH2_TOKEN_URL": "https://auth.example.com/oauth/token",
-    "OPENL_OAUTH2_GRANT_TYPE": "client_credentials",
-    "OPENL_CLIENT_DOCUMENT_ID": "client-id"
-  }
-}
-```
-
 ## Verification
 
 ### Check health endpoint
 
 ```bash
-curl http://localhost:3333/health
+curl http://localhost:3000/health
 ```
 
 ### Check logs
@@ -157,7 +142,5 @@ Should show:
 ## Configuration Examples
 
 Full configuration examples are available in:
-- `docs/setup/examples/claude-desktop-config.example.json`
-- `docs/setup/examples/cursor-pat-config.example.json`
-- `docs/setup/examples/cursor-docker-config.example.json`
+- [MCP Connection Guide](./MCP-CONNECTION-GUIDE.md#complete-configuration-examples) - Complete configuration examples for all scenarios
 

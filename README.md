@@ -2,7 +2,7 @@
 
 Model Context Protocol server for [OpenL Tablets](https://github.com/openl-tablets/openl-tablets) Business Rules Management System.
 
-Built with MCP SDK v1.25.1 featuring type-safe validation (Zod), OAuth 2.1 support, and comprehensive OpenL Tablets integration.
+Built with MCP SDK v1.25.1 featuring type-safe validation (Zod) and comprehensive OpenL Tablets integration.
 
 ## Quick Links
 
@@ -37,13 +37,13 @@ For detailed setup instructions, see [Quick Start Guide](docs/getting-started/QU
 - [Configuration](docs/getting-started/CONFIGURATION.md) - Environment variables and settings *(coming soon)*
 
 ### Setup Guides
-- [Claude Desktop & Cursor Setup](docs/setup/CLAUDE-DESKTOP.md) - Setup for Claude Desktop and Cursor IDE
-- [Docker Setup](docs/setup/DOCKER.md) - Running MCP server in Docker
-- [Cursor with Docker](docs/setup/CURSOR-DOCKER.md) - Connect Cursor IDE to Docker container
+- [MCP Connection Guide](docs/setup/MCP-CONNECTION-GUIDE.md) - Complete guide for connecting Cursor and Claude Desktop to MCP server (Remote and Docker)
+- [Docker Setup](docs/setup/DOCKER.md) - Running MCP server in Docker (technical details)
+- [Cursor with Docker](docs/setup/CURSOR-DOCKER.md) - Detailed Docker connection guide (alternative reference)
 
 ### Guides
 - [Usage Examples](docs/guides/EXAMPLES.md) - Practical examples of using MCP tools
-- [Authentication Guide](docs/guides/AUTHENTICATION.md) - All authentication methods (Basic Auth, Personal Access Token, OAuth 2.1)
+- [Authentication Guide](docs/guides/AUTHENTICATION.md) - All authentication methods (Basic Auth, Personal Access Token)
 - [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) - Common issues, debugging, and solutions
 
 ### Development
@@ -163,11 +163,8 @@ OPENL_BASE_URL=http://localhost:8080/rest
 OPENL_USERNAME=admin
 OPENL_PASSWORD=admin
 
-# Auth Method 2: OAuth 2.1
-OPENL_OAUTH2_CLIENT_ID=client-id
-OPENL_OAUTH2_CLIENT_SECRET=client-secret
-OPENL_OAUTH2_TOKEN_URL=https://auth.example.com/oauth/token
-OPENL_OAUTH2_SCOPE=openl:read openl:write
+# Auth Method 2: Personal Access Token
+OPENL_PERSONAL_ACCESS_TOKEN=openl_pat_...
 
 # Optional
 OPENL_CLIENT_DOCUMENT_ID=mcp-server-1
@@ -197,7 +194,7 @@ See [Setup Guides](docs/setup/) for client-specific configuration instructions.
 - **AI Prompts**: 12 expert guidance templates with conditional rendering
 
 ### Authentication & Security
-- **OAuth 2.1**: Automatic token management, refresh, and retry on 401
+- **Multiple Auth Methods**: Basic Auth and Personal Access Token (PAT)
 - **Personal Access Token**: User-generated tokens for programmatic access
 - **Basic Auth**: Username/password with Base64 encoding
 - **Sensitive Data Protection**: Automatic redaction of credentials in error messages

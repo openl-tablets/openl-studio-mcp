@@ -110,7 +110,7 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
   }
 
   // If authentication is provided via query params/headers, create a new client with same base URL but different auth
-  if (query && (query.OPENL_PERSONAL_ACCESS_TOKEN || query.OPENL_USERNAME || query.OPENL_OAUTH2_CLIENT_ID)) {
+  if (query && (query.OPENL_PERSONAL_ACCESS_TOKEN || query.OPENL_USERNAME)) {
     try {
       // Get base URL from default client (server configuration)
       const baseUrl = defaultClient.getBaseUrl();
@@ -125,28 +125,9 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
         timeout: query.OPENL_TIMEOUT ? parseInt(query.OPENL_TIMEOUT, 10) : undefined,
       };
 
-      // OAuth2 configuration from query (if provided)
-      if (query.OPENL_OAUTH2_CLIENT_ID) {
-        config.oauth2 = {
-          clientId: query.OPENL_OAUTH2_CLIENT_ID,
-          clientSecret: query.OPENL_OAUTH2_CLIENT_SECRET,
-          tokenUrl: query.OPENL_OAUTH2_TOKEN_URL || '',
-          authorizationUrl: query.OPENL_OAUTH2_AUTHORIZATION_URL,
-          scope: query.OPENL_OAUTH2_SCOPE,
-          grantType: (query.OPENL_OAUTH2_GRANT_TYPE as any) || 'client_credentials',
-          refreshToken: query.OPENL_OAUTH2_REFRESH_TOKEN,
-          useBasicAuth: query.OPENL_OAUTH2_USE_BASIC_AUTH === 'true',
-          audience: query.OPENL_OAUTH2_AUDIENCE,
-          resource: query.OPENL_OAUTH2_RESOURCE,
-          codeVerifier: query.OPENL_OAUTH2_CODE_VERIFIER,
-          authorizationCode: query.OPENL_OAUTH2_AUTHORIZATION_CODE,
-          redirectUri: query.OPENL_OAUTH2_REDIRECT_URI,
-        };
-      }
-
       const client = new OpenLClient(config);
       clientsBySession[sessionId] = client;
-      console.log(`✅ OpenL client initialized for session ${sessionId} (base URL: ${baseUrl} from server config, auth: ${config.personalAccessToken ? 'PAT' : config.username ? 'Basic' : config.oauth2 ? 'OAuth2' : 'none'})`);
+      console.log(`✅ OpenL client initialized for session ${sessionId} (base URL: ${baseUrl} from server config, auth: ${config.personalAccessToken ? 'PAT' : config.username ? 'Basic' : 'none'})`);
       return client;
     } catch (error) {
       console.error(`⚠️  Failed to create client for session ${sessionId}:`, sanitizeError(error));
@@ -506,19 +487,28 @@ const handleSSE = async (req: Request, res: Response) => {
     // Extract configuration from headers and query params (only authentication, not base URL)
     const configFromHeaders: Record<string, string | undefined> = {};
     
-    // Extract token from standard Authorization header: "Authorization: Token <PAT>"
-    // This is the standard way to pass authentication tokens
+    // Extract token from standard Authorization header: "Authorization: Token <PAT>" or "Authorization: Bearer <PAT>"
+    // Supports both formats: Bearer (from MCP config) and Token (direct format)
+    // Bearer will be converted to Token format for OpenL API requests
     const authHeader = req.headers.authorization;
     // Log only presence, not the actual value for security
     console.log(`[Config] Authorization header present: ${!!authHeader}, type: ${authHeader ? (typeof authHeader === 'string' ? 'string' : 'array') : 'none'}`);
-    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Token ')) {
-      const token = authHeader.substring(6); // Remove "Token " prefix
-      if (token) {
-        configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-        console.log(`[Config] Token extracted from Authorization header (length: ${token.length})`);
+    if (authHeader && typeof authHeader === 'string') {
+      if (authHeader.startsWith('Token ')) {
+        const token = authHeader.substring(6); // Remove "Token " prefix
+        if (token) {
+          configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
+          console.log(`[Config] Token extracted from Authorization header (Token format, length: ${token.length})`);
+        }
+      } else if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7); // Remove "Bearer " prefix
+        if (token) {
+          configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
+          console.log(`[Config] Token extracted from Authorization header (Bearer format, will be converted to Token for OpenL API, length: ${token.length})`);
+        }
+      } else {
+        console.log(`[Config] Authorization header doesn't start with 'Token ' or 'Bearer ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
       }
-    } else if (authHeader) {
-      console.log(`[Config] Authorization header doesn't start with 'Token ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
     }
 
     // Merge headers and query params (only for authentication, base URL comes from server config)
@@ -566,7 +556,8 @@ const handleSSE = async (req: Request, res: Response) => {
  * Only authentication token can be passed via Authorization header or query parameter.
  * 
  * Supports configuration via:
- *   1. HTTP Authorization header: "Authorization: Token <PAT>"
+ *   1. HTTP Authorization header: "Authorization: Token <PAT>" or "Authorization: Bearer <PAT>"
+ *      (Bearer format will be automatically converted to Token format for OpenL API)
  *   2. Query parameter: ?OPENL_PERSONAL_ACCESS_TOKEN=<PAT>
  */
 app.get('/mcp/sse', handleSSE);
@@ -581,18 +572,28 @@ const handleStreamableHttp = async (req: Request, res: Response) => {
     // Extract configuration from headers and query params (only authentication, not base URL)
     const configFromHeaders: Record<string, string | undefined> = {};
     
-    // Extract token from standard Authorization header: "Authorization: Token <PAT>"
+    // Extract token from standard Authorization header: "Authorization: Token <PAT>" or "Authorization: Bearer <PAT>"
+    // Supports both formats: Bearer (from MCP config) and Token (direct format)
+    // Bearer will be converted to Token format for OpenL API requests
     const authHeader = req.headers.authorization;
     // Log only presence, not the actual value for security
     console.log(`[Config] Authorization header present: ${!!authHeader}, type: ${authHeader ? (typeof authHeader === 'string' ? 'string' : 'array') : 'none'}`);
-    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Token ')) {
-      const token = authHeader.substring(6); // Remove "Token " prefix
-      if (token) {
-        configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-        console.log(`[Config] Token extracted from Authorization header (length: ${token.length})`);
+    if (authHeader && typeof authHeader === 'string') {
+      if (authHeader.startsWith('Token ')) {
+        const token = authHeader.substring(6); // Remove "Token " prefix
+        if (token) {
+          configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
+          console.log(`[Config] Token extracted from Authorization header (Token format, length: ${token.length})`);
+        }
+      } else if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7); // Remove "Bearer " prefix
+        if (token) {
+          configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
+          console.log(`[Config] Token extracted from Authorization header (Bearer format, will be converted to Token for OpenL API, length: ${token.length})`);
+        }
+      } else {
+        console.log(`[Config] Authorization header doesn't start with 'Token ' or 'Bearer ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
       }
-    } else if (authHeader) {
-      console.log(`[Config] Authorization header doesn't start with 'Token ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
     }
 
     // Merge headers and query params (only for authentication, base URL comes from server config)
@@ -664,7 +665,8 @@ const handleStreamableHttp = async (req: Request, res: Response) => {
  * Only authentication token can be passed via Authorization header.
  * 
  * Supports configuration via:
- *   1. HTTP Authorization header: "Authorization: Token <PAT>"
+ *   1. HTTP Authorization header: "Authorization: Token <PAT>" or "Authorization: Bearer <PAT>"
+ *      (Bearer format will be automatically converted to Token format for OpenL API)
  */
 app.post('/mcp/sse', handleStreamableHttp);
 app.post('/sse', handleStreamableHttp); // Alias for nginx proxy compatibility

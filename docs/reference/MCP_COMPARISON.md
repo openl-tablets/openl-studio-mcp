@@ -49,7 +49,7 @@ OpenL Tablets provides two implementations of the MCP (Model Context Protocol) s
 │  (Node.js/TS)   │
 └────────┬────────┘
          │ HTTP REST API
-         │ (JSON, Basic Auth / OAuth2)
+         │ (JSON, Basic Auth / PAT)
          ▼
 ┌─────────────────┐
 │  OpenL Tablets  │  ← OpenL Studio REST API
