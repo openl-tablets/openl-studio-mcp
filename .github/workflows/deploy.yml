@@ -75,7 +75,7 @@ jobs:
           version="org.opencontainers.image.version=${{ steps.version.outputs.VERSION }}"
           revision="org.opencontainers.image.revision=${GITHUB_SHA}"
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-          docker buildx build -t $repo/mcp-server:${{ env.TAG_VERSION }} -t $repo/mcp-server:latest . \
+          docker buildx build -t $repo/openl-studio-mcp-server:${{ env.TAG_VERSION }} -t $repo/openl-studio-mcp-server:latest . \
             --platform ${BUILD_PLATFORMS} --push \
             --label $created --label $version --label $revision \
             --label "org.opencontainers.image.title=OpenL MCP Server" \
@@ -88,7 +88,7 @@ jobs:
           echo 'Built and pushed to GitHub Packages:' >> $GITHUB_STEP_SUMMARY
           echo '' >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo 'docker run -p 3000:3000 ghcr.io/${{ github.repository_owner }}/mcp-server:${{ env.TAG_VERSION }}' >> $GITHUB_STEP_SUMMARY
+          echo 'docker run -p 3000:3000 ghcr.io/${{ github.repository_owner }}/openl-studio-mcp-server:${{ env.TAG_VERSION }}' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo '' >> $GITHUB_STEP_SUMMARY
           echo '**Version**: `${{ steps.version.outputs.VERSION }}`' >> $GITHUB_STEP_SUMMARY
@@ -97,6 +97,6 @@ jobs:
       - name: Clean up old versions
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'mcp-server'
+          package-name: 'openl-studio-mcp-server'
           package-type: 'container'
           min-versions-to-keep: 25 # 5 versions * 5 manifests
