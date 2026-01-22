@@ -112,7 +112,7 @@ cd DEMO && ./start
 
 ## Authentication
 
-MCP Server uses one of three methods:
+MCP Server uses one of two methods:
 
 1. **Basic Auth** (default)
    ```env
@@ -121,11 +121,6 @@ MCP Server uses one of three methods:
    ```
 
 2. **Personal Access Token**
-   ```env
-   OPENL_PERSONAL_ACCESS_TOKEN=your-pat-token
-   ```
-
-3. **Personal Access Token**
    ```env
    OPENL_PERSONAL_ACCESS_TOKEN=your-pat-token
    ```

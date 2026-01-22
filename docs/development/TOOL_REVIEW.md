@@ -175,12 +175,9 @@
 
 **Extra/Missed Inputs**:
 - ✅ Covered: `projectId`, `tableId`, `view` (full table structure)
-- ⚠️ **NOTE**: `comment` parameter is accepted by tool but **NOT supported by OpenL API** (documented in client.ts line 814)
-  - Tool accepts it but doesn't send it to API
-  - Consider removing from tool schema or documenting that it's ignored
+- ✅ All required API parameters are covered
 
 **Recommendations**:
-- Remove `comment` parameter from schema (or document it's ignored) since API doesn't support it
 - Consider adding validation to ensure `view` contains all required fields before sending
 
 ---
@@ -192,11 +189,9 @@
 
 **Extra/Missed Inputs**:
 - ✅ Covered: `projectId`, `tableId`, `appendData` (discriminated union by tableType)
-- ⚠️ **NOTE**: `comment` parameter is accepted but **NOT supported by OpenL API**
-  - Similar to `update_table` - consider removing or documenting
+- ✅ All required API parameters are covered
 
 **Recommendations**:
-- Remove `comment` parameter (or document it's ignored)
 - Consider adding validation for tableType-specific append data structure
 
 ---
@@ -552,8 +547,7 @@
    - `openl_list_deployments`: Missing `repository` filter parameter
 
 2. **Extra Parameters** (not in API):
-   - `openl_update_table`: `comment` parameter (ignored by API)
-   - `openl_append_table`: `comment` parameter (ignored by API)
+   - None
 
 3. **Disabled Tools** (need re-enabling):
    - `openl_upload_file` - Essential for project management
@@ -582,7 +576,6 @@
 1. Add `repository` parameter to `openl_list_deployments`
 2. Re-enable `openl_upload_file`, `openl_download_file`, `openl_execute_rule`
 3. Add missing tools: `openl_validate_project`, `openl_get_project_errors`, `openl_compare_versions`
-4. Remove or document ignored `comment` parameters in `update_table` and `append_table`
 
 **MEDIUM PRIORITY**:
 5. Add `openl_delete_project` tool

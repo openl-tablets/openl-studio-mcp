@@ -35,7 +35,7 @@ import { OpenLClient } from "./client.js";
 import { SERVER_INFO } from "./constants.js";
 import { PROMPTS, loadPromptContent, getPromptDefinition } from "./prompts-registry.js";
 import { registerAllTools, getAllTools, executeTool } from "./tool-handlers.js";
-import { parseProjectId, createProjectId, safeStringify, sanitizeError } from "./utils.js";
+import { safeStringify, sanitizeError } from "./utils.js";
 import type * as Types from "./types.js";
 
 /**
@@ -439,10 +439,11 @@ export async function loadConfigFromEnv(): Promise<Types.OpenLConfig> {
   }
 
   // Validate at least one authentication method is configured
-  if (!config.username && !config.personalAccessToken) {
+  // Require either both username and password (Basic Auth) or Personal Access Token
+  if (!((config.username && config.password) || config.personalAccessToken)) {
     throw new Error(
       "At least one authentication method must be configured " +
-        "(username/password or Personal Access Token)"
+        "(both username and password for Basic Auth, or Personal Access Token)"
     );
   }
 

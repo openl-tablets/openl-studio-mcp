@@ -5,6 +5,7 @@
 import { createHash } from "crypto";
 import { exec } from "child_process";
 import { promisify } from "util";
+import type { ExtractedErrorInfo } from "./types.js";
 
 /**
  * Compute a SHA-256 hash fingerprint of a sensitive value for debugging
@@ -140,6 +141,92 @@ export function extractErrorDetails(error: unknown): {
   return {
     type: "Unknown",
     message: "An unknown error occurred",
+  };
+}
+
+/**
+ * Extract structured error information from API response data
+ *
+ * Handles different error response formats:
+ * - 400: {code, errors[], fields[], message}
+ * - 401-500: {code, message}
+ * - Unknown formats: returns raw response
+ *
+ * @param responseData - Response data from axios error
+ * @param status - HTTP status code
+ * @returns Extracted error information
+ */
+export function extractApiErrorInfo(
+  responseData: unknown,
+  status?: number
+): ExtractedErrorInfo {
+  if (!responseData || typeof responseData !== "object") {
+    return {
+      rawResponse: responseData,
+    };
+  }
+
+  const data = responseData as Record<string, unknown>;
+
+  // Handle 400 Bad Request format
+  if (status === 400) {
+    const result: ExtractedErrorInfo = {};
+
+    if (typeof data.code === "string") {
+      result.code = data.code;
+    }
+    if (typeof data.message === "string") {
+      result.message = data.message;
+    }
+
+    // Extract errors array if present
+    if (Array.isArray(data.errors)) {
+      result.errors = data.errors
+        .filter((err): err is Record<string, unknown> => typeof err === "object" && err !== null)
+        .map((err) => ({
+          code: typeof err.code === "string" ? err.code : undefined,
+          message: typeof err.message === "string" ? err.message : undefined,
+        }));
+    }
+
+    // Extract fields array if present
+    if (Array.isArray(data.fields)) {
+      result.fields = data.fields
+        .filter((field): field is Record<string, unknown> => typeof field === "object" && field !== null)
+        .map((field) => ({
+          code: typeof field.code === "string" ? field.code : undefined,
+          field: typeof field.field === "string" ? field.field : undefined,
+          message: typeof field.message === "string" ? field.message : undefined,
+          rejectedValue: field.rejectedValue,
+        }));
+    }
+
+    // If we extracted at least some structured data, return it
+    if (result.code || result.message || result.errors || result.fields) {
+      return result;
+    }
+  }
+
+  // Handle 401-500 format (or any other status)
+  if (status && status >= 401 && status <= 500) {
+    const result: ExtractedErrorInfo = {};
+
+    if (typeof data.code === "string") {
+      result.code = data.code;
+    }
+    if (typeof data.message === "string") {
+      result.message = data.message;
+    }
+
+    // If we extracted structured data, return it
+    if (result.code || result.message) {
+      return result;
+    }
+  }
+
+  // Unknown format - return raw response
+  return {
+    rawResponse: responseData,
   };
 }
 

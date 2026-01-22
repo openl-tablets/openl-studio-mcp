@@ -1,6 +1,6 @@
 # Authentication Guide
 
-This guide covers all authentication methods supported by the OpenL Tablets MCP Server, including Personal Access Token (PAT) and Basic Authentication.
+This guide covers the authentication methods supported by the OpenL Tablets MCP Server: Personal Access Token (PAT) and Basic Authentication.
 
 ## Table of Contents
 - [Authentication Methods](#authentication-methods)
@@ -249,87 +249,6 @@ Error: timeout of 30000ms exceeded
 3. Verify OpenL Tablets is running
 4. Check firewall rules
 
-#### OAuth2 Token Endpoint 404 Error
-
-**Symptoms:**
-```
-Failed to obtain OAuth 2.1 token: Request failed with status code 404
-```
-
-**Solutions:**
-1. Check the token endpoint URL is correct for your OAuth provider:
-   - **Ping Identity**: Use `/as/token.oauth2` (e.g., `https://auth.example.com/as/token.oauth2`)
-   - **Spring Security OAuth2**: Use `/oauth/token` (e.g., `https://auth.example.com/oauth/token`)
-   - **Standard OAuth2**: Use `/token` (e.g., `https://auth.example.com/token`)
-2. If using `OPENL_OAUTH2_ISSUER_URI`, override with explicit `OPENL_OAUTH2_TOKEN_URL`
-3. Verify the issuer URI is correct (no trailing slash)
-4. Check OAuth provider documentation for the correct token endpoint path
-5. Enable debug logging to see the exact URL being used
-
-**Example for Ping Identity:**
-```bash
-# Instead of issuer-uri (which defaults to /token)
-OPENL_OAUTH2_ISSUER_URI=https://your-oauth-server.example.com
-
-# Use explicit token-url
-OPENL_OAUTH2_TOKEN_URL=https://your-oauth-server.example.com/as/token.oauth2
-```
-
-#### OAuth2 Token Endpoint 400 Error
-
-**Symptoms:**
-```
-Failed to obtain OAuth 2.1 token: Request failed with status code 400
-```
-
-**Solutions:**
-1. **Try Basic Auth**: Some OAuth providers (like Ping Identity) require Basic Authentication header instead of credentials in the request body:
-   ```bash
-   OPENL_OAUTH2_USE_BASIC_AUTH=true
-   ```
-
-2. **Check request format**: Verify the Content-Type header is correct (`application/x-www-form-urlencoded`)
-
-3. **Verify grant type**: Ensure `OPENL_OAUTH2_GRANT_TYPE` matches what your OAuth provider expects
-
-4. **Check required parameters**: Some providers require additional parameters:
-   - **Audience**: Some providers (like Auth0, Ping Identity) require an `audience` parameter:
-     ```bash
-     OPENL_OAUTH2_AUDIENCE=https://api.example.com
-     ```
-   - **Resource**: Some providers require a `resource` parameter:
-     ```bash
-     OPENL_OAUTH2_RESOURCE=https://api.example.com
-     ```
-   - **Scope**: Ensure required scopes are specified:
-     ```bash
-     OPENL_OAUTH2_SCOPE=openl:read openl:write
-     ```
-
-5. **Review error response**: Check logs for the actual error message from the OAuth provider
-
-**Common Error Codes:**
-- `unauthorized_client`: 
-  - Client not authorized for this grant type (check OAuth provider configuration)
-  - Missing required parameters (e.g., `audience`, `scope`)
-  - Client not configured to use `client_credentials` grant type
-  - **Solution**: Verify client configuration in OAuth provider admin console
-- `invalid_client`: Invalid client credentials (check client_id and client_secret)
-- `invalid_scope`: Invalid or missing scope (verify required scopes in OAuth provider)
-- `invalid_grant`: Invalid grant type or grant expired (check grant type configuration)
-
-**Example for Ping Identity with Basic Auth:**
-```bash
-OPENL_OAUTH2_CLIENT_ID=your-client-id
-OPENL_OAUTH2_CLIENT_SECRET=your-client-secret
-OPENL_OAUTH2_TOKEN_URL=https://your-oauth-server.example.com/as/token.oauth2
-OPENL_OAUTH2_GRANT_TYPE=client_credentials
-OPENL_OAUTH2_USE_BASIC_AUTH=true
-# If required by your Ping Identity configuration:
-OPENL_OAUTH2_AUDIENCE=https://api.example.com
-OPENL_OAUTH2_SCOPE=openl:read openl:write
-```
-
 #### SSL/TLS Errors
 
 **Symptoms:**
@@ -363,27 +282,6 @@ OPENL_PASSWORD          # Password for basic authentication
 OPENL_PERSONAL_ACCESS_TOKEN  # Personal Access Token (format: openl_pat_<publicId>.<secret>)
 ```
 
-### OAuth 2.1
-```bash
-OPENL_OAUTH2_CLIENT_ID           # OAuth client ID
-OPENL_OAUTH2_CLIENT_SECRET       # OAuth client secret
-OPENL_OAUTH2_TOKEN_URL           # Token endpoint URL (required if issuer-uri not provided)
-OPENL_OAUTH2_ISSUER_URI         # OAuth issuer URI (alternative to token-url, auto-appends /token)
-OPENL_OAUTH2_AUTHORIZATION_URL   # Authorization endpoint (optional)
-OPENL_OAUTH2_SCOPE               # Space-separated scopes
-OPENL_OAUTH2_GRANT_TYPE          # Grant type (client_credentials, authorization_code, refresh_token)
-OPENL_OAUTH2_REFRESH_TOKEN       # Refresh token (if using refresh grant)
-OPENL_OAUTH2_USE_BASIC_AUTH      # Use Basic Auth header instead of form data (true/false, default: false)
-OPENL_OAUTH2_AUDIENCE            # OAuth2 audience parameter (required by some providers)
-OPENL_OAUTH2_RESOURCE            # OAuth2 resource parameter (required by some providers)
-# PKCE parameters (for authorization_code grant)
-OPENL_OAUTH2_CODE_VERIFIER       # PKCE code verifier (43-128 chars, URL-safe, required for PKCE)
-OPENL_OAUTH2_CODE_CHALLENGE      # PKCE code challenge (auto-generated from code_verifier if not provided)
-OPENL_OAUTH2_CODE_CHALLENGE_METHOD # PKCE method (S256 or plain, default: S256)
-OPENL_OAUTH2_AUTHORIZATION_CODE  # Authorization code from authorization endpoint
-OPENL_OAUTH2_REDIRECT_URI        # Redirect URI registered with OAuth provider
-```
-
 ## Examples
 
 ### Local Development with Basic Auth
@@ -395,13 +293,10 @@ export OPENL_CLIENT_DOCUMENT_ID=dev-laptop
 npm start
 ```
 
-### Production with OAuth 2.1
+### Production with Personal Access Token
 ```bash
 export OPENL_BASE_URL=https://openl-prod.example.com/rest
-export OPENL_OAUTH2_CLIENT_ID=mcp-server-prod
-export OPENL_OAUTH2_CLIENT_SECRET=$(vault read -field=secret secret/openl/prod/client-secret)
-export OPENL_OAUTH2_TOKEN_URL=https://auth.example.com/oauth/token
-export OPENL_OAUTH2_SCOPE="openl:read openl:write"
+export OPENL_PERSONAL_ACCESS_TOKEN=$(vault read -field=token secret/openl/prod/pat)
 export OPENL_CLIENT_DOCUMENT_ID=mcp-prod-instance-1
 export OPENL_TIMEOUT=60000
 npm start
@@ -409,7 +304,6 @@ npm start
 
 ## Resources
 
-- [OAuth 2.1 Specification](https://oauth.net/2.1/)
 - [OpenL Tablets Documentation](https://openl-tablets.org/)
 - [MCP Server README](../../README.md)
 - [Testing Guide](../development/TESTING.md)

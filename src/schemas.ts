@@ -99,7 +99,6 @@ export const updateTableSchema = z.object({
   projectId: projectIdSchema,
   tableId: tableIdSchema,
   view: z.record(z.any()).describe("FULL table structure from get_table() with your modifications applied. MUST include: id, tableType, kind, name, plus type-specific data (rules for SimpleRules, rows for Spreadsheet, fields for Datatype). Do NOT send only the changed fields - send the complete structure. Workflow: 1) currentTable = get_table(), 2) currentTable.rules[0]['Column'] = newValue, 3) update_table(view=currentTable)"),
-  comment: commentSchema,
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -138,7 +137,6 @@ export const appendTableSchema = z.object({
       values: z.array(z.unknown()).describe("Array of vocabulary value objects to append"),
     }),
   ]).describe("Data structure to append to the table. Structure depends on tableType: Datatype uses 'fields', SimpleRules/SmartRules use 'rules', SimpleSpreadsheet uses 'steps', Vocabulary uses 'values'"),
-  comment: commentSchema,
   response_format: ResponseFormat.optional(),
 }).strict();
 

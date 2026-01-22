@@ -18,9 +18,9 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { OpenLClient } from "./client.js";
 import * as schemas from "./schemas.js";
 import { formatResponse, paginateResults } from "./formatters.js";
-import { validateBase64, validateResponseFormat, validatePagination } from "./validators.js";
+import { validateResponseFormat, validatePagination } from "./validators.js";
 import { logger } from "./logger.js";
-import { parseProjectId, createProjectId, isAxiosError, sanitizeError, safeStringify } from "./utils.js";
+import { isAxiosError, sanitizeError, extractApiErrorInfo } from "./utils.js";
 import type * as Types from "./types.js";
 
 /**
@@ -263,6 +263,12 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
       }
       if (typedArgs.status) filters.status = typedArgs.status;
       if (typedArgs.tags) filters.tags = typedArgs.tags;
+      
+      // Add pagination parameters (convert offset/limit to page/size for API)
+      if (offset !== undefined && limit !== undefined) {
+        filters.offset = offset;
+        filters.limit = limit;
+      }
 
       const projectsResponse = await client.listProjects(filters);
 
@@ -280,12 +286,30 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
         totalCount = projects.length;
       } else if (projectsResponse && typeof projectsResponse === 'object') {
         if ('content' in projectsResponse && Array.isArray((projectsResponse as any).content)) {
-          // Paginated response: { content: [...], pageNumber, pageSize, numberOfElements }
+          // Paginated response: { content: [...], pageNumber, pageSize, numberOfElements, total }
           projects = (projectsResponse as any).content;
           apiPageNumber = (projectsResponse as any).pageNumber;
           apiPageSize = (projectsResponse as any).pageSize;
-          // Use numberOfElements for current page, or totalElements if available
-          totalCount = (projectsResponse as any).totalElements ?? (projectsResponse as any).numberOfElements;
+          // Use total if available (OpenL API), otherwise totalElements
+          // Do NOT use numberOfElements as it's the current page size, not the global total
+          const total = (projectsResponse as any).total;
+          const totalElements = (projectsResponse as any).totalElements;
+          if (total !== undefined && total !== null) {
+            totalCount = total;
+          } else if (totalElements !== undefined && totalElements !== null) {
+            totalCount = totalElements;
+          } else {
+            // Total count unknown - let has_more logic rely on page cursor/size
+            totalCount = undefined;
+            logger.warn('Projects response missing total count metadata', {
+              hasTotal: total !== undefined,
+              hasTotalElements: totalElements !== undefined,
+              numberOfElements: (projectsResponse as any).numberOfElements,
+              pageNumber: apiPageNumber,
+              pageSize: apiPageSize,
+              message: 'Pagination has_more calculation may be unreliable without total count'
+            });
+          }
         } else if ('data' in projectsResponse && Array.isArray((projectsResponse as any).data)) {
           // Wrapped response: { data: [...] }
           projects = (projectsResponse as any).data;
@@ -587,16 +611,85 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
       }
       if (typedArgs.name) filters.name = typedArgs.name;
       if (typedArgs.properties) filters.properties = typedArgs.properties;
+      
+      // Add pagination parameters (convert offset/limit to page/size for API)
+      if (offset !== undefined && limit !== undefined) {
+        filters.offset = offset;
+        filters.limit = limit;
+      }
 
-      const tables = await client.listTables(typedArgs.projectId, filters);
+      const tablesResponse = await client.listTables(typedArgs.projectId, filters);
 
-      // Apply pagination
-      const paginated = paginateResults(tables, limit, offset);
+      // Handle case when API returns PageResponse instead of array
+      // API now returns { content: [...], pageNumber, pageSize, numberOfElements, total }
+      let tables: Types.TableMetadata[];
+      let totalCount: number | undefined;
+      let apiPageNumber: number | undefined;
+      let apiPageSize: number | undefined;
+
+      if (Array.isArray(tablesResponse)) {
+        // Direct array response (backward compatibility, no pagination metadata)
+        tables = tablesResponse;
+        totalCount = tables.length;
+      } else if (tablesResponse && typeof tablesResponse === 'object' && 'content' in tablesResponse && Array.isArray((tablesResponse as any).content)) {
+        // PageResponse format: { content: [...], pageNumber, pageSize, numberOfElements, total }
+        tables = (tablesResponse as any).content;
+        apiPageNumber = (tablesResponse as any).pageNumber;
+        apiPageSize = (tablesResponse as any).pageSize;
+        // Use total if available (OpenL API), otherwise totalElements
+        // Do NOT use numberOfElements as it's the current page size, not the global total
+        const total = (tablesResponse as any).total;
+        const totalElements = (tablesResponse as any).totalElements;
+        if (total !== undefined && total !== null) {
+          totalCount = total;
+        } else if (totalElements !== undefined && totalElements !== null) {
+          totalCount = totalElements;
+        } else {
+          // Total count unknown - let has_more logic rely on page cursor/size
+          totalCount = undefined;
+          logger.warn('Tables response missing total count metadata', {
+            hasTotal: total !== undefined,
+            hasTotalElements: totalElements !== undefined,
+            numberOfElements: (tablesResponse as any).numberOfElements,
+            pageNumber: apiPageNumber,
+            pageSize: apiPageSize,
+            message: 'Pagination has_more calculation may be unreliable without total count'
+          });
+        }
+      } else {
+        // Fallback: empty array
+        tables = [];
+        totalCount = 0;
+      }
+
+      // If API already paginated, use its pagination metadata
+      // Otherwise apply client-side pagination
+      let paginated;
+      if (apiPageNumber !== undefined && apiPageSize !== undefined && totalCount !== undefined) {
+        // API already paginated - use its metadata
+        paginated = {
+          data: tables,
+          has_more: (apiPageNumber + 1) * apiPageSize < totalCount,
+          next_offset: (apiPageNumber + 1) * apiPageSize < totalCount ? (apiPageNumber + 1) * apiPageSize : null,
+          total_count: totalCount,
+        };
+      } else {
+        // Apply client-side pagination
+        paginated = paginateResults(tables, limit, offset);
+      }
+
+      // Use API pagination metadata if available, otherwise use client-side pagination values
+      const paginationOffset = apiPageNumber !== undefined && apiPageSize !== undefined
+        ? apiPageNumber * apiPageSize
+        : offset;
+      const paginationLimit = apiPageSize !== undefined
+        ? apiPageSize
+        : limit;
 
       const formattedResult = formatResponse(paginated.data, format, {
         pagination: {
-          limit,
-          offset,
+          limit: paginationLimit,
+          offset: paginationOffset,
           total: paginated.total_count,
         },
         dataType: "tables",
@@ -659,7 +752,6 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
         projectId: string;
         tableId: string;
         view: Types.EditableTableView;
-        comment?: string;
         response_format?: "json" | "markdown";
       };
 
@@ -669,7 +761,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      await client.updateTable(typedArgs.projectId, typedArgs.tableId, typedArgs.view, typedArgs.comment);
+      await client.updateTable(typedArgs.projectId, typedArgs.tableId, typedArgs.view);
 
       const result = {
         success: true,
@@ -706,7 +798,6 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
           steps?: Array<any>;
           values?: Array<any>;
         };
-        comment?: string;
         response_format?: "json" | "markdown";
       };
 
@@ -1523,23 +1614,89 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
 function handleToolError(error: unknown, toolName: string): McpError {
   // Enhanced error handling with context
   if (isAxiosError(error)) {
-    const status = error.response && error.response.status;
-    const sanitizedMessage = sanitizeError(error);
-    const endpoint = error.config && error.config.url;
-    const method = error.config && error.config.method ? error.config.method.toUpperCase() : undefined;
+    const status = error.response?.status;
+    const responseData = error.response?.data;
+    const endpoint = error.config?.url;
+    const method = error.config?.method ? error.config.method.toUpperCase() : undefined;
 
-    const errorDetails = {
+    // Extract structured error information from API response
+    const apiErrorInfo = extractApiErrorInfo(responseData, status);
+
+    // Build error message with priority:
+    // 1. API error message (if available)
+    // 2. Field errors (for 400)
+    // 3. Generic errors array (for 400)
+    // 4. Fallback to sanitized axios error message
+    let errorMessage = "";
+    const errorDetails: Record<string, unknown> = {
       status,
       endpoint,
       method,
       tool: toolName,
     };
 
+    // Add structured error information to details
+    if (apiErrorInfo.code) {
+      errorDetails.apiErrorCode = apiErrorInfo.code;
+    }
+    if (apiErrorInfo.message) {
+      errorMessage = apiErrorInfo.message;
+    }
+    if (apiErrorInfo.errors && apiErrorInfo.errors.length > 0) {
+      errorDetails.errors = apiErrorInfo.errors;
+      if (!errorMessage && apiErrorInfo.errors[0]?.message) {
+        errorMessage = apiErrorInfo.errors[0].message;
+      }
+    }
+    if (apiErrorInfo.fields && apiErrorInfo.fields.length > 0) {
+      errorDetails.fields = apiErrorInfo.fields;
+      // Build field error message if no main message
+      if (!errorMessage && apiErrorInfo.fields.length > 0) {
+        const fieldMessages = apiErrorInfo.fields
+          .map((f) => f.field && f.message ? `${f.field}: ${f.message}` : f.message)
+          .filter(Boolean);
+        if (fieldMessages.length > 0) {
+          errorMessage = fieldMessages.join("; ");
+        }
+      }
+    }
+    if (apiErrorInfo.rawResponse && !apiErrorInfo.code && !apiErrorInfo.message) {
+      // Unknown format - include raw response in details
+      errorDetails.rawResponse = apiErrorInfo.rawResponse;
+    }
+
+    // Fallback to sanitized axios error message if no API message
+    if (!errorMessage) {
+      errorMessage = sanitizeError(error);
+    }
+
+    // Build final error message
+    let finalMessage = `OpenL Tablets API error`;
+    if (status) {
+      finalMessage += ` (${status})`;
+    }
+    finalMessage += `: ${errorMessage}`;
+    if (method && endpoint) {
+      finalMessage += ` [${method} ${endpoint}]`;
+    }
+
     logger.error(`Tool error: ${toolName}`, errorDetails);
 
+    // Use appropriate error code based on status
+    let errorCode = ErrorCode.InternalError;
+    if (status === 400) {
+      errorCode = ErrorCode.InvalidParams;
+    } else if (status === 401 || status === 403) {
+      errorCode = ErrorCode.InvalidRequest; // MCP doesn't have specific auth error code
+    } else if (status === 404) {
+      errorCode = ErrorCode.InvalidParams;
+    } else if (status === 405) {
+      errorCode = ErrorCode.MethodNotFound;
+    }
+
     throw new McpError(
-      ErrorCode.InternalError,
-      `OpenL Tablets API error (${status}): ${sanitizedMessage} [${method} ${endpoint}]`,
+      errorCode,
+      finalMessage,
       errorDetails
     );
   }

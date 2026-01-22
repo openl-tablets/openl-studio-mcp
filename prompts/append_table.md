@@ -82,8 +82,7 @@ arguments:
           "required": true
         }
       ]
-    },
-    "comment": "Added contact information fields"
+    }
   }
 }
 ```
@@ -252,8 +251,7 @@ openl_append_table(
         "defaultValue": "Bronze"
       }
     ]
-  },
-  comment="Added customer loyalty tier field"
+  }
 )
 
 # Step 3: Verify the append

@@ -267,8 +267,7 @@ OpenL Tablets provides two implementations of the MCP (Model Context Protocol) s
 
 5. **Authentication**
    - Basic Auth support
-   - OAuth 2.1 support (PKCE, refresh tokens)
-   - API Key support
+   - Personal Access Token (PAT) support
 
 #### Disadvantages
 

@@ -372,6 +372,14 @@ export interface ProjectFilters {
   status?: string;
   /** Project tags - must start with `tags.` prefix, e.g., { "tags.insurance.home": "value" } */
   tags?: Record<string, string>;
+  /** Pagination: page number (0-based, default: 0) */
+  page?: number;
+  /** Pagination: page size (default: 50) */
+  size?: number;
+  /** Pagination: offset (alternative to page, for backward compatibility) */
+  offset?: number;
+  /** Pagination: limit (alternative to size, for backward compatibility) */
+  limit?: number;
 }
 
 // =============================================================================
@@ -496,6 +504,14 @@ export interface TableFilters {
   name?: string;
   /** Filter by project properties (will be prefixed with 'properties.' in query string) */
   properties?: Record<string, string>;
+  /** Pagination: page number (0-based, default: 0) */
+  page?: number;
+  /** Pagination: page size (default: 50) */
+  size?: number;
+  /** Pagination: offset (alternative to page, for backward compatibility) */
+  offset?: number;
+  /** Pagination: limit (alternative to size, for backward compatibility) */
+  limit?: number;
 }
 
 /** Save project result */
@@ -728,8 +744,9 @@ export interface PageResponse<T> {
   numberOfElements: number;
   pageNumber: number;
   pageSize: number;
-  totalElements?: number;
-  totalPages?: number;
+  total?: number; // Total number of items (can be null if unknown)
+  totalElements?: number; // Alias for total (for consistency with Spring)
+  totalPages?: number; // Calculated as Math.ceil(total / pageSize)
 }
 
 /** Paginated response for project history (OpenAPI 3.0.1) */
@@ -760,5 +777,50 @@ export interface GetProjectHistoryResult {
   commits: ProjectHistoryCommit[];
   total: number;
   hasMore: boolean;
+}
+
+// =============================================================================
+// API Error Response Types
+// =============================================================================
+
+/** Error detail in API error response (for 400 status) */
+export interface ApiErrorDetail {
+  code?: string;
+  message?: string;
+}
+
+/** Field validation error in API error response (for 400 status) */
+export interface ApiFieldError {
+  code?: string;
+  field?: string;
+  message?: string;
+  rejectedValue?: unknown;
+}
+
+/** API error response structure for 400 Bad Request */
+export interface ApiErrorResponse400 {
+  code?: string;
+  errors?: ApiErrorDetail[];
+  fields?: ApiFieldError[];
+  message?: string;
+  // Allow for additional fields that might be present
+  [key: string]: unknown;
+}
+
+/** API error response structure for 403-500 status codes */
+export interface ApiErrorResponse403_500 {
+  code?: string;
+  message?: string;
+  // Allow for additional fields that might be present
+  [key: string]: unknown;
+}
+
+/** Extracted error information from API response */
+export interface ExtractedErrorInfo {
+  code?: string;
+  message?: string;
+  errors?: ApiErrorDetail[];
+  fields?: ApiFieldError[];
+  rawResponse?: unknown; // Original response data if structure doesn't match expected formats
 }
 

@@ -6,10 +6,11 @@
  * - Personal Access Token (PAT)
  */
 
+import { createHash } from "node:crypto";
 import { AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import * as Types from "./types.js";
+import type * as Types from "./types.js";
 import { HEADERS } from "./constants.js";
-import { sanitizeError, hashFingerprint } from "./utils.js";
+import { hashFingerprint, extractApiErrorInfo } from "./utils.js";
 
 /**
  * Check if debug logging is enabled (via environment variable)
@@ -126,11 +127,15 @@ export class AuthenticationManager {
       async (error) => {
         const originalRequest = error.config;
 
-        // Log 401 errors with details
+        // Enhanced 401 error handling with API error extraction
         if (error.response && error.response.status === 401) {
           const fullUrl = `${(error.config && error.config.baseURL) || ''}${(error.config && error.config.url) || ''}`;
           const authMethod = this.getAuthMethod();
-          const authHeader = error.config?.headers?.[HEADERS.AUTHORIZATION];
+          const authHeader = error.config?.headers?.[HEADERS.AUTHORIZATION] as string | undefined;
+          const responseData = error.response.data;
+          
+          // Extract API error information if available
+          const apiErrorInfo = extractApiErrorInfo(responseData, 401);
           
           console.error(`[Auth] ========================================`);
           console.error(`[Auth] ❌ 401 Unauthorized Error:`);
@@ -145,7 +150,38 @@ export class AuthenticationManager {
             console.error(`[Auth]   Header length: ${headerStr.length} characters`);
           }
           console.error(`[Auth]   Response status: ${error.response.status}`);
-          console.error(`[Auth]   Response data: ${JSON.stringify((error.response && error.response.data) || {}).substring(0, 300)}`);
+          
+          // Log structured error information if available
+          if (apiErrorInfo.code || apiErrorInfo.message) {
+            console.error(`[Auth]   API Error Code: ${apiErrorInfo.code || 'N/A'}`);
+            console.error(`[Auth]   API Error Message: ${apiErrorInfo.message || 'N/A'}`);
+          }
+          if (apiErrorInfo.rawResponse) {
+            // Log raw response if structure doesn't match expected format
+            console.error(`[Auth]   Response data: ${JSON.stringify(apiErrorInfo.rawResponse).substring(0, 300)}`);
+          } else {
+            console.error(`[Auth]   Response data: ${JSON.stringify(responseData || {}).substring(0, 300)}`);
+          }
+          
+          // Provide helpful suggestions based on auth method
+          if (authMethod === "Personal Access Token") {
+            console.error(`[Auth]   💡 Troubleshooting:`);
+            console.error(`[Auth]      - Verify PAT is valid and not expired`);
+            console.error(`[Auth]      - Check PAT format: should start with 'openl_pat_'`);
+            console.error(`[Auth]      - Ensure PAT has required permissions`);
+          } else if (authMethod === "Basic Auth" || authMethod === "Incomplete Basic Auth") {
+            console.error(`[Auth]   💡 Troubleshooting:`);
+            console.error(`[Auth]      - Verify username and password are correct`);
+            console.error(`[Auth]      - Check if account is locked or disabled`);
+            console.error(`[Auth]      - Ensure user has required permissions`);
+            if (authMethod === "Incomplete Basic Auth") {
+              console.error(`[Auth]      - Both OPENL_USERNAME and OPENL_PASSWORD must be set`);
+            }
+          } else {
+            console.error(`[Auth]   💡 Troubleshooting:`);
+            console.error(`[Auth]      - Configure authentication: set OPENL_USERNAME/OPENL_PASSWORD or OPENL_PERSONAL_ACCESS_TOKEN`);
+          }
+          
           console.error(`[Auth] ========================================`);
         }
 
@@ -266,10 +302,12 @@ export class AuthenticationManager {
   public getAuthMethod(): string {
     if (this.config.personalAccessToken) {
       return "Personal Access Token";
-    } else if (this.config.username) {
+    } else if (this.config.username && this.config.password) {
       return "Basic Auth";
+    } else if (this.config.username || this.config.password) {
+      return "Incomplete Basic Auth";
     } else {
-      return "None";
+      return "No Auth";
     }
   }
 }

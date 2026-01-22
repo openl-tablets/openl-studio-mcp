@@ -20,6 +20,7 @@ Choose your setup scenario:
 - [Scenario 4: Connecting to MCP in Docker using Claude Desktop](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
 - [Verifying Connection](#verifying-connection)
 - [Troubleshooting](#troubleshooting)
+- [Complete Configuration Examples](#complete-configuration-examples)
 
 ---
 
@@ -201,7 +202,7 @@ npm config get prefix
 
 #### Step 1.2: Configuration in Cursor IDE
 
-**Via Cursor UI (Recommended)**
+#### Via Cursor UI (Recommended)
 
 1. Open Cursor IDE
 2. Press `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux) to open settings
@@ -353,7 +354,7 @@ docker compose logs mcp-server
 
 ### Step 2.2: Configuration in Cursor IDE
 
-**Method 1: Via Cursor UI (Recommended)**
+#### Method 1: Via Cursor UI (Recommended)
 
 1. Open Cursor IDE
 2. Press `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
@@ -570,11 +571,11 @@ After configuring any of the scenarios, perform verification:
 2. **Test in chat:**
    - Open chat in Cursor
    - Enter request:
-     ```
+     ```text
      List repositories in OpenL Tablets
      ```
    - Or:
-     ```
+     ```text
      Show projects in the design repository
      ```
    - Cursor should use MCP tools and show results
@@ -590,11 +591,11 @@ After configuring any of the scenarios, perform verification:
 2. **Test in chat:**
    - Start a new conversation
    - Enter request:
-     ```
+     ```text
      What OpenL Tablets tools are available?
      ```
    - Or:
-     ```
+     ```text
      List repositories in OpenL Tablets
      ```
    - Claude should use MCP tools and show results

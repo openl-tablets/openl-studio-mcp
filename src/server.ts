@@ -16,7 +16,6 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { OpenLClient } from './client.js';
 import { getAllTools, executeTool, registerAllTools } from './tool-handlers.js';
-import { loadConfigFromQuery } from './index.js';
 import { sanitizeError, safeStringify } from './utils.js';
 import type * as Types from './types.js';
 import { SERVER_INFO } from './constants.js';

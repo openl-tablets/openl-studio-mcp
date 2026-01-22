@@ -205,8 +205,7 @@ Use existing `update_table` tool:
         { "driverType": "RISKY", "age": 45, "_res_": 1500.0 },
         { "driverType": "SAFE", "age": 16, "_res_": 1200.0 }
       ]
-    },
-    "comment": "Added boundary test case for minimum age"
+    }
   }
 }
 ```
