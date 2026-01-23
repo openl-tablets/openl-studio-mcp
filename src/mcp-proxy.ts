@@ -64,6 +64,7 @@ class MCPProxyServer {
         return {
           tools: response.data.tools.map((tool: any) => ({
             name: tool.name,
+            title: tool.title,
             description: tool.description,
             inputSchema: tool.inputSchema,
             ...(tool.annotations && { annotations: tool.annotations }),
@@ -118,7 +119,7 @@ class MCPProxyServer {
     });
 
     // Handle resource read
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (_request) => {
       throw new McpError(
         ErrorCode.MethodNotFound,
         "Resource reading not supported via HTTP proxy"
@@ -139,7 +140,7 @@ class MCPProxyServer {
     });
 
     // Handle prompt get
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    this.server.setRequestHandler(GetPromptRequestSchema, async (_request) => {
       throw new McpError(
         ErrorCode.MethodNotFound,
         "Prompts not supported via HTTP proxy"

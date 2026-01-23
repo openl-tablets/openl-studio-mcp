@@ -13,7 +13,6 @@
  * 3. Add the tool handler in the server implementation
  */
 
-import { zodToJsonSchema } from "zod-to-json-schema";
 import * as schemas from "./schemas.js";
 import { TOOL_CATEGORIES } from "./constants.js";
 
@@ -63,7 +62,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_repositories",
     description: "List all design repositories in OpenL Tablets. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
-    inputSchema: zodToJsonSchema(schemas.z.object({
+    inputSchema: schemas.z.toJSONSchema(schemas.z.object({
       response_format: schemas.ResponseFormat.optional(),
       limit: schemas.z.number().int().positive().max(200).default(50).optional(),
       offset: schemas.z.number().int().nonnegative().default(0).optional(),
@@ -77,7 +76,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_branches",
     description: "List all Git branches in a repository. Returns branch names and metadata (current branch, commit info). Use this to see available branches before switching or comparing versions. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.listBranchesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listBranchesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.REPOSITORY,
@@ -87,7 +86,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_repository_features",
     description: "Get features supported by a design repository (branching, searchable, etc.). Use this to check if a repository supports specific features like branching before performing operations that depend on those features. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.getRepositoryFeaturesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getRepositoryFeaturesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.REPOSITORY,
@@ -97,7 +96,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_repository_project_revisions",
     description: "Get revision history (commit history) of a project in a design repository. Returns list of revisions with commit hashes, authors, timestamps, and commit types. Supports pagination and filtering by branch and search term. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.getProjectRevisionsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectRevisionsSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.REPOSITORY,
@@ -107,7 +106,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_deploy_repositories",
     description: "List all deployment repositories in OpenL Tablets. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
-    inputSchema: zodToJsonSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.DEPLOYMENT,
@@ -122,7 +121,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "openl_list_projects",
     description:
       "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
-    inputSchema: zodToJsonSchema(schemas.listProjectsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     _meta: {
       version: "1.1.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -132,7 +131,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_get_project",
     description: "Get comprehensive project information including details, modules, dependencies, and metadata. Returns full project structure, configuration, and status. Use this to understand project organization before making changes.",
-    inputSchema: zodToJsonSchema(schemas.getProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "2.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -142,7 +141,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_update_project_status",
     description: "Update project status with safety checks for unsaved changes. Unified tool for all project state transitions: opening, closing, saving, or switching branches. Status behavior: OPENED (open for editing, read-only if locked by another user), EDITING (has unsaved changes, auto-set by OpenL on first edit), VIEWING_VERSION (viewing outdated version after another user saved, need to re-open), CLOSED (closed and unlocked). Prevents accidental data loss by requiring explicit confirmation when closing EDITING projects. Use cases: 1) Open: {status: 'OPENED'}, 2) Save and close: {status: 'CLOSED', comment: 'changes'}, 3) Save only: {comment: 'intermediate save'}, 4) Force close: {status: 'CLOSED', discardChanges: true}, 5) Switch branch: {branch: 'develop'}",
-    inputSchema: zodToJsonSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
     _meta: {
       version: "2.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -153,7 +152,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_create_project_branch",
     description: "Create a new branch in a project's repository from a specified revision. Allows branching from specific revisions, tags, or other branches. If no revision is specified, the HEAD revision will be used. Use this to manage project versions and isolate development work.",
-    inputSchema: zodToJsonSchema(schemas.createBranchSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.createBranchSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -163,8 +162,8 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_list_project_local_changes",
-    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version.",
-    inputSchema: zodToJsonSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
+    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -173,8 +172,8 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_restore_project_local_change",
-    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change.",
-    inputSchema: zodToJsonSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
+    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -189,7 +188,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_upload_file",
     description: "Upload an Excel file (.xlsx or .xls) containing rules to a project. The file is uploaded to OpenL Studio workspace but NOT committed to Git yet - changes remain in-memory until you save the project using update_project_status (with comment or status: 'CLOSED'). Returns file metadata and upload confirmation. Use this to add or replace Excel rule files. IMPORTANT: The fileName parameter can be a simple name (e.g., 'Rules.xlsx'), subdirectory path (e.g., 'rules/Premium.xlsx'), or full path (e.g., 'Example 1 - Bank Rating/Bank Rating.xlsx'). To replace an existing file, use the exact 'file' field from list_tables().",
-    inputSchema: zodToJsonSchema(schemas.uploadFileSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.uploadFileSchema) as Record<string, unknown>,
     _meta: {
       version: "1.2.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -200,7 +199,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_download_file",
     description: "Download an Excel file from OpenL project. Can download latest version (HEAD) or specific historical version using Git commit hash. Returns base64-encoded file content. IMPORTANT: Use the exact 'file' field from list_tables() response as the fileName parameter (e.g., 'Example 2 - Corporate Rating/Corporate Rating.xlsx' or 'rules/Premium.xlsx'). The tool automatically handles path normalization by stripping the project name prefix when needed.",
-    inputSchema: zodToJsonSchema(schemas.downloadFileSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.downloadFileSchema) as Record<string, unknown>,
     _meta: {
       version: "2.2.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -214,7 +213,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_tables",
     description: "List all tables/rules in a project with optional filters for type, name, and file. Returns table metadata including 'tableId' (the 'id' field) which is required for calling get_table(), update_table(), append_table(), or run_project_tests(). Use the 'tableId' field from the response to reference specific tables in other API calls.",
-    inputSchema: zodToJsonSchema(schemas.listTablesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listTablesSchema) as Record<string, unknown>,
     _meta: {
       version: "2.1.0",
       category: TOOL_CATEGORIES.RULES,
@@ -224,7 +223,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_get_table",
     description: "Get detailed information about a specific table/rule. Returns table structure, signature, conditions, actions, dimension properties, and all row data. Use this to understand existing rules before modifying them.",
-    inputSchema: zodToJsonSchema(schemas.getTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getTableSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
@@ -234,7 +233,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_update_table",
     description: "Replace the ENTIRE table structure with a modified version. Use for MODIFYING existing rows, DELETING rows, REORDERING rows, or STRUCTURAL changes. CRITICAL: Must send the FULL table structure (not just modified fields). DO NOT use for simple additions - use append_table instead. Required workflow: 1) Call get_table() to retrieve complete structure, 2) Modify the returned object (e.g., update rules array, change fields, delete rows), 3) Pass the ENTIRE modified object to update_table(). Required fields: id, tableType, kind, name, plus type-specific fields (rules for SimpleRules, rows for Spreadsheet, fields for Datatype). Modifies table in memory (requires save_project to persist changes).",
-    inputSchema: zodToJsonSchema(schemas.updateTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.updateTableSchema) as Record<string, unknown>,
     _meta: {
       version: "1.2.0",
       category: TOOL_CATEGORIES.RULES,
@@ -245,7 +244,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_append_table",
     description: "Append new rows/fields to an existing table WITHOUT replacing the entire structure. Use for ADDING rows/fields ONLY - does not modify existing data. Examples: Adding 1 row → use append_table. Adding multiple rows → use append_table. Adding fields to Datatype → use append_table. More efficient than update_table for simple additions. Only requires the NEW data to append, not the full table structure. For modifications, deletions, or reordering → use update_table instead. Workflow: 1) Call get_table() to understand current structure, 2) Prepare only the new data to add, 3) Call append_table() with appendData. Modifies table in memory (requires save_project to persist changes).",
-    inputSchema: zodToJsonSchema(schemas.appendTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.appendTableSchema) as Record<string, unknown>,
     _meta: {
       version: "1.1.0",
       category: TOOL_CATEGORIES.RULES,
@@ -256,7 +255,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_create_project_table",
     description: "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (Excel file/folder name) and complete table structure (EditableTableView). The table structure must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for Rules/SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
-    inputSchema: zodToJsonSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
@@ -273,7 +272,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_deployments",
     description: "List all active deployments across production environments. Returns deployment names, repositories, versions, and status information. Use this to see what's currently deployed before making deployment decisions.",
-    inputSchema: zodToJsonSchema(schemas.z.object({
+    inputSchema: schemas.z.toJSONSchema(schemas.z.object({
       response_format: schemas.ResponseFormat.optional(),
       limit: schemas.z.number().int().positive().max(200).default(50).optional(),
       offset: schemas.z.number().int().nonnegative().default(0).optional(),
@@ -287,7 +286,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_deploy_project",
     description: "Deploy a project to production environment. Publishes rules to a deployment repository for runtime execution. Returns deployment status and confirmation. Requires validated project with no errors. Use production repository name (not ID) - e.g., 'Production Deployment' instead of 'production-deploy'.",
-    inputSchema: zodToJsonSchema(schemas.deployProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.deployProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.DEPLOYMENT,
@@ -298,7 +297,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_redeploy_project",
     description: "Redeploy an existing deployment with a new project version. Use this to update a deployment with a newer version of the project or rollback to a previous version.",
-    inputSchema: zodToJsonSchema(schemas.redeployProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.redeployProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.DEPLOYMENT,
@@ -313,7 +312,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_run_project_tests",
     description: "Run project tests - unified tool that starts test execution and retrieves results. Automatically uses all headers from the test start response when fetching results. Supports options to target specific tables, test ranges, filtering failures, pagination, and waiting for completion.",
-    inputSchema: zodToJsonSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
     _meta: {
       version: "2.0.0",
       category: TOOL_CATEGORIES.PROJECT,
@@ -330,7 +329,7 @@ export const TOOLS: ToolDefinition[] = [
   // {
   //   name: "validate_project",
   //   description: "Validate entire project for compilation errors, type errors, and warnings. Returns validation status and detailed error list if issues found. Required before deployment; use this to catch issues early.",
-  //   inputSchema: zodToJsonSchema(schemas.validateProjectSchema) as Record<string, unknown>,
+  //   inputSchema: schemas.z.toJSONSchema(schemas.validateProjectSchema) as Record<string, unknown>,
   //   _meta: {
   //     version: "1.0.0",
   //     category: TOOL_CATEGORIES.PROJECT,
@@ -340,7 +339,7 @@ export const TOOLS: ToolDefinition[] = [
   // {
   //   name: "get_project_errors",
   //   description: "Get comprehensive project error analysis with detailed categorization (type errors, syntax errors, reference errors) and auto-fix suggestions. Returns error severity, locations, and actionable guidance. Use this to understand and fix validation failures.",
-  //   inputSchema: zodToJsonSchema(schemas.getProjectErrorsSchema) as Record<string, unknown>,
+  //   inputSchema: schemas.z.toJSONSchema(schemas.getProjectErrorsSchema) as Record<string, unknown>,
   //   _meta: {
   //     version: "1.0.0",
   //     category: TOOL_CATEGORIES.PROJECT,
@@ -350,7 +349,7 @@ export const TOOLS: ToolDefinition[] = [
   // {
   //   name: "test_project",
   //   description: "Run project tests in OpenL Studio. Can run specific tests by name or all tests in the project. Returns test execution results with pass/fail status, assertions, and coverage information. Use this to verify rule behavior and catch regressions before deployment.",
-  //   inputSchema: zodToJsonSchema(schemas.testProjectSchema) as Record<string, unknown>,
+  //   inputSchema: schemas.z.toJSONSchema(schemas.testProjectSchema) as Record<string, unknown>,
   //   _meta: {
   //     version: "1.0.0",
   //     category: TOOL_CATEGORIES.PROJECT,
@@ -364,7 +363,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_execute_rule",
     description: "Execute a rule with input data to test its behavior and validate changes. Runs the rule with provided parameters and returns calculated result. Use this to verify rule logic before deploying changes.",
-    inputSchema: zodToJsonSchema(schemas.executeRuleSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.executeRuleSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
@@ -375,7 +374,7 @@ export const TOOLS: ToolDefinition[] = [
   // {
   //   name: "compare_versions",
   //   description: "Compare two Git commit versions of a project using commit hashes. Returns detailed diff showing added, modified, and removed tables/files with specific changes. Use this to review what changed between versions before reverting or deploying.",
-  //   inputSchema: zodToJsonSchema(schemas.compareVersionsSchema) as Record<string, unknown>,
+  //   inputSchema: schemas.z.toJSONSchema(schemas.compareVersionsSchema) as Record<string, unknown>,
   //   _meta: {
   //     version: "2.0.0",
   //     category: TOOL_CATEGORIES.VERSION_CONTROL,
@@ -389,7 +388,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_revert_version",
     description: "Revert project to a previous Git commit using commit hash. Creates a new commit that restores old content while preserving full history. Returns new commit hash. Use this to roll back problematic changes while maintaining audit trail.",
-    inputSchema: zodToJsonSchema(schemas.revertVersionSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.revertVersionSchema) as Record<string, unknown>,
     _meta: {
       version: "2.0.0",
       category: TOOL_CATEGORIES.VERSION_CONTROL,
@@ -404,7 +403,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_get_file_history",
     description: "Get Git commit history for a specific file. Returns list of commits with hashes, authors, timestamps, and commit types. Use this to see all versions of a file over time.",
-    inputSchema: zodToJsonSchema(schemas.getFileHistorySchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getFileHistorySchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.VERSION_CONTROL,
@@ -414,7 +413,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_get_project_history",
     description: "Get Git commit history for entire project. Returns chronological list of all commits with metadata about files and tables changed. Supports pagination and branch filtering.",
-    inputSchema: zodToJsonSchema(schemas.getProjectHistorySchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectHistorySchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
       category: TOOL_CATEGORIES.VERSION_CONTROL,

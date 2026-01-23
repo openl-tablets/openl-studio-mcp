@@ -16,7 +16,6 @@
  * @see https://modelcontextprotocol.io/
  */
 
-import { createHash } from "node:crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -85,6 +84,7 @@ class OpenLMCPServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: getAllTools().map(({ name, title, description, inputSchema, annotations }) => ({
         name,
+        title,
         description,
         inputSchema,
         ...(annotations && { annotations }),

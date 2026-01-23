@@ -295,10 +295,10 @@
 **OpenL API**: `GET /history/project` (session-based, requires project to be open)
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `projectId` (used for context, but endpoint is session-based)
+- ✅ Covered: No `projectId` parameter needed (endpoint uses session-based project context)
 
 **Recommendations**:
-- Document that project must be opened in WebStudio session first
+- Document that project must be opened in WebStudio session first (use `openl_update_project_status` to open the project)
 - Consider adding validation to check if project is open before calling
 
 ---
@@ -309,10 +309,10 @@
 **OpenL API**: `POST /history/restore` with `historyId` (text/plain body)
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `projectId`, `historyId`
+- ✅ Covered: `historyId` (no `projectId` parameter needed - endpoint uses session-based project context)
 
 **Recommendations**:
-- Document that project must be opened in WebStudio session first
+- Document that project must be opened in WebStudio session first (use `openl_update_project_status` to open the project)
 
 ---
 

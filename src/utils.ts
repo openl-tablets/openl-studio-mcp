@@ -17,36 +17,153 @@ export function hashFingerprint(value: string): string {
   return createHash('sha256').update(value).digest('hex').substring(0, 16);
 }
 
+// Shared sanitization patterns
+const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
+  [/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]"],
+  [/Token\s+[A-Za-z0-9\-._~+/]+=*/gi, "Token [REDACTED]"],
+  [/openl_pat_[A-Za-z0-9\-._~+/]+/gi, "openl_pat_[REDACTED]"],
+  [/api[_-]?key["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "api_key=[REDACTED]"],
+  [/(:\/\/)[^:@]+:[^@]+@/g, "$1[REDACTED]:[REDACTED]@"],
+  [/client[_-]?secret["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "client_secret=[REDACTED]"],
+  [/authorization[_-]?code["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "authorization_code=[REDACTED]"],
+  [/refresh[_-]?token["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "refresh_token=[REDACTED]"],
+  [/code[_-]?verifier["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "code_verifier=[REDACTED]"],
+];
+
+// Sensitive keys for JSON sanitization - exact matches (fast O(1) lookup)
+// Includes common variations (with underscores, hyphens, lowercase)
+const SENSITIVE_KEYS = new Set([
+  "password",
+  "token",
+  "secret",
+  "apikey",
+  "api_key",
+  "api-key",
+  "authorization",
+  "auth",
+  "credential",
+  "pat",
+  "personalaccesstoken",
+  "personal_access_token",
+  "personal-access-token",
+  "accesstoken",
+  "access_token",
+  "access-token",
+  "refreshtoken",
+  "refresh_token",
+  "refresh-token",
+  "clientsecret",
+  "client_secret",
+  "client-secret",
+]);
+
+// Sensitive key patterns for edge cases not covered by exact matches
+// These use exact word matching (^...$) to avoid false positives
+// Covers camelCase, PascalCase, and other variations
+const SENSITIVE_KEY_PATTERNS = [
+  /^api[_-]?key$/i,                    // apiKey, api_key, api-key, ApiKey
+  /^(authorization|auth)$/i,           // authorization, auth, Authorization, Auth
+  /^access[_-]?token$/i,              // accessToken, access_token, access-token
+  /^refresh[_-]?token$/i,             // refreshToken, refresh_token, refresh-token
+  /^client[_-]?secret$/i,             // clientSecret, client_secret, client-secret
+  /^personal[_-]?access[_-]?token$/i, // personalAccessToken, personal_access_token
+];
+
+/**
+ * Apply sanitization patterns to a string to redact sensitive data
+ *
+ * @param str - String to sanitize
+ * @returns Sanitized string with sensitive patterns redacted
+ */
+function applySanitizationPatterns(str: string): string {
+  return SENSITIVE_PATTERNS.reduce((s, [pattern, replacement]) => s.replace(pattern, replacement), str);
+}
+
 /**
  * Sanitize error messages to prevent sensitive data exposure
  *
- * @param error - Error object to sanitize
+ * @param error - Error object, string, or object with message property to sanitize
  * @returns Sanitized error message
  */
 export function sanitizeError(error: unknown): string {
+  // Handle Error instances
   if (error instanceof Error) {
-    // Remove potential sensitive patterns from error messages
-    let message = error.message;
-
-    // Redact potential tokens (Bearer tokens, API keys, PAT tokens)
-    message = message.replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]");
-    message = message.replace(/Token\s+[A-Za-z0-9\-._~+/]+=*/gi, "Token [REDACTED]");
-    message = message.replace(/openl_pat_[A-Za-z0-9\-._~+/]+/gi, "openl_pat_[REDACTED]");
-    message = message.replace(/api[_-]?key["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "api_key=[REDACTED]");
-
-    // Redact potential credentials in URLs
-    message = message.replace(/(:\/\/)[^:@]+:[^@]+@/g, "$1[REDACTED]:[REDACTED]@");
-
-    // Redact potential client secrets and authorization codes
-    message = message.replace(/client[_-]?secret["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "client_secret=[REDACTED]");
-    message = message.replace(/authorization[_-]?code["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "authorization_code=[REDACTED]");
-    message = message.replace(/refresh[_-]?token["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "refresh_token=[REDACTED]");
-    message = message.replace(/code[_-]?verifier["\s:=]+[A-Za-z0-9\-._~+/]+/gi, "code_verifier=[REDACTED]");
-
-    return message;
+    return applySanitizationPatterns(error.message);
   }
 
+  // Handle string values
+  if (typeof error === "string") {
+    return applySanitizationPatterns(error);
+  }
+
+  // Handle objects with a message property
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return applySanitizationPatterns(error.message);
+  }
+
+  // Fallback for unknown error types
   return "Unknown error";
+}
+
+/**
+ * Sanitize JSON object to prevent sensitive data exposure in logs
+ * Recursively removes or redacts sensitive fields (tokens, passwords, secrets, etc.)
+ *
+ * @param obj - Object to sanitize
+ * @returns Sanitized object (deep clone)
+ */
+export function sanitizeJson(obj: unknown): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === "string") {
+    // Apply string sanitization
+    return applySanitizationPatterns(obj);
+  }
+
+  if (typeof obj !== "object") {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeJson(item));
+  }
+
+  // Handle objects
+  const sanitized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const lowerKey = key.toLowerCase();
+    
+    // First check exact match in Set (fast O(1) lookup for common cases)
+    let isSensitive = SENSITIVE_KEYS.has(lowerKey);
+    
+    // If not found, check patterns for edge cases (camelCase, PascalCase, etc.)
+    // Patterns use exact matching (^...$) to avoid false positives
+    if (!isSensitive) {
+      isSensitive = SENSITIVE_KEY_PATTERNS.some(pattern => pattern.test(key));
+    }
+
+    if (isSensitive) {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
+      // Recursively sanitize nested objects
+      sanitized[key] = sanitizeJson(value);
+    } else if (typeof value === "string") {
+      // Sanitize string values
+      sanitized[key] = sanitizeJson(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
 }
 
 /**
@@ -288,7 +405,7 @@ export function parseProjectId(id: string | { repository: string; projectName: s
       } else {
         throw new Error(`Invalid project ID format: expected "repository:projectName:hashCode" or "repository:projectName", got "${decoded}"`);
       }
-    } catch (error) {
+    } catch {
       // If base64 decode fails, it might be a plain string already
       // Try parsing as "repository:projectName" or "repository:projectName:hashCode" format
       const colonIndex = id.indexOf(":");
@@ -361,7 +478,7 @@ export async function openBrowser(url: string): Promise<void> {
   try {
     await execAsync(command);
     console.error(`[Browser] ✅ Opened browser with URL: ${url.substring(0, 80)}...`);
-  } catch (error) {
+  } catch {
     // Silently fail - browser opening is optional
     console.error(`[Browser] ⚠️  Could not automatically open browser. Please open manually: ${url}`);
   }

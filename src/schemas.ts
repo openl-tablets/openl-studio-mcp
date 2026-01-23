@@ -51,7 +51,7 @@ export const commentSchema = z.string().optional().describe("Commit comment desc
 export const listProjectsSchema = z.object({
   repository: z.string().optional().describe("Filter by repository name (display name, not ID). Use the 'name' field from openl_list_repositories() response (e.g., if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' here, NOT 'design-repo'). Omit to show projects from all repositories."),
   status: z.enum(["LOCAL", "ARCHIVED", "OPENED", "VIEWING_VERSION", "EDITING", "CLOSED"]).optional().describe("Filter by project status. Valid values: 'LOCAL', 'ARCHIVED', 'OPENED', 'VIEWING_VERSION', 'EDITING', 'CLOSED'."),
-  tags: z.record(z.string()).optional().describe("Filter by project tags. Tags must be prefixed with 'tags.' in the query string (e.g., tags.version='1.0', tags.environment='production'). This is handled automatically by the API client - provide as object with tag names as keys."),
+  tags: z.record(z.string(), z.string()).optional().describe("Filter by project tags. Tags must be prefixed with 'tags.' in the query string (e.g., tags.version='1.0', tags.environment='production'). This is handled automatically by the API client - provide as object with tag names as keys."),
   response_format: ResponseFormat.optional(),
 }).merge(PaginationParams).strict();
 
@@ -85,7 +85,7 @@ export const listTablesSchema = z.object({
   projectId: projectIdSchema,
   kind: z.array(z.string()).optional().describe("Filter by table kinds (array of strings). Valid values: 'Rules', 'Spreadsheet', 'Datatype', 'Data', 'Test', 'TBasic', 'Column Match', 'Method', 'Run', 'Constants', 'Conditions', 'Actions', 'Returns', 'Environment', 'Properties', 'Other'. Omit to show all kinds."),
   name: z.string().optional().describe("Filter by table name fragment (e.g., 'calculate', 'Premium'). Omit to show all tables."),
-  properties: z.record(z.string()).optional().describe("Filter by project properties. Properties must be prefixed with 'properties.' in the query string (e.g., properties.state='CA', properties.lob='Auto'). This is handled automatically by the API client."),
+  properties: z.record(z.string(), z.string()).optional().describe("Filter by project properties. Properties must be prefixed with 'properties.' in the query string (e.g., properties.state='CA', properties.lob='Auto'). This is handled automatically by the API client."),
   response_format: ResponseFormat.optional(),
 }).merge(PaginationParams).strict();
 
@@ -98,7 +98,7 @@ export const getTableSchema = z.object({
 export const updateTableSchema = z.object({
   projectId: projectIdSchema,
   tableId: tableIdSchema,
-  view: z.record(z.any()).describe("FULL table structure from get_table() with your modifications applied. MUST include: id, tableType, kind, name, plus type-specific data (rules for SimpleRules, rows for Spreadsheet, fields for Datatype). Do NOT send only the changed fields - send the complete structure. Workflow: 1) currentTable = get_table(), 2) currentTable.rules[0]['Column'] = newValue, 3) update_table(view=currentTable)"),
+  view: z.record(z.string(), z.any()).describe("FULL table structure from get_table() with your modifications applied. MUST include: id, tableType, kind, name, plus type-specific data (rules for SimpleRules, rows for Spreadsheet, fields for Datatype). Do NOT send only the changed fields - send the complete structure. Workflow: 1) currentTable = get_table(), 2) currentTable.rules[0]['Column'] = newValue, 3) update_table(view=currentTable)"),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -119,7 +119,7 @@ export const appendTableSchema = z.object({
     // SimpleRulesAppend
     z.object({
       tableType: z.literal("SimpleRules"),
-      rules: z.array(z.record(z.unknown())).describe("Array of rule objects to append. Each rule is a map with condition and action columns."),
+      rules: z.array(z.record(z.string(), z.unknown())).describe("Array of rule objects to append. Each rule is a map with condition and action columns."),
     }),
     // SimpleSpreadsheetAppend
     z.object({
@@ -129,7 +129,7 @@ export const appendTableSchema = z.object({
     // SmartRulesAppend
     z.object({
       tableType: z.literal("SmartRules"),
-      rules: z.array(z.record(z.any())).describe("Array of rule objects to append. Each rule is a map with condition and action columns."),
+      rules: z.array(z.record(z.string(), z.unknown())).describe("Array of rule objects to append. Each rule is a map with condition and action columns."),
     }),
     // VocabularyAppend
     z.object({
@@ -220,7 +220,7 @@ export const createRuleSchema = z.object({
     name: z.string().describe("Parameter name (e.g., 'driverType', 'age', 'policy')")
   })).optional().describe("Method parameters for the table signature"),
   file: z.string().optional().describe("Target Excel file (e.g., 'rules/Insurance.xlsx'). If not specified, uses default file."),
-  properties: z.record(z.any()).optional().describe("Dimension properties (e.g., { state: 'CA', lob: 'Auto', effectiveDate: '01/01/2025' })"),
+  properties: z.record(z.string(), z.any()).optional().describe("Dimension properties (e.g., { state: 'CA', lob: 'Auto', effectiveDate: '01/01/2025' })"),
   comment: commentSchema,
   response_format: ResponseFormat.optional(),
 }).strict();
@@ -229,7 +229,7 @@ export const createProjectTableSchema = z.object({
   projectId: projectIdSchema,
   moduleName: z.string().min(1).describe("Name of the module where the table will be created (e.g., 'Rules', 'Data', 'Insurance'). This is typically the Excel file name without extension or a folder name."),
   sheetName: z.string().optional().describe("Name of the sheet where the table will be created within the Excel file. If not provided, the table name will be used as the sheet name."),
-  table: z.record(z.any()).describe("Complete table structure (EditableTableView). Must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure."),
+  table: z.record(z.string(), z.any()).describe("Complete table structure (EditableTableView). Must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure."),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -251,7 +251,7 @@ export const getProjectErrorsSchema = z.object({
 export const executeRuleSchema = z.object({
   projectId: projectIdSchema,
   ruleName: z.string().describe("Name of the rule/method to execute (e.g., 'calculatePremium', 'validatePolicy'). Must match exact table name."),
-  inputData: z.record(z.any()).describe("Input data for rule execution as JSON object with parameter names as keys (e.g., { \"driverType\": \"SAFE\", \"age\": 30, \"vehicleValue\": 25000 })"),
+  inputData: z.record(z.string(), z.any()).describe("Input data for rule execution as JSON object with parameter names as keys (e.g., { \"driverType\": \"SAFE\", \"age\": 30, \"vehicleValue\": 25000 })"),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -319,12 +319,10 @@ export const listDeployRepositoriesSchema = z.object({
 // =============================================================================
 
 export const listProjectLocalChangesSchema = z.object({
-  projectId: projectIdSchema,
   response_format: ResponseFormat.optional(),
 }).strict();
 
 export const restoreProjectLocalChangeSchema = z.object({
-  projectId: projectIdSchema,
   historyId: z.string().describe("History ID to restore (from list_project_local_changes response)"),
   response_format: ResponseFormat.optional(),
 }).strict();

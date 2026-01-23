@@ -13,7 +13,6 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { OpenLClient } from "./client.js";
 import * as schemas from "./schemas.js";
@@ -83,7 +82,7 @@ export function getToolByName(name: string): ToolDefinition | undefined {
  * @returns Array of tool definitions without handlers
  */
 export function getAllTools(): Array<Omit<ToolDefinition, "handler">> {
-  return Array.from(toolHandlers.values()).map(({ handler, ...tool }) => tool);
+  return Array.from(toolHandlers.values()).map(({ handler: _handler, ...tool }) => tool);
 }
 
 /**
@@ -120,7 +119,7 @@ export async function executeTool(
  * @param server - MCP Server instance (for future use)
  * @param client - OpenL Tablets API client (for future use)
  */
-export function registerAllTools(server: Server, client: OpenLClient): void {
+export function registerAllTools(_server: Server, _client: OpenLClient): void {
   // =============================================================================
   // Repository Tools
   // =============================================================================
@@ -131,7 +130,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "List all design repositories in OpenL Tablets. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
-    inputSchema: zodToJsonSchema(
+    inputSchema: schemas.z.toJSONSchema(
       schemas.z
         .object({
           response_format: schemas.ResponseFormat.optional(),
@@ -181,7 +180,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "List all Git branches in a repository. Returns branch names and metadata (current branch, commit info). Use this to see available branches before switching or comparing versions. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.listBranchesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listBranchesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -236,7 +235,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name).",
-    inputSchema: zodToJsonSchema(schemas.listProjectsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -395,7 +394,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get comprehensive project information including details, modules, dependencies, and metadata. Returns full project structure, configuration, and status.",
-    inputSchema: zodToJsonSchema(schemas.getProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -429,7 +428,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Update project status with safety checks for unsaved changes. Unified tool for all project state transitions: opening, closing, saving, or switching branches.",
-    inputSchema: zodToJsonSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true, // Can discard changes if requested
       openWorldHint: true,
@@ -482,7 +481,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Upload an Excel file (.xlsx or .xls) containing rules to a project. The file is uploaded to OpenL Studio workspace but NOT committed to Git yet.",
-    inputSchema: zodToJsonSchema(schemas.uploadFileSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.uploadFileSchema) as Record<string, unknown>,
     annotations: {
       idempotentHint: true,
       openWorldHint: true,
@@ -533,7 +532,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Download an Excel file from OpenL project. Can download latest version (HEAD) or specific historical version using Git commit hash.",
-    inputSchema: zodToJsonSchema(schemas.downloadFileSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.downloadFileSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -581,7 +580,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     title: "openl List Tables",
     version: "2.1.0",
     description: "List all tables/rules in a project with optional filters for type, name, and file. Returns table metadata including 'tableId' (the 'id' field) which is required for calling get_table(), update_table(), append_table(), or run_project_tests(). Use the 'tableId' field from the response to reference specific tables in other API calls.",
-    inputSchema: zodToJsonSchema(schemas.listTablesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listTablesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -707,7 +706,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get detailed information about a specific table/rule. Returns table structure, signature, conditions, actions, dimension properties, and all row data.",
-    inputSchema: zodToJsonSchema(schemas.getTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getTableSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -742,7 +741,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.2.0",
     description:
       "Replace the ENTIRE table structure with a modified version. Use for MODIFYING existing rows, DELETING rows, REORDERING rows, or STRUCTURAL changes. CRITICAL: Must send the FULL table structure (not just modified fields). DO NOT use for simple additions - use append_table instead. Required workflow: 1) Call get_table() to retrieve complete structure, 2) Modify the returned object, 3) Pass the ENTIRE modified object to update_table().",
-    inputSchema: zodToJsonSchema(schemas.updateTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.updateTableSchema) as Record<string, unknown>,
     annotations: {
       idempotentHint: true,
       openWorldHint: true,
@@ -782,7 +781,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.1.0",
     description:
       "Append new rows/fields to an existing table WITHOUT replacing the entire structure. Use for ADDING rows/fields ONLY - does not modify existing data. Examples: Adding 1 row → use append_table. Adding multiple rows → use append_table. More efficient than update_table for simple additions. Only requires the NEW data to append, not the full table structure. For modifications, deletions, or reordering → use update_table instead.",
-    inputSchema: zodToJsonSchema(schemas.appendTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.appendTableSchema) as Record<string, unknown>,
     annotations: {
       idempotentHint: true,
       openWorldHint: true,
@@ -848,7 +847,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (Excel file/folder name) and complete table structure (EditableTableView). The table structure must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for Rules/SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
-    inputSchema: zodToJsonSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,
     },
@@ -903,7 +902,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "List all active deployments across production environments. Returns deployment names, repositories, versions, and status information.",
-    inputSchema: zodToJsonSchema(
+    inputSchema: schemas.z.toJSONSchema(
       schemas.z
         .object({
           response_format: schemas.ResponseFormat.optional(),
@@ -953,7 +952,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Deploy a project to production environment. Publishes rules to a deployment repository for runtime execution. Use production repository name (not ID) - e.g., 'Production Deployment' instead of 'production-deploy'.",
-    inputSchema: zodToJsonSchema(schemas.deployProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.deployProjectSchema) as Record<string, unknown>,
     annotations: {
       idempotentHint: true,
       openWorldHint: true,
@@ -1012,7 +1011,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Execute a rule with input data to test its behavior and validate changes. Runs the rule with provided parameters and returns calculated result.",
-    inputSchema: zodToJsonSchema(schemas.executeRuleSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.executeRuleSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -1060,7 +1059,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Revert project to a previous Git commit using commit hash. Creates a new commit that restores old content while preserving full history.",
-    inputSchema: zodToJsonSchema(schemas.revertVersionSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.revertVersionSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true,
       openWorldHint: true,
@@ -1115,7 +1114,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get Git commit history for a specific file. Returns list of commits with hashes, authors, timestamps, and commit types.",
-    inputSchema: zodToJsonSchema(schemas.getFileHistorySchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getFileHistorySchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -1163,7 +1162,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get Git commit history for entire project. Returns chronological list of all commits with metadata about files and tables changed.",
-    inputSchema: zodToJsonSchema(schemas.getProjectHistorySchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectHistorySchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       idempotentHint: true,
@@ -1216,7 +1215,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get features supported by a design repository (branching, searchable, etc.). Use this to check if a repository supports specific features like branching before performing operations that depend on those features. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.getRepositoryFeaturesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getRepositoryFeaturesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -1255,7 +1254,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Get revision history (commit history) of a project in a design repository. Returns list of revisions with commit hashes, authors, timestamps, and commit types. Supports pagination and filtering by branch and search term. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'.",
-    inputSchema: zodToJsonSchema(schemas.getProjectRevisionsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.getProjectRevisionsSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -1313,7 +1312,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "List all deployment repositories in OpenL Tablets. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
-    inputSchema: zodToJsonSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -1359,7 +1358,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Create a new branch in a project's repository from a specified revision. Allows branching from specific revisions, tags, or other branches. If no revision is specified, the HEAD revision will be used.",
-    inputSchema: zodToJsonSchema(schemas.createBranchSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.createBranchSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,
     },
@@ -1406,8 +1405,8 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     title: "openl List Project Local Changes",
     version: "1.0.0",
     description:
-      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version.",
-    inputSchema: zodToJsonSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
+      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -1415,22 +1414,14 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     },
     handler: async (args, client): Promise<ToolResponse> => {
       const typedArgs = args as {
-        projectId: string;
         response_format?: "json" | "markdown";
       };
 
-      if (!typedArgs || !typedArgs.projectId) {
-        throw new McpError(
-          ErrorCode.InvalidParams,
-          "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()"
-        );
-      }
+      const format = validateResponseFormat(typedArgs?.response_format);
 
-      const format = validateResponseFormat(typedArgs.response_format);
-
-      // Note: This endpoint requires project to be loaded in WebStudio session
-      // The projectId is used for context but the endpoint uses session state
-      const changes = await client.getProjectLocalChanges(typedArgs.projectId);
+      // Note: This endpoint requires project to be loaded in WebStudio session.
+      // The endpoint `/history/project` uses session-based project context.
+      const changes = await client.getProjectLocalChanges();
 
       const formattedResult = formatResponse(changes, format, {
         dataType: "local_changes",
@@ -1447,30 +1438,30 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     title: "openl Restore Project Local Change",
     version: "1.0.0",
     description:
-      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change.",
-    inputSchema: zodToJsonSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
+      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true,
       openWorldHint: true,
     },
     handler: async (args, client): Promise<ToolResponse> => {
       const typedArgs = args as {
-        projectId: string;
         historyId: string;
         response_format?: "json" | "markdown";
       };
 
-      if (!typedArgs || !typedArgs.projectId || !typedArgs.historyId) {
+      if (!typedArgs || !typedArgs.historyId) {
         throw new McpError(
           ErrorCode.InvalidParams,
-          "Missing required arguments: projectId, historyId. Use openl_list_project_local_changes() to find valid history IDs."
+          "Missing required argument: historyId. Use openl_list_project_local_changes() to find valid history IDs."
         );
       }
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      // Note: This endpoint requires project to be loaded in WebStudio session
-      await client.restoreProjectLocalChange(typedArgs.projectId, typedArgs.historyId);
+      // Note: This endpoint requires project to be loaded in WebStudio session.
+      // The endpoint `/history/restore` uses session-based project context.
+      await client.restoreProjectLocalChange(typedArgs.historyId);
 
       const result = {
         success: true,
@@ -1496,7 +1487,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "2.0.0",
     description:
       "Run project tests - unified tool that starts test execution and retrieves results. Automatically uses all headers from the test start response when fetching results. Supports options to target specific tables, test ranges, filtering failures, pagination, and waiting for completion.",
-    inputSchema: zodToJsonSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,
       idempotentHint: true,
@@ -1560,7 +1551,7 @@ export function registerAllTools(server: Server, client: OpenLClient): void {
     version: "1.0.0",
     description:
       "Redeploy an existing deployment with a new project version. Use this to update a deployment with a newer version of the project or rollback to a previous version.",
-    inputSchema: zodToJsonSchema(schemas.redeployProjectSchema) as Record<string, unknown>,
+    inputSchema: schemas.z.toJSONSchema(schemas.redeployProjectSchema) as Record<string, unknown>,
     annotations: {
       idempotentHint: true,
       openWorldHint: true,

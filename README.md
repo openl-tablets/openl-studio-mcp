@@ -91,20 +91,46 @@ OpenL has TWO independent versioning systems:
 
 See [prompts/create_rule.md](./prompts/create_rule.md) for detailed table type guidance.
 
-## Tools (18 Total)
+## Tools (20 Active, 6 Temporarily Disabled)
 
-All tools are versioned (v1.0.0) and prefixed with `openl_` for MCP compliance.
+All tools are prefixed with `openl_` for MCP compliance and versioned (v1.0.0+).
 
-**Repository** (2): openl_list_repositories, openl_list_branches  
-**Project** (3): openl_list_projects, openl_get_project, openl_update_project_status  
-**Files** (3): openl_upload_file, openl_download_file, openl_get_file_history  
-**Rules** (5): openl_list_tables, openl_get_table, openl_update_table, openl_append_table, openl_create_project_table  
-**Version Control** (2): openl_get_project_history, openl_revert_version  
-**Deployment** (2): openl_list_deployments, openl_deploy_project  
-**Testing** (1): openl_run_project_tests  
-**Execution** (1): openl_execute_rule
+### Repository Management (5) ✅
+- `openl_list_repositories` - List all design repositories
+- `openl_list_branches` - List Git branches in a repository
+- `openl_list_repository_features` - Get repository capabilities (branching, searchable, etc.)
+- `openl_repository_project_revisions` - Get project revision history from repository
+- `openl_list_deploy_repositories` - List deployment repositories
 
-**Note**: Some tools are temporarily disabled pending full implementation. See [Enable Disabled Tools](docs/reference/ENABLE_DISABLED_TOOLS.md) for details.
+### Project Management (7) ✅
+- `openl_list_projects` - List projects with filters (repository, status, tags)
+- `openl_get_project` - Get comprehensive project details
+- `openl_update_project_status` - Open/close/save projects, switch branches
+- `openl_create_project_branch` - Create new branch in a project
+- `openl_list_project_local_changes` - View workspace history (local changes)
+- `openl_restore_project_local_change` - Restore project to previous local version
+- `openl_run_project_tests` - Execute project tests (all or specific tables)
+
+### Rules & Tables (5) ✅
+- `openl_list_tables` - List all tables/rules in a project with filters
+- `openl_get_table` - Get detailed table structure and data
+- `openl_update_table` - Replace entire table (modify, delete, reorder rows)
+- `openl_append_table` - Add rows/fields to table (incremental changes)
+- `openl_create_project_table` - Create new table programmatically (BETA API)
+
+### Deployment (3) ✅
+- `openl_list_deployments` - List all active deployments
+- `openl_deploy_project` - Deploy project to production
+- `openl_redeploy_project` - Redeploy existing deployment with new version
+
+### Temporarily Disabled (6) ⚠️
+The following tools are disabled pending implementation fixes:
+- `openl_upload_file` - Upload Excel files to a project
+- `openl_download_file` - Download Excel files (current or historical versions)
+- `openl_execute_rule` - Execute rule with test data for validation
+- `openl_revert_version` - Revert project to previous Git commit
+- `openl_get_file_history` - Git commit history for specific file
+- `openl_get_project_history` - Git commit history for entire project
 
 ## Prompts (12 Total)
 

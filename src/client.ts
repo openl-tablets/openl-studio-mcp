@@ -185,7 +185,7 @@ export class OpenLClient {
    * @param useCache - Whether to use cached repositories (default: true)
    * @returns Array of deployment repository information
    */
-  async listDeployRepositories(useCache: boolean = true): Promise<Types.Repository[]> {
+  async listDeployRepositories(_useCache: boolean = true): Promise<Types.Repository[]> {
     // Note: We could cache this separately, but for simplicity, we'll fetch each time
     // since deployment repositories change less frequently
     const response = await this.axiosInstance.get<Types.Repository[]>(
@@ -279,7 +279,7 @@ export class OpenLClient {
       try {
         const parsed = parseProjectIdUtil(projectId);
         return [parsed.repository, parsed.projectName];
-      } catch (error) {
+      } catch {
         // If base64 decode fails, fall through to try other formats
       }
     }
@@ -297,7 +297,7 @@ export class OpenLClient {
       try {
         const parsed = parseProjectIdUtil(projectId);
         return [parsed.repository, parsed.projectName];
-      } catch (error) {
+      } catch {
         // Fall through to error
       }
     }
@@ -328,7 +328,7 @@ export class OpenLClient {
     if (projectId.includes('%')) {
       try {
         decodedId = decodeURIComponent(projectId);
-      } catch (error) {
+      } catch {
         // If decoding fails, use original - might not be URL-encoded
         decodedId = projectId;
       }
@@ -341,7 +341,7 @@ export class OpenLClient {
       return Buffer.from(colonFormat, 'utf-8').toString('base64');
     }
 
-    // No dash or colon - might be already base64, but validate explicitly
+    // No dash or colon - might be already base64, validate but don't re-encode
     // First check if it matches base64 pattern
     const normalizedId = decodedId.replace(/\s/g, "");
     if (!PROJECT_ID_PATTERN.test(normalizedId)) {
@@ -351,7 +351,8 @@ export class OpenLClient {
       );
     }
 
-    // Validate by attempting decode/re-encode round-trip
+    // Validate that it's valid base64 and has expected format
+    // But don't re-encode - if it's already base64 from API, use it as-is
     try {
       const decoded = Buffer.from(normalizedId, "base64").toString("utf-8");
       
@@ -361,16 +362,8 @@ export class OpenLClient {
         throw new Error(`Decoded base64 does not have expected format: "${decoded}"`);
       }
 
-      // Verify round-trip: re-encode and compare (but normalize padding)
-      const reEncoded = Buffer.from(decoded, "utf-8").toString("base64");
-      // Base64 padding can vary, so compare decoded values instead of encoded strings
-      const reDecoded = Buffer.from(reEncoded, "base64").toString("utf-8");
-      if (reDecoded !== decoded) {
-        throw new Error(`Base64 round-trip validation failed for: "${projectId}"`);
-      }
-
-      // Valid base64 - return normalized version (preserve original padding if it was valid)
-      // Use the original normalizedId to preserve any padding characters
+      // Valid base64 with correct format - return as-is (don't re-encode)
+      // The ID from API is already correctly encoded, no need to change it
       return normalizedId;
     } catch (error) {
       // If decode fails or validation fails, throw descriptive error
@@ -401,7 +394,7 @@ export class OpenLClient {
       try {
         const decoded = decodeURIComponent(projectId);
         cleanBase64Id = this.toBase64ProjectId(decoded);
-      } catch (error) {
+      } catch {
         // If decoding fails, try treating as non-encoded
         cleanBase64Id = this.toBase64ProjectId(projectId);
       }
@@ -1204,10 +1197,11 @@ export class OpenLClient {
   /**
    * Get project local changes (workspace history)
    *
-   * @param projectId - Project ID
    * @returns List of local change history items
+   * @note This endpoint requires the project to be loaded in WebStudio session.
+   *       The endpoint `/history/project` uses session-based project context.
    */
-  async getProjectLocalChanges(projectId: string): Promise<Types.ProjectHistoryItem[]> {
+  async getProjectLocalChanges(): Promise<Types.ProjectHistoryItem[]> {
     // Note: This endpoint requires the project to be loaded in WebStudio session
     // The endpoint is /history/project and uses session-based project context
     const response = await this.axiosInstance.get<Types.ProjectHistoryItem[]>(
@@ -1219,11 +1213,12 @@ export class OpenLClient {
   /**
    * Restore project to a local change version
    *
-   * @param projectId - Project ID
    * @param historyId - History ID to restore
    * @returns Success status (204 No Content on success)
+   * @note This endpoint requires the project to be loaded in WebStudio session.
+   *       The endpoint `/history/restore` uses session-based project context.
    */
-  async restoreProjectLocalChange(projectId: string, historyId: string): Promise<void> {
+  async restoreProjectLocalChange(historyId: string): Promise<void> {
     // Note: This endpoint requires the project to be loaded in WebStudio session
     // The endpoint is /history/restore and uses session-based project context
     await this.axiosInstance.post(

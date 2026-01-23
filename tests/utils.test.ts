@@ -54,9 +54,24 @@ describe("utils", () => {
       expect(result2).toContain("[REDACTED]");
     });
 
-    it("should handle non-Error objects", () => {
+    it("should handle string values", () => {
       const result = sanitizeError("plain string");
-      expect(result).toBe("Unknown error");
+      expect(result).toBe("plain string");
+    });
+
+    it("should sanitize sensitive data in string values", () => {
+      const result = sanitizeError("Bearer token123");
+      expect(result).toBe("Bearer [REDACTED]");
+    });
+
+    it("should handle objects with message property", () => {
+      const result = sanitizeError({ message: "Error occurred" });
+      expect(result).toBe("Error occurred");
+    });
+
+    it("should sanitize sensitive data in objects with message property", () => {
+      const result = sanitizeError({ message: "Token abc123" });
+      expect(result).toBe("Token [REDACTED]");
     });
 
     it("should handle null", () => {
@@ -66,6 +81,16 @@ describe("utils", () => {
 
     it("should handle undefined", () => {
       const result = sanitizeError(undefined);
+      expect(result).toBe("Unknown error");
+    });
+
+    it("should handle objects without message property", () => {
+      const result = sanitizeError({ code: 500 });
+      expect(result).toBe("Unknown error");
+    });
+
+    it("should handle objects with non-string message", () => {
+      const result = sanitizeError({ message: 123 });
       expect(result).toBe("Unknown error");
     });
 

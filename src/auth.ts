@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import type * as Types from "./types.js";
 import { HEADERS } from "./constants.js";
-import { hashFingerprint, extractApiErrorInfo } from "./utils.js";
+import { hashFingerprint, extractApiErrorInfo, sanitizeJson } from "./utils.js";
 
 /**
  * Check if debug logging is enabled (via environment variable)
@@ -125,7 +125,8 @@ export class AuthenticationManager {
         return response;
       },
       async (error) => {
-        const originalRequest = error.config;
+        // Original request config available if needed for debugging
+        void error.config;
 
         // Enhanced 401 error handling with API error extraction
         if (error.response && error.response.status === 401) {
@@ -157,10 +158,13 @@ export class AuthenticationManager {
             console.error(`[Auth]   API Error Message: ${apiErrorInfo.message || 'N/A'}`);
           }
           if (apiErrorInfo.rawResponse) {
-            // Log raw response if structure doesn't match expected format
-            console.error(`[Auth]   Response data: ${JSON.stringify(apiErrorInfo.rawResponse).substring(0, 300)}`);
+            // Log raw response if structure doesn't match expected format (sanitized to prevent sensitive data exposure)
+            const sanitized = sanitizeJson(apiErrorInfo.rawResponse);
+            console.error(`[Auth]   Response data: ${JSON.stringify(sanitized).substring(0, 300)}`);
           } else {
-            console.error(`[Auth]   Response data: ${JSON.stringify(responseData || {}).substring(0, 300)}`);
+            // Sanitize response data before logging to prevent sensitive data exposure
+            const sanitized = sanitizeJson(responseData || {});
+            console.error(`[Auth]   Response data: ${JSON.stringify(sanitized).substring(0, 300)}`);
           }
           
           // Provide helpful suggestions based on auth method

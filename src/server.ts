@@ -165,6 +165,7 @@ async function initializeMCPServer(): Promise<void> {
   mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: getAllTools().map(({ name, title, description, inputSchema, annotations }) => ({
       name,
+      title,
       description,
       inputSchema,
       ...(annotations && { annotations }),
@@ -261,6 +262,7 @@ function setupSessionHandlers(server: Server, client: OpenLClient): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: getAllTools().map(({ name, title, description, inputSchema, annotations }) => ({
       name,
+      title,
       description,
       inputSchema,
       ...(annotations && { annotations }),
@@ -480,7 +482,7 @@ async function handleResourceRead(
 /**
  * SSE endpoint handler (shared for /mcp/sse and /sse)
  */
-const handleSSE = async (req: Request, res: Response) => {
+const handleSSE = async (req: Request, res: Response): Promise<Response | void> => {
   console.log(`[SSE Handler] Processing SSE connection request: ${req.method} ${req.path}`);
   try {
     // Extract configuration from headers and query params (only authentication, not base URL)
@@ -565,7 +567,7 @@ app.get('/sse', handleSSE); // Alias for nginx proxy compatibility
 /**
  * StreamableHttp endpoint handler (shared for /mcp/sse and /sse)
  */
-const handleStreamableHttp = async (req: Request, res: Response) => {
+const handleStreamableHttp = async (req: Request, res: Response): Promise<Response | void> => {
   console.log(`[StreamableHTTP Handler] Processing StreamableHTTP connection request: ${req.method} ${req.path}`);
   try {
     // Extract configuration from headers and query params (only authentication, not base URL)
@@ -673,7 +675,7 @@ app.post('/sse', handleStreamableHttp); // Alias for nginx proxy compatibility
 /**
  * Message endpoint handler for SSE transport (shared for /mcp/messages and /messages)
  */
-const handleSSEMessages = async (req: Request, res: Response) => {
+const handleSSEMessages = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const sessionId = req.query.sessionId as string;
     const transport = sseTransports[sessionId];
@@ -831,7 +833,7 @@ app.post('/execute', async (req: Request, res: Response) => {
 /**
  * Error handling middleware
  */
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({
     error: 'Internal server error',
