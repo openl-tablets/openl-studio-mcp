@@ -300,14 +300,6 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
           } else {
             // Total count unknown - let has_more logic rely on page cursor/size
             totalCount = undefined;
-            logger.warn('Projects response missing total count metadata', {
-              hasTotal: total !== undefined,
-              hasTotalElements: totalElements !== undefined,
-              numberOfElements: (projectsResponse as any).numberOfElements,
-              pageNumber: apiPageNumber,
-              pageSize: apiPageSize,
-              message: 'Pagination has_more calculation may be unreliable without total count'
-            });
           }
         } else if ('data' in projectsResponse && Array.isArray((projectsResponse as any).data)) {
           // Wrapped response: { data: [...] }
@@ -315,11 +307,6 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
           totalCount = projects.length;
         } else {
           // Fallback: try to convert to array or use empty array
-          logger.warn('Unexpected projects response format, expected array but got object', {
-            responseType: typeof projectsResponse,
-            hasData: 'data' in projectsResponse,
-            hasContent: 'content' in projectsResponse,
-          });
           projects = [];
           totalCount = 0;
         }
@@ -646,14 +633,6 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         } else {
           // Total count unknown - let has_more logic rely on page cursor/size
           totalCount = undefined;
-          logger.warn('Tables response missing total count metadata', {
-            hasTotal: total !== undefined,
-            hasTotalElements: totalElements !== undefined,
-            numberOfElements: (tablesResponse as any).numberOfElements,
-            pageNumber: apiPageNumber,
-            pageSize: apiPageSize,
-            message: 'Pagination has_more calculation may be unreliable without total count'
-          });
         }
       } else {
         // Fallback: empty array
@@ -1526,13 +1505,60 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         waitForCompletion: typedArgs.waitForCompletion !== false, // Default to true
       });
 
-      const formattedResult = formatResponse(summary, format, {
+      // Calculate total tests in all test tables if tableId is not specified
+      let totalTestsInAllTables: number | undefined;
+      if (!typedArgs.tableId) {
+        try {
+          const allTables = await client.listTables(typedArgs.projectId, {
+            kind: ["Test"],
+          });
+          
+          // Get row count for each test table (parallel execution)
+          const tableCounts = await Promise.all(
+            allTables.map(async (table) => {
+              try {
+                const tableDetails = await client.getTable(typedArgs.projectId, table.id);
+                // Test tables can have different structures - check for rows, rules, or other data arrays
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const tableData = tableDetails as any;
+                if (tableData.rows && Array.isArray(tableData.rows)) {
+                  return tableData.rows.length;
+                } else if (tableData.rules && Array.isArray(tableData.rules)) {
+                  return tableData.rules.length;
+                } else if (tableData.steps && Array.isArray(tableData.steps)) {
+                  return tableData.steps.length;
+                }
+                return 0;
+              } catch (error) {
+                // If we can't get table details, skip it
+                return 0;
+              }
+            })
+          );
+          const totalCount = tableCounts.reduce((sum, count) => sum + count, 0);
+          totalTestsInAllTables = totalCount;
+        } catch (error) {
+          // If we can't get test tables list, fall back to API's numberOfTests
+        }
+      }
+
+      // Add totalTestsInAllTables to summary if calculated
+      const enhancedSummary = totalTestsInAllTables !== undefined
+        ? { ...summary, totalTestsInAllTables }
+        : summary;
+
+      const formattedResult = formatResponse(enhancedSummary, format, {
         pagination: {
-          limit: summary.pageSize || typedArgs.limit || 50,
-          offset: (summary.pageNumber || 0) * (summary.pageSize || 50),
-          total: summary.totalElements || summary.numberOfTests,
+          // numberOfElements is the page size (elements per page), not total count
+          // numberOfTests is the total number of tests (all tests)
+          // numberOfFailures is the number of failed tests
+          limit: summary.numberOfElements || summary.pageSize || typedArgs.limit || 50,
+          offset: (summary.pageNumber || 0) * (summary.numberOfElements || summary.pageSize || 50),
+          // Use numberOfTests as total (all tests), not totalElements or numberOfElements
+          total: summary.numberOfTests,
         },
         dataType: "test_results",
+        skipTruncation: true, // Always return full test results without truncation
       });
 
       return {
@@ -1591,8 +1617,6 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
       };
     },
   });
-
-  logger.info(`Registered ${toolHandlers.size} OpenL Tablets tools`);
 }
 
 /**

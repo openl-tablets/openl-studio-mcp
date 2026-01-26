@@ -430,10 +430,11 @@ export interface TestCaseExecutionResult {
 export interface TestsExecutionSummary {
   testCases: TestCaseExecutionResult[];
   executionTimeMs: number;
-  numberOfTests: number;
-  numberOfFailures: number;
+  numberOfTests: number; // Total number of tests (all tests)
+  numberOfFailures: number; // Number of failed tests
   pageNumber?: number;
   pageSize?: number;
+  numberOfElements?: number; // Page size (elements per page for pagination)
   totalElements?: number;
   totalPages?: number;
 }

@@ -38,11 +38,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
+// Request logging middleware (disabled to reduce noise)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // Log all requests (including MCP endpoints)
-  const timestamp = new Date().toISOString();
-  console.log(`[MCP Server] ${timestamp} ${req.method} ${req.path}`);
   next();
 });
 
@@ -61,7 +58,6 @@ async function initializeDefaultClient(): Promise<void> {
     // This allows the server to start without auth, and auth will be provided per-session
     const baseUrl = process.env.OPENL_BASE_URL;
     if (!baseUrl) {
-      console.log('ℹ️  OPENL_BASE_URL not set - will use per-session configuration');
       return;
     }
 
@@ -83,10 +79,6 @@ async function initializeDefaultClient(): Promise<void> {
     // Only create client if we have at least base URL
     // Auth will be provided per-session via query params or headers
     defaultClient = new OpenLClient(config);
-    console.log(`✅ Default OpenL client initialized with base URL: ${config.baseUrl}`);
-    console.log(`ℹ️  Authentication will be provided per-session via query parameters or headers`);
-    console.log(`ℹ️  Do NOT set authentication credentials in Docker/environment variables`);
-    console.log(`ℹ️  Configure authentication in your MCP client (Cursor/Claude Desktop) settings`);
   } catch (error) {
     console.error('❌ Failed to initialize default OpenL client:', sanitizeError(error));
     // Don't exit - allow per-session clients
@@ -126,7 +118,7 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
 
       const client = new OpenLClient(config);
       clientsBySession[sessionId] = client;
-      console.log(`✅ OpenL client initialized for session ${sessionId} (base URL: ${baseUrl} from server config, auth: ${config.personalAccessToken ? 'PAT' : config.username ? 'Basic' : 'none'})`);
+      // Only log on first client creation for this session (not on every request)
       return client;
     } catch (error) {
       console.error(`⚠️  Failed to create client for session ${sessionId}:`, sanitizeError(error));
@@ -240,7 +232,6 @@ async function initializeMCPServer(): Promise<void> {
     };
   });
 
-    console.log(`✅ MCP Server initialized for SSE transport`);
   } catch (error) {
     console.error('❌ Failed to initialize MCP Server:', sanitizeError(error));
     process.exit(1);
@@ -483,7 +474,6 @@ async function handleResourceRead(
  * SSE endpoint handler (shared for /mcp/sse and /sse)
  */
 const handleSSE = async (req: Request, res: Response): Promise<Response | void> => {
-  console.log(`[SSE Handler] Processing SSE connection request: ${req.method} ${req.path}`);
   try {
     // Extract configuration from headers and query params (only authentication, not base URL)
     const configFromHeaders: Record<string, string | undefined> = {};
@@ -492,31 +482,22 @@ const handleSSE = async (req: Request, res: Response): Promise<Response | void> 
     // Supports both formats: Bearer (from MCP config) and Token (direct format)
     // Bearer will be converted to Token format for OpenL API requests
     const authHeader = req.headers.authorization;
-    // Log only presence, not the actual value for security
-    console.log(`[Config] Authorization header present: ${!!authHeader}, type: ${authHeader ? (typeof authHeader === 'string' ? 'string' : 'array') : 'none'}`);
     if (authHeader && typeof authHeader === 'string') {
       if (authHeader.startsWith('Token ')) {
         const token = authHeader.substring(6); // Remove "Token " prefix
         if (token) {
           configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-          console.log(`[Config] Token extracted from Authorization header (Token format, length: ${token.length})`);
         }
       } else if (authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7); // Remove "Bearer " prefix
         if (token) {
           configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-          console.log(`[Config] Token extracted from Authorization header (Bearer format, will be converted to Token for OpenL API, length: ${token.length})`);
         }
-      } else {
-        console.log(`[Config] Authorization header doesn't start with 'Token ' or 'Bearer ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
       }
     }
 
     // Merge headers and query params (only for authentication, base URL comes from server config)
     const configParams = { ...req.query, ...configFromHeaders } as Record<string, string | undefined>;
-    // Never log actual token values - only presence
-    console.log(`[Config] Config params: OPENL_PERSONAL_ACCESS_TOKEN=${configParams.OPENL_PERSONAL_ACCESS_TOKEN ? 'set (hidden)' : 'not set'}`);
-    console.log(`[Config] Base URL: using server configuration (OPENL_BASE_URL env var or Docker config)`);
     
     // Try to create client from configuration (base URL from server, auth from client)
     const sessionId = randomUUID();
@@ -535,13 +516,9 @@ const handleSSE = async (req: Request, res: Response): Promise<Response | void> 
     res.on('close', () => {
       delete sseTransports[transportSessionId];
       delete clientsBySession[sessionId];
-      console.log(`SSE session ${transportSessionId} closed`);
     });
 
     await sessionServer.connect(transport);
-    const configSource = configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN ? 'Authorization header' : 
-                         req.query.OPENL_PERSONAL_ACCESS_TOKEN ? 'query params' : 'default config';
-    console.log(`✅ SSE connection established: session ${transportSessionId} (client from ${configSource})`);
   } catch (error) {
     console.error('❌ Failed to establish SSE connection:', sanitizeError(error));
     res.status(500).json({ error: 'Failed to establish SSE connection', message: sanitizeError(error) });
@@ -568,7 +545,6 @@ app.get('/sse', handleSSE); // Alias for nginx proxy compatibility
  * StreamableHttp endpoint handler (shared for /mcp/sse and /sse)
  */
 const handleStreamableHttp = async (req: Request, res: Response): Promise<Response | void> => {
-  console.log(`[StreamableHTTP Handler] Processing StreamableHTTP connection request: ${req.method} ${req.path}`);
   try {
     // Extract configuration from headers and query params (only authentication, not base URL)
     const configFromHeaders: Record<string, string | undefined> = {};
@@ -577,31 +553,22 @@ const handleStreamableHttp = async (req: Request, res: Response): Promise<Respon
     // Supports both formats: Bearer (from MCP config) and Token (direct format)
     // Bearer will be converted to Token format for OpenL API requests
     const authHeader = req.headers.authorization;
-    // Log only presence, not the actual value for security
-    console.log(`[Config] Authorization header present: ${!!authHeader}, type: ${authHeader ? (typeof authHeader === 'string' ? 'string' : 'array') : 'none'}`);
     if (authHeader && typeof authHeader === 'string') {
       if (authHeader.startsWith('Token ')) {
         const token = authHeader.substring(6); // Remove "Token " prefix
         if (token) {
           configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-          console.log(`[Config] Token extracted from Authorization header (Token format, length: ${token.length})`);
         }
       } else if (authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7); // Remove "Bearer " prefix
         if (token) {
           configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN = token;
-          console.log(`[Config] Token extracted from Authorization header (Bearer format, will be converted to Token for OpenL API, length: ${token.length})`);
         }
-      } else {
-        console.log(`[Config] Authorization header doesn't start with 'Token ' or 'Bearer ': ${typeof authHeader === 'string' ? 'wrong format' : 'not a string'}`);
       }
     }
 
     // Merge headers and query params (only for authentication, base URL comes from server config)
     const configParams = { ...req.query, ...configFromHeaders } as Record<string, string | undefined>;
-    // Never log actual token values - only presence
-    console.log(`[Config] Config params: OPENL_PERSONAL_ACCESS_TOKEN=${configParams.OPENL_PERSONAL_ACCESS_TOKEN ? 'set (hidden)' : 'not set'}`);
-    console.log(`[Config] Base URL: using server configuration (OPENL_BASE_URL env var or Docker config)`);
 
     // Check for existing session ID in headers
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
@@ -610,7 +577,6 @@ const handleStreamableHttp = async (req: Request, res: Response): Promise<Respon
     // Get or create client for this session
     const sessionClientId = sessionId || randomUUID();
     const client = getClientForSession(sessionClientId, configParams);
-    console.log(`[Config] Using client for session ${sessionClientId}: auth=${client.getAuthMethod()}`);
 
     if (sessionId && streamableHttpTransports[sessionId]) {
       // Reuse existing transport
@@ -624,7 +590,6 @@ const handleStreamableHttp = async (req: Request, res: Response): Promise<Respon
         onsessioninitialized: (id) => {
           streamableHttpTransports[id] = transport;
           clientsBySession[id] = client;
-          console.log(`StreamableHttp session ${id} initialized with client (auth: ${client.getAuthMethod()})`);
         }
       });
 
@@ -633,15 +598,11 @@ const handleStreamableHttp = async (req: Request, res: Response): Promise<Respon
         if (transport.sessionId) {
           delete streamableHttpTransports[transport.sessionId];
           delete clientsBySession[transport.sessionId];
-          console.log(`StreamableHttp session ${transport.sessionId} closed`);
         }
       };
 
       // Connect session server to transport
       await sessionServer.connect(transport);
-      const configSource = configFromHeaders.OPENL_PERSONAL_ACCESS_TOKEN ? 'Authorization header' : 
-                           req.query.OPENL_PERSONAL_ACCESS_TOKEN ? 'query params' : 'default config';
-      console.log(`✅ StreamableHttp connection established: session ${transport.sessionId || 'new'} (client from ${configSource}, auth: ${client.getAuthMethod()})`);
     } else {
       // Invalid request
       return res.status(400).json({ error: 'Invalid request' });
@@ -763,7 +724,6 @@ app.post('/tools/:toolName/execute', async (req: Request, res: Response) => {
     const args = req.body;
     
     // Never log actual arguments - they may contain sensitive data
-    console.log(`Executing tool: ${toolName}`);
     
     if (!defaultClient) {
       return res.status(500).json({
@@ -804,7 +764,6 @@ app.post('/execute', async (req: Request, res: Response) => {
     }
     
     // Never log actual arguments - they may contain sensitive data
-    console.log(`Executing tool: ${tool}`);
     
     if (!defaultClient) {
       return res.status(500).json({
@@ -863,12 +822,7 @@ async function startServer(): Promise<void> {
   await initializeMCPServer();
   
   app.listen(PORT, () => {
-    console.log(`🚀 OpenL MCP Server HTTP API listening on port ${PORT}`);
-    console.log(`📋 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔧 Tools list: http://localhost:${PORT}/tools`);
-    console.log(`⚙️  Execute tool: POST http://localhost:${PORT}/execute`);
-    console.log(`🔌 MCP SSE endpoint (for Cursor): http://localhost:${PORT}/mcp/sse`);
-    console.log(`📨 MCP Messages endpoint: http://localhost:${PORT}/mcp/messages`);
+  console.log(`OpenL MCP Server listening on port ${PORT}`);
   });
 }
 

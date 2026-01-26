@@ -12,11 +12,6 @@ import { DEFAULTS, PROJECT_ID_PATTERN, TEST_POLLING } from "./constants.js";
 import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } from "./utils.js";
 
 /**
- * Check if test execution logging is enabled (via environment variable)
- */
-const DEBUG_TESTS = process.env.DEBUG_TESTS === "true" || process.env.DEBUG === "true";
-
-/**
  * Client for OpenL Tablets WebStudio REST API
  *
  * Usage:
@@ -35,6 +30,7 @@ export class OpenLClient {
   private axiosInstance: AxiosInstance;
   private authManager: AuthenticationManager;
   private repositoriesCache: Types.Repository[] | null = null;
+  private jsessionId: string | null = null; // Store JSESSIONID cookie for session management
 
   /**
    * Create a new OpenL Tablets API client
@@ -53,12 +49,63 @@ export class OpenLClient {
       timeout,
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
       },
     });
 
     // Setup authentication
     this.authManager = new AuthenticationManager(config);
     this.authManager.setupInterceptors(this.axiosInstance);
+    
+    // Setup cookie management: extract JSESSIONID from responses and add to requests
+    this.setupCookieInterceptors();
+  }
+
+  /**
+   * Setup interceptors to automatically handle JSESSIONID cookies
+   * Extracts JSESSIONID from set-cookie headers and adds it to all subsequent requests
+   */
+  private setupCookieInterceptors(): void {
+    // Response interceptor: Extract JSESSIONID from set-cookie headers
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        // Extract JSESSIONID from set-cookie header if present
+        const setCookieHeader = response.headers['set-cookie'];
+        if (setCookieHeader) {
+          const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+          for (const cookie of cookies) {
+            const jsessionMatch = cookie.match(/JSESSIONID=([^;]+)/);
+            if (jsessionMatch) {
+              this.jsessionId = jsessionMatch[1];
+              break;
+            }
+          }
+        }
+        return response;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Request interceptor: Add JSESSIONID to Cookie header if available
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        if (this.jsessionId && config.headers) {
+          // Check if Cookie header already exists
+          const existingCookie = config.headers['Cookie'] || config.headers['cookie'];
+          if (existingCookie) {
+            // Append JSESSIONID if not already present
+            if (!existingCookie.includes('JSESSIONID=')) {
+              config.headers['Cookie'] = `${existingCookie}; JSESSIONID=${this.jsessionId}`;
+            }
+          } else {
+            // Set Cookie header with JSESSIONID
+            config.headers['Cookie'] = `JSESSIONID=${this.jsessionId}`;
+          }
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
   }
 
   /**
@@ -403,20 +450,9 @@ export class OpenLClient {
       cleanBase64Id = this.toBase64ProjectId(projectId);
     }
     
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] buildProjectPath:`);
-      console.error(`[Tests]   Input projectId: ${projectId.substring(0, 50)}...`);
-      console.error(`[Tests]   Clean base64Id: ${cleanBase64Id.substring(0, 50)}...`);
-      console.error(`[Tests]   Base64Id ends with: ${cleanBase64Id.slice(-5)}`);
-    }
-    
     // Always URL-encode the final base64 string for URL safety
     // This ensures padding characters (=) are properly encoded as %3D
     const encodedPath = `/projects/${encodeURIComponent(cleanBase64Id)}`;
-    
-    if (DEBUG_TESTS) {
-      console.error(`[Tests]   Final path: ${encodedPath.substring(0, 80)}...`);
-    }
     
     return encodedPath;
   }
@@ -1262,28 +1298,12 @@ export class OpenLClient {
     if (options?.tableId) params.fromModule = options.tableId;
     if (options?.testRanges) params.testRanges = options.testRanges;
 
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] ========================================`);
-      console.error(`[Tests] Starting test execution:`);
-      console.error(`[Tests]   Project: ${projectId}`);
-      console.error(`[Tests]   Endpoint: POST ${projectPath}/tests/run`);
-      if (options?.tableId) console.error(`[Tests]   TableId: ${options.tableId}`);
-      if (options?.testRanges) console.error(`[Tests]   TestRanges: ${options.testRanges}`);
-      console.error(`[Tests]   Params:`, params);
-    }
-
     // Start tests and capture all response headers
     const startResponse = await this.axiosInstance.post(
       `${projectPath}/tests/run`,
       undefined,
       { params }
     );
-
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] Test execution started:`);
-      console.error(`[Tests]   Status: ${startResponse.status} ${startResponse.statusText}`);
-      console.error(`[Tests]   Response headers:`, Object.keys(startResponse.headers || {}));
-    }
 
     // Extract all headers from the start response
     // Exclude standard response headers that shouldn't be forwarded to requests
@@ -1307,6 +1327,7 @@ export class OpenLClient {
         'access-control-allow-methods',
         'access-control-allow-headers',
         'access-control-expose-headers',
+        'accept', // Exclude Accept from response headers - we set it explicitly
       ];
       
       // Special handling for set-cookie: convert to Cookie header
@@ -1343,10 +1364,6 @@ export class OpenLClient {
       }
     }
 
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] Extracted headers to forward:`, Object.keys(responseHeaders));
-    }
-
     // Build summary query parameters
     const summaryParams: Record<string, string | number | boolean> = {};
     if (options?.query?.failuresOnly) summaryParams.failuresOnly = true;
@@ -1357,27 +1374,16 @@ export class OpenLClient {
 
     // If waitForCompletion is false, just return current status
     if (options?.waitForCompletion === false) {
-      if (DEBUG_TESTS) {
-        console.error(`[Tests] Getting test results (no wait):`);
-        console.error(`[Tests]   Endpoint: GET ${projectPath}/tests/summary`);
-        console.error(`[Tests]   Params:`, summaryParams);
-        console.error(`[Tests]   Headers:`, Object.keys(responseHeaders));
-      }
-
       const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
         `${projectPath}/tests/summary`,
         {
           params: summaryParams,
-          headers: responseHeaders, // Use all headers from start response
+          headers: {
+            ...responseHeaders, // Use all headers from start response
+            "Accept": "application/json", // Explicitly set Accept header for test results (must be last to override)
+          },
         }
       );
-
-      if (DEBUG_TESTS) {
-        console.error(`[Tests] Test results received:`);
-        console.error(`[Tests]   Status: ${response.status}`);
-        console.error(`[Tests]   Tests: ${response.data.numberOfTests || 0}, Failures: ${response.data.numberOfFailures || 0}`);
-        console.error(`[Tests] ========================================`);
-      }
 
       return response.data;
     }
@@ -1388,19 +1394,9 @@ export class OpenLClient {
     let lastExecutionTime = 0;
     let attempts = 0;
 
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] Starting polling for test completion:`);
-      console.error(`[Tests]   Max retries: ${TEST_POLLING.MAX_RETRIES}`);
-      console.error(`[Tests]   Timeout: ${TEST_POLLING.TIMEOUT}ms`);
-      console.error(`[Tests]   Initial interval: ${TEST_POLLING.INITIAL_INTERVAL}ms`);
-    }
-
     while (attempts < TEST_POLLING.MAX_RETRIES) {
       // Check timeout
       if (Date.now() - startTime > TEST_POLLING.TIMEOUT) {
-        if (DEBUG_TESTS) {
-          console.error(`[Tests] ❌ Timeout after ${TEST_POLLING.TIMEOUT}ms`);
-        }
         throw new Error(
           `Test execution timed out after ${TEST_POLLING.TIMEOUT}ms. ` +
           `Tests may still be running. Check status manually or increase timeout.`
@@ -1409,36 +1405,23 @@ export class OpenLClient {
 
       // Wait before polling (except first attempt)
       if (attempts > 0) {
-        if (DEBUG_TESTS) {
-          console.error(`[Tests] Waiting ${interval}ms before next poll attempt...`);
-        }
         await new Promise(resolve => setTimeout(resolve, interval));
         // Exponential backoff: increase interval up to MAX_INTERVAL
         interval = Math.min(interval * 1.5, TEST_POLLING.MAX_INTERVAL);
       }
 
       try {
-        if (DEBUG_TESTS) {
-          console.error(`[Tests] Poll attempt ${attempts + 1}/${TEST_POLLING.MAX_RETRIES}:`);
-          console.error(`[Tests]   Endpoint: GET ${projectPath}/tests/summary`);
-          console.error(`[Tests]   Params:`, summaryParams);
-        }
-
         const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
           `${projectPath}/tests/summary`,
           {
             params: summaryParams,
-            headers: responseHeaders, // Use all headers from start response
+            headers: {
+              ...responseHeaders, // Use all headers from start response
+              "Accept": "application/json", // Explicitly set Accept header for test results (must be last to override)
+            },
           }
         );
         const summary = response.data;
-
-        if (DEBUG_TESTS) {
-          console.error(`[Tests]   Status: ${response.status}`);
-          console.error(`[Tests]   ExecutionTimeMs: ${summary.executionTimeMs || 0}`);
-          console.error(`[Tests]   Tests: ${summary.numberOfTests || 0}, Failures: ${summary.numberOfFailures || 0}`);
-          console.error(`[Tests]   TestCases: ${summary.testCases?.length || 0}`);
-        }
 
         // Check if execution is complete by comparing executionTimeMs
         // If executionTimeMs has changed, tests are still running
@@ -1446,10 +1429,6 @@ export class OpenLClient {
         if (summary.executionTimeMs > 0) {
           if (summary.executionTimeMs === lastExecutionTime && summary.testCases.length > 0) {
             // Execution time is stable and we have results - likely complete
-            if (DEBUG_TESTS) {
-              console.error(`[Tests] ✅ Tests completed (stable execution time)`);
-              console.error(`[Tests] ========================================`);
-            }
             return summary;
           }
 
@@ -1459,60 +1438,28 @@ export class OpenLClient {
             const completedTests = summary.testCases.length;
             if (completedTests >= summary.numberOfTests) {
               // All tests have completed
-              if (DEBUG_TESTS) {
-                console.error(`[Tests] ✅ Tests completed (all ${completedTests}/${summary.numberOfTests} tests finished)`);
-                console.error(`[Tests] ========================================`);
-              }
               return summary;
             }
           }
 
           lastExecutionTime = summary.executionTimeMs;
-          if (DEBUG_TESTS) {
-            console.error(`[Tests]   Tests still running (execution time changed or incomplete)`);
-          }
         } else if (summary.testCases.length > 0) {
           // We have results but no execution time - assume complete if we have test cases
-          if (DEBUG_TESTS) {
-            console.error(`[Tests] ✅ Tests completed (results available)`);
-            console.error(`[Tests] ========================================`);
-          }
           return summary;
-        } else {
-          if (DEBUG_TESTS) {
-            console.error(`[Tests]   No results yet, continuing to poll...`);
-          }
         }
 
         attempts++;
       } catch (error) {
         // If it's a 404 or other error, wait a bit and retry (tests might not be ready yet)
-        if (DEBUG_TESTS) {
-          const errorStatus = (error as any)?.response?.status;
-          const errorMessage = (error as any)?.message;
-          console.error(`[Tests]   ⚠️  Error: ${errorStatus || 'unknown'} - ${errorMessage || 'unknown error'}`);
-        }
         if (attempts < 3) {
-          if (DEBUG_TESTS) {
-            console.error(`[Tests]   Retrying (attempt ${attempts + 1}/3)...`);
-          }
           attempts++;
           continue;
-        }
-        if (DEBUG_TESTS) {
-          console.error(`[Tests] ❌ Max retries reached, throwing error`);
-          console.error(`[Tests] ========================================`);
         }
         throw error;
       }
     }
 
     // Max retries reached
-    if (DEBUG_TESTS) {
-      console.error(`[Tests] ❌ Max polling attempts (${TEST_POLLING.MAX_RETRIES}) reached`);
-      console.error(`[Tests]   Elapsed time: ${Math.round((Date.now() - startTime) / 1000)}s`);
-      console.error(`[Tests] ========================================`);
-    }
     throw new Error(
       `Test execution did not complete within ${TEST_POLLING.MAX_RETRIES} polling attempts ` +
       `(${Math.round((Date.now() - startTime) / 1000)}s). ` +

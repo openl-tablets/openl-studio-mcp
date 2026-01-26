@@ -42,6 +42,8 @@ export interface FormatOptions {
   characterLimit?: number;
   /** Data type hint for markdown formatting */
   dataType?: string;
+  /** Skip truncation for this response (useful for test results and other large data) */
+  skipTruncation?: boolean;
 }
 
 /**
@@ -89,7 +91,11 @@ export function formatResponse<T>(
     formattedString = toMarkdown(response, options && options.dataType);
   }
 
-  // Check character limit
+  // Check character limit (skip if skipTruncation is true)
+  if (options && options.skipTruncation) {
+    return formattedString;
+  }
+
   const charLimit = (options && options.characterLimit) || RESPONSE_LIMITS.MAX_CHARACTERS;
   if (formattedString.length > charLimit) {
     if (format === "json") {
@@ -174,6 +180,9 @@ export function toMarkdown<T>(
       break;
     case "history":
       parts.push(formatHistory(data as any));
+      break;
+    case "test_results":
+      parts.push(formatTestResults(data as any));
       break;
     default:
       // Generic object/array formatting
@@ -504,6 +513,76 @@ function formatHistory(commits: any[]): string {
     lines.push(`- **Date**: ${date}`);
     lines.push(`- **Message**: ${message}`);
     lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format test results as markdown table
+ */
+function formatTestResults(summary: any): string {
+  if (!summary || typeof summary !== "object") {
+    return "No test results found.";
+  }
+
+  const testCases = summary.testCases || [];
+  const totalTests = summary.numberOfTests || 0;
+  const totalFailures = summary.numberOfFailures || 0;
+  const executionTime = summary.executionTimeMs || 0;
+
+  const lines = ["# Test Results", ""];
+
+  // Summary section
+  // Use totalTestsInAllTables if available (counts all tests from all test tables)
+  // Otherwise, calculate total: if numberOfTests is 0 but there are failures,
+  // it means validation/compilation errors, so total = failures
+  // Otherwise, total = numberOfTests (which already includes passed + failed)
+  let totalTestsCount: number;
+  if (summary.totalTestsInAllTables !== undefined) {
+    // Use the total count from all test tables
+    totalTestsCount = summary.totalTestsInAllTables;
+  } else {
+    totalTestsCount = totalTests === 0 && totalFailures > 0 
+      ? totalFailures 
+      : totalTests;
+  }
+  const passedCount = totalTestsCount - totalFailures;
+
+  lines.push("## Summary");
+  lines.push(`- **Total Tests**: ${totalTestsCount}`);
+  lines.push(`- **Passed**: ${passedCount}`);
+  lines.push(`- **Failed**: ${totalFailures}`);
+  lines.push(`- **Execution Time**: ${executionTime.toFixed(2)} ms`);
+  lines.push("");
+
+  // Test cases table
+  if (testCases.length > 0) {
+    lines.push("## Test Cases");
+    lines.push("");
+    lines.push("| Table Name | Total Tests | Passed | Failed | Status | Execution Time (ms) |");
+    lines.push("|------------|-------------|--------|--------|--------|---------------------|");
+
+    for (const testCase of testCases) {
+      const name = escapeTableCell(testCase.name || "N/A");
+      const numberOfTests = testCase.numberOfTests || 0;
+      const numberOfFailures = testCase.numberOfFailures || 0;
+      
+      // Calculate total tests: if numberOfTests is 0 but there are failures,
+      // it means validation/compilation errors, so total = failures
+      // Otherwise, total = numberOfTests (which already includes passed + failed)
+      const totalTestsForCase = numberOfTests === 0 && numberOfFailures > 0 
+        ? numberOfFailures 
+        : numberOfTests;
+      
+      const passed = totalTestsForCase - numberOfFailures;
+      const status = numberOfFailures === 0 ? "✅ PASSED" : "❌ FAILED";
+      const execTime = (testCase.executionTimeMs || 0).toFixed(2);
+
+      lines.push(`| ${name} | ${totalTestsForCase} | ${passed} | ${numberOfFailures} | ${status} | ${execTime} |`);
+    }
+  } else {
+    lines.push("No test cases found.");
   }
 
   return lines.join("\n");
