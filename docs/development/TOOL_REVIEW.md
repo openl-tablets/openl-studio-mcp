@@ -89,20 +89,23 @@
 
 ---
 
-### 7. `openl_update_project_status`
+### 7. `openl_open_project`, `openl_save_project`, `openl_close_project`
 
-**Status**: ⚠️ Partial  
-**OpenL API**: `PATCH /projects/{projectId}` with `ProjectStatusUpdateModel`
+**Status**: ✅ Complete  
+**OpenL API**: 
+- `openl_open_project`: `PATCH /projects/{projectId}` with `status: "OPENED"`
+- `openl_save_project`: `POST /projects/{projectId}/save` with validation
+- `openl_close_project`: `PATCH /projects/{projectId}` with `status: "CLOSED"`
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `status`, `comment`, `branch`, `revision`, `selectedBranches`
-- ⚠️ **MISSING**: API supports `status` values: `LOCAL`, `ARCHIVED`, `OPENED`, `VIEWING_VERSION`, `EDITING`, `CLOSED`
-  - Tool only allows `OPENED` and `CLOSED` (documentation says others are auto-set, but API accepts them)
-- ✅ Client-side safety: `discardChanges` parameter (not in API, handled client-side)
+- ✅ Covered: `branch`, `revision`, `selectedBranches` (in `openl_open_project`)
+- ✅ Covered: `comment` (in `openl_save_project` and `openl_close_project`)
+- ✅ Covered: `saveChanges`, `discardChanges` (in `openl_close_project` for safety)
 
 **Recommendations**:
-- Consider allowing all status values for advanced use cases, even if documentation warns they're typically auto-set
-- Document that `EDITING` status cannot be set manually (it's set when project is modified)
+- ✅ Implemented: Tools provide clear separation of concerns
+- ✅ Implemented: Safety checks prevent accidental data loss
+- ✅ Implemented: Proper endpoint usage (`/save` for saving with validation)
 
 ---
 
@@ -119,6 +122,7 @@
 
 **Recommendations**:
 - **CRITICAL**: Re-enable this tool - it's essential for project management
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_upload_file`) - needs implementation fixes
 - Consider adding validation for file size limits
 - Add support for file path validation (ensure it matches project structure)
 
@@ -134,6 +138,7 @@
 
 **Recommendations**:
 - **CRITICAL**: Re-enable this tool - it's essential for project management
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_download_file`) - needs implementation fixes
 - Consider adding file type detection/validation in response
 - Add metadata in response: file size, last modified date, commit hash
 
@@ -298,7 +303,7 @@
 - ✅ Covered: No `projectId` parameter needed (endpoint uses session-based project context)
 
 **Recommendations**:
-- Document that project must be opened in WebStudio session first (use `openl_update_project_status` to open the project)
+- Document that project must be opened in WebStudio session first (use `openl_open_project` to open the project)
 - Consider adding validation to check if project is open before calling
 
 ---
@@ -312,20 +317,20 @@
 - ✅ Covered: `historyId` (no `projectId` parameter needed - endpoint uses session-based project context)
 
 **Recommendations**:
-- Document that project must be opened in WebStudio session first (use `openl_update_project_status` to open the project)
+- Document that project must be opened in WebStudio session first (use `openl_open_project` to open the project)
 
 ---
 
 ### 22. `openl_revert_version`
 
 **Status**: 🔴 DISABLED (Temporarily)  
-**OpenL API**: Not found in current API documentation
+**OpenL API**: `POST /projects/{projectId}/revert` (endpoint may exist)
 
 **Extra/Missed Inputs**:
-- ⚠️ **ISSUE**: API endpoint may not exist or may be deprecated
-- Client method exists but endpoint may be missing
+- ✅ Covered: `projectId`, `targetVersion` (commit hash), `comment`, `confirm`
 
 **Recommendations**:
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_revert_version`) - needs implementation fixes
 - Verify if endpoint exists: `POST /projects/{projectId}/revert` or similar
 - If endpoint doesn't exist, remove client method and tool permanently
 - If endpoint exists but uses different path, update client method
@@ -338,10 +343,10 @@
 **OpenL API**: Not found in current API documentation
 
 **Extra/Missed Inputs**:
-- ⚠️ **ISSUE**: API endpoint may not exist
-- Client method exists but endpoint may be missing
+- ✅ Covered: `projectId`, `filePath`, pagination parameters
 
 **Recommendations**:
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_get_file_history`) - needs implementation fixes
 - Verify if endpoint exists: `GET /projects/{projectId}/files/{filePath}/history` or similar
 - Consider using `openl_repository_project_revisions` as alternative (shows project-level history)
 - If endpoint doesn't exist, document alternative approach
@@ -354,10 +359,10 @@
 **OpenL API**: Not found in current API documentation
 
 **Extra/Missed Inputs**:
-- ⚠️ **ISSUE**: API endpoint may not exist
-- Client method exists but endpoint may be missing
+- ✅ Covered: `projectId`, pagination parameters
 
 **Recommendations**:
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_get_project_history`) - needs implementation fixes
 - **USE ALTERNATIVE**: `openl_repository_project_revisions` provides similar functionality
 - Verify if endpoint exists: `GET /projects/{projectId}/history` or similar
 - If endpoint doesn't exist, recommend using `openl_repository_project_revisions` instead
@@ -402,7 +407,7 @@
 
 **Recommendations**:
 - **ADD TOOL**: Create `openl_validate_project` tool
-- Verify if endpoint exists (client.ts line 1082 notes it may return 404)
+- Verify if endpoint exists (see `validateProject` method in `client.ts` - notes it may return 404)
 - If endpoint doesn't exist, use `openl_get_project_errors` as alternative
 - If endpoint exists, register the tool
 
@@ -437,6 +442,7 @@
 
 **Recommendations**:
 - **CRITICAL**: Re-enable this tool - it's essential for testing rules
+- Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_execute_rule`) - needs implementation fixes
 - Consider adding timeout parameter
 - Consider adding error handling for execution failures
 - Document that project must be compiled/valid before execution
@@ -493,7 +499,7 @@
 
 **Recommendations**:
 - **ADD TOOL**: Create `openl_save_project` tool
-- Currently `update_project_status` with `comment` can save, but dedicated tool is clearer
+- ✅ **RESOLVED**: `openl_save_project` tool now available (v1.0.0)
 - Should validate project before saving (client already does this)
 
 ---
@@ -505,11 +511,11 @@
 
 **Extra/Missed Inputs**:
 - Client methods exist: `openProject(projectId, options)`, `closeProject(projectId, comment)`
-- **Tools are not registered** (functionality exists in `update_project_status`)
+- ✅ **RESOLVED**: Tools are now registered as `openl_open_project`, `openl_save_project`, `openl_close_project`
 
 **Recommendations**:
 - Consider adding dedicated `openl_open_project` and `openl_close_project` tools for clarity
-- OR document that `update_project_status` handles these cases
+- ✅ **RESOLVED**: Use `openl_save_project` for saving changes
 - Current approach (unified tool) is fine, but dedicated tools may be more intuitive
 
 ---
@@ -536,10 +542,10 @@
 
 | Status | Count | Tools |
 |--------|-------|-------|
-| ✅ Complete | 17 | All repository, project, table, deployment, branch, and test tools |
-| ⚠️ Partial | 2 | `openl_update_project_status`, `openl_list_deployments` |
-| 🔴 Disabled | 7 | `upload_file`, `download_file`, `create_rule`, `execute_rule`, `revert_version`, `get_file_history`, `get_project_history` |
-| ❌ Missing | 8 | `validate_project`, `get_project_errors`, `compare_versions`, `delete_project`, `save_project`, `openl_open_project`, `openl_close_project`, `health_check` |
+| ✅ Complete | 21 | All repository, project, table, deployment, branch, and test tools (excluding `openl_list_deployments` which is partial) |
+| ⚠️ Partial | 1 | `openl_list_deployments` (missing `repository` filter parameter) |
+| 🔴 Disabled | 6 | `openl_upload_file`, `openl_download_file`, `openl_execute_rule`, `openl_revert_version`, `openl_get_file_history`, `openl_get_project_history` |
+| ❌ Missing | 5 | `validate_project`, `get_project_errors`, `compare_versions`, `delete_project`, `health_check` |
 
 ### Critical Issues
 
@@ -549,45 +555,32 @@
 2. **Extra Parameters** (not in API):
    - None
 
-3. **Disabled Tools** (need re-enabling):
-   - `openl_upload_file` - Essential for project management
-   - `openl_download_file` - Essential for project management
-   - `openl_execute_rule` - Essential for testing
-
-4. **Missing Tools** (should be added):
+3. **Missing Tools** (should be added):
    - `openl_validate_project` - Client method exists, tool missing
    - `openl_get_project_errors` - Client method exists, tool missing
    - `openl_compare_versions` - Client method exists, tool missing
    - `openl_delete_project` - Client method exists, tool missing
-   - `openl_save_project` - Client method exists, tool missing
-   - `openl_open_project` - Client method exists, tool missing (functionality available via `update_project_status`)
-   - `openl_close_project` - Client method exists, tool missing (functionality available via `update_project_status`)
    - `openl_health_check` - Client method exists, tool missing
 
-5. **API Endpoint Verification Needed**:
-   - `revert_version` - Endpoint may not exist
-   - `get_file_history` - Endpoint may not exist
-   - `get_project_history` - Endpoint may not exist (use `repository_project_revisions` instead)
+4. **API Endpoint Verification Needed**:
    - `validate_project` - Endpoint may return 404
 
 ### Recommendations Priority
 
 **HIGH PRIORITY**:
 1. Add `repository` parameter to `openl_list_deployments`
-2. Re-enable `openl_upload_file`, `openl_download_file`, `openl_execute_rule`
+2. Re-enable disabled tools: `openl_upload_file`, `openl_download_file`, `openl_execute_rule` (fix implementation issues)
 3. Add missing tools: `openl_validate_project`, `openl_get_project_errors`, `openl_compare_versions`
 
 **MEDIUM PRIORITY**:
+4. Verify and re-enable version control tools: `openl_revert_version`, `openl_get_file_history`, `openl_get_project_history` (verify endpoints exist)
 5. Add `openl_delete_project` tool
-6. Add `openl_save_project` tool
-7. Add `openl_health_check` tool
-8. Verify and fix/remove `revert_version`, `get_file_history`, `get_project_history` tools
+6. Add `openl_health_check` tool
+7. Verify `validate_project` endpoint (may return 404)
 
 **LOW PRIORITY**:
-9. Add `openl_open_project` tool
-10. Add `openl_close_project` tool
-11. Add timeout parameters to long-running operations
-12. Add polling mechanism for async test execution
+1. Add timeout parameters to long-running operations
+2. Add polling mechanism for async test execution (already implemented for `openl_run_project_tests`)
 
 ---
 

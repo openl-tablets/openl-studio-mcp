@@ -228,7 +228,7 @@ Each field in the `fields` array must include:
 2. Determine fields → Define new fields with types
 3. Call openl_append_table → Add fields to table
 4. Verify changes → Use openl_get_table() to confirm
-5. Save project → Persist changes with openl_update_project_status()
+5. Save project → Persist changes with openl_save_project()
 ```
 
 ### Complete Example
@@ -258,7 +258,7 @@ openl_append_table(
 openl_get_table(projectId="design-insurance-rules", tableId="Customer_1234")
 
 # Step 4: Save changes
-openl_update_project_status(
+openl_save_project(
   projectId="design-insurance-rules",
   comment="Added loyalty tier to Customer datatype"
 )
@@ -381,7 +381,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 1. openl_get_table(tableId) → Confirm fields added
 2. Manually validate in OpenL WebStudio UI → Check for type errors
    (openl_validate_project is temporarily disabled)
-3. IF validation passes → openl_update_project_status(comment="...")
+3. IF validation passes → openl_save_project(comment="...")
 4. IF validation fails → Review field types and references
 ```
 
@@ -394,7 +394,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 ### After openl_append_table
 - `openl_get_table()` → Verify append succeeded
 - Validate in OpenL WebStudio UI → Check for errors
-- `openl_update_project_status()` → Save changes
+- `openl_save_project()` → Save changes
 
 ### Alternatives
 - `openl_update_table()` → For complex modifications or replacing entire structure
@@ -410,11 +410,11 @@ Fix: Use openl_append_table only for Datatype and Data tables
 | Add required field | `openl_append_table(fields=[{name, type, required: true}])` |
 | Add with default | `openl_append_table(fields=[{name, type, defaultValue}])` |
 | Verify append | `openl_get_table(tableId)` |
-| Save changes | `openl_update_project_status(comment="...")` |
+| Save changes | `openl_save_project(comment="...")` |
 
 ## Performance Notes
 
 - **Efficiency**: openl_append_table is more efficient than openl_update_table for simple additions
-- **In-memory**: Changes are in-memory until openl_update_project_status()
+- **In-memory**: Changes are in-memory until openl_save_project()
 - **Bulk append**: Can append multiple fields in single call
 - **No fetch**: Don't need to fetch full table first (unlike openl_update_table)

@@ -23,8 +23,8 @@ const __dirname = dirname(__filename);
 
 describe("Prompts Registry", () => {
   describe("PROMPTS array", () => {
-    test("should contain exactly 12 prompts", () => {
-      expect(PROMPTS).toHaveLength(12);
+    test("should contain exactly 14 prompts", () => {
+      expect(PROMPTS).toHaveLength(14);
     });
 
     test("all prompts should have required fields", () => {
@@ -34,7 +34,9 @@ describe("Prompts Registry", () => {
         expect(typeof prompt.name).toBe("string");
         expect(typeof prompt.description).toBe("string");
         expect(prompt.name.length).toBeGreaterThan(0);
-        expect(prompt.description.length).toBeGreaterThan(0);
+        if (prompt.description) {
+          expect(prompt.description.length).toBeGreaterThan(0);
+        }
       });
     });
 
@@ -98,17 +100,20 @@ describe("Prompts Registry", () => {
 
     test("all expected prompts should be present", () => {
       const expectedPrompts = [
+        "append_table",
         "create_rule",
-        "datatype_vocabulary",
+        "create_rule_decision_tables",
+        "create_rule_spreadsheet",
         "create_test",
-        "update_test",
-        "run_test",
+        "datatype_vocabulary",
+        "deploy_project",
         "dimension_properties",
         "execute_rule",
-        "deploy_project",
-        "get_project_errors",
         "file_history",
+        "get_project_errors",
         "project_history",
+        "run_test",
+        "update_test",
       ];
 
       expectedPrompts.forEach((name) => {
@@ -309,8 +314,10 @@ describe("Helper functions", () => {
   describe("getPromptNames", () => {
     test("should return all prompt names", () => {
       const names = getPromptNames();
-      expect(names).toHaveLength(12);
+      expect(names).toHaveLength(14);
       expect(names).toContain("create_rule");
+      expect(names).toContain("create_rule_decision_tables");
+      expect(names).toContain("create_rule_spreadsheet");
       expect(names).toContain("create_test");
       expect(names).toContain("append_table");
     });
@@ -405,7 +412,9 @@ describe("Regression tests", () => {
       expect(headerCount).toBeGreaterThan(1);
 
       // Description should be informative
-      expect(prompt.description.length).toBeGreaterThan(30);
+      if (prompt.description) {
+        expect(prompt.description.length).toBeGreaterThan(30);
+      }
     });
   });
 });

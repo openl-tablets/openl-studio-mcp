@@ -322,7 +322,7 @@ If the remote MCP server provides a direct HTTP SSE endpoint (similar to Docker 
 }
 ```
 
-**Or using StreamableHTTP transport (more reliable for HTTPS):**
+**Or using StreamableHTTP transport:**
 
 ```json
 {
@@ -337,10 +337,10 @@ If the remote MCP server provides a direct HTTP SSE endpoint (similar to Docker 
 **Important:** 
 - Replace `https://<your-openl-server>/mcp/sse` with your OpenL server URL
 - Replace `<your-pat-token>` with your Personal Access Token
-- Use `transport: "sse"` for SSE (Server-Sent Events) - standard for most cases
-- Use `transport: "streamablehttp"` for StreamableHTTP - more reliable for HTTPS, uses POST requests instead of GET
+- Use `transport: "sse"` for SSE (Server-Sent Events) - uses GET requests, standard for most cases
+- Use `transport: "streamablehttp"` for StreamableHTTP - uses POST requests instead of GET, which can have practical benefits in certain network scenarios (e.g., proxy configurations, firewall rules)
 
-**Note:** This method works if the remote server exposes an HTTP endpoint for MCP. If you're unsure, use Method A (mcp-remote) which is more universally supported.
+**Note:** This method is for **Cursor IDE integration specifically**. Claude Desktop MCP client does not support HTTP/SSE transports at all (only stdio)—it requires a local stdio proxy bridge (like `mcp-remote`) for remote servers. If you're unsure, use Method A (mcp-remote) which is more universally supported.
 
 ---
 
@@ -451,7 +451,9 @@ docker compose logs mcp-server
 
 ## Scenario 3: Connecting to Remote MCP using Claude Desktop
 
-This method connects Claude Desktop directly to a remote MCP server via SSE transport.
+**Important:** Claude Desktop MCP client does not support HTTP/SSE transports directly—it only supports stdio transport. To connect to a remote MCP server, you must use `mcp-remote` as a stdio proxy bridge.
+
+This method connects Claude Desktop to a remote MCP server via `mcp-remote` stdio proxy.
 
 ### Step 3.1: Finding Node.js and mcp-remote Paths
 
@@ -478,25 +480,9 @@ notepad %APPDATA%\Claude\claude_desktop_config.json
 nano ~/.config/Claude/claude_desktop_config.json
 ```
 
-2. **If file doesn't exist, create it** with the following content:
+2. **Add or update configuration:**
 
-```json
-{
-  "mcpServers": {
-    "openl-mcp-server-remote": {
-      "command": "/Users/username/.nvm/versions/node/v24.0.0/bin/node",
-      "args": [
-        "/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote",
-        "https://<your-openl-server>/mcp/sse",
-        "--header",
-        "Authorization: Token <your-pat-token>"
-      ]
-    }
-  }
-}
-```
-
-3. **If file already exists**, add the `mcpServers` section or update existing:
+If the file doesn't exist, create it. If it already exists, add the `mcpServers` section or update the existing one:
 
 ```json
 {
@@ -520,7 +506,7 @@ nano ~/.config/Claude/claude_desktop_config.json
 - `https://<your-openl-server>/mcp/sse` → your OpenL server URL
 - Replace `<your-pat-token>` with your Personal Access Token
 
-4. **Save the file** (ensure JSON is valid)
+3. **Save the file** (ensure JSON is valid)
 
 ### Step 3.3: Restart Claude Desktop
 
@@ -532,13 +518,19 @@ nano ~/.config/Claude/claude_desktop_config.json
 
 ## Scenario 4: Connecting to MCP in Docker using Claude Desktop
 
-This method connects Claude Desktop to an MCP server running in a Docker container.
+**Important:** Claude Desktop MCP client does not support HTTP/SSE transports directly—it only supports stdio transport. To connect to a Docker MCP server, you must use `mcp-remote` as a stdio proxy bridge, similar to Scenario 3.
+
+This method connects Claude Desktop to an MCP server running in a Docker container via `mcp-remote` stdio proxy.
 
 ### Step 4.1: Verifying Docker Container Availability
 
 Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-container-availability).
 
-### Step 4.2: Claude Desktop Configuration
+### Step 4.2: Finding Node.js and mcp-remote Paths
+
+Follow the same steps as in [Scenario 1, Step 1.1](#step-11-finding-nodejs-and-mcp-remote-paths).
+
+### Step 4.3: Claude Desktop Configuration
 
 1. **Open Claude Desktop configuration file** (see [Scenario 3, Step 3.2](#step-32-claude-desktop-configuration))
 
@@ -549,11 +541,13 @@ Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-con
 {
   "mcpServers": {
     "openl-mcp-server-docker": {
-      "url": "http://localhost:3000/mcp/sse",
-      "transport": "sse",
-      "headers": {
-        "Authorization": "Token <your-pat-token>"
-      }
+      "command": "/Users/username/.nvm/versions/node/v24.0.0/bin/node",
+      "args": [
+        "/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote",
+        "http://localhost:3000/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
     }
   }
 }
@@ -564,23 +558,27 @@ Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-con
 {
   "mcpServers": {
     "openl-mcp-server-docker": {
-      "url": "http://<docker-host>:3000/mcp/sse",
-      "transport": "sse",
-      "headers": {
-        "Authorization": "Token <your-pat-token>"
-      }
+      "command": "/Users/username/.nvm/versions/node/v24.0.0/bin/node",
+      "args": [
+        "/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote",
+        "http://<docker-host>:3000/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
     }
   }
 }
 ```
 
 **Important:** Replace:
-- `http://localhost:3000` → your Docker container URL
+- `/Users/username/.nvm/versions/node/v24.0.0/bin/node` → your Node.js path
+- `/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote` → your mcp-remote path
+- `http://localhost:3000` → your Docker container URL (for remote: `http://<docker-host>:3000`)
 - Replace `<your-pat-token>` with your Personal Access Token
 
 3. **Save the file**
 
-### Step 4.3: Restart Claude Desktop
+### Step 4.4: Restart Claude Desktop
 
 1. Completely close Claude Desktop
 2. Open Claude Desktop again
@@ -901,15 +899,19 @@ After configuring any of the scenarios, perform verification:
 
 ### Claude Desktop: Docker Connection
 
+**Note:** Claude Desktop only supports stdio transport, so it requires `mcp-remote` as a proxy bridge even for Docker connections.
+
 ```json
 {
   "mcpServers": {
     "openl-mcp-server-docker": {
-      "url": "http://localhost:3000/mcp/sse",
-      "transport": "sse",
-      "headers": {
-        "Authorization": "Token <your-pat-token>"
-      }
+      "command": "/Users/username/.nvm/versions/node/v24.0.0/bin/node",
+      "args": [
+        "/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote",
+        "http://localhost:3000/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
     }
   }
 }

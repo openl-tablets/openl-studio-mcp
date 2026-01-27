@@ -1,15 +1,15 @@
 ---
-name: create_rule
-description: Comprehensive guide for creating decision tables, spreadsheets, and other OpenL table types
+name: create_rule_decision_tables
+description: Comprehensive guide for creating decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup) in OpenL Tablets
 ---
 
 ## Summary
 
-**Choose table type based on use case**: Decision Tables (Rules, SimpleRules, SmartRules) for conditional logic with multiple scenarios; SimpleLookup/SmartLookup for key-value mappings; Spreadsheet for calculations with cell formulas. Always create matching Test tables after rule creation.
+**Choose table type based on use case**: Decision Tables (Rules, SimpleRules, SmartRules) for conditional logic with multiple scenarios; SimpleLookup/SmartLookup for key-value mappings. Always create matching Test tables after rule creation.
 
 # Creating Tables in OpenL Tablets
 
-You are helping the user create a table in OpenL Tablets. There are **two main categories** of tables:
+You are helping the user create a table in OpenL Tablets.
 
 ## A. DECISION TABLES (For Conditional Logic) ⭐ Most Common
 
@@ -234,58 +234,7 @@ NY              0.06             0.09               0.12
 
 ---
 
-## B. SPREADSHEET TABLES (For Calculations) ⭐ Most Common
-
-**When to Use:**
-- Multi-step calculations
-- Need intermediate values
-- Audit trail required
-- Insurance premium calculations
-- Financial computations with breakdown
-- Multi-stage pricing logic
-
-**Header Format:**
-```
-Spreadsheet <ReturnType> spreadsheetName(<ParamType1> param1, ...)
-```
-
-**Excel Structure:**
-```text
-       | A          | B        | Premium
--------+------------+----------+---------
-Step1  | baseAmount | 1000     | $A
-Step2  | risk       | "HIGH"   | $B
-Step3  | factor     | 1.5      | $A * $factor
-Result |            |          | $Premium$Step3
-```
-
-**Key Features:**
-- Row names (Step1, Step2, etc.)
-- Column names (A, B, Premium, etc.)
-- Cell references: `$columnName` or `$rowName$columnName`
-- Mathematical expressions and formulas
-- Can call other rules within cells
-
-**Return Types:**
-- `SpreadsheetResult`: Returns entire calculated matrix
-- Specific type (int, double): Returns final cell value
-
-**Example Parameters:**
-```json
-{
-  "name": "calculatePremiumBreakdown",
-  "tableType": "Spreadsheet",
-  "returnType": "SpreadsheetResult",
-  "parameters": [
-    { "type": "int", "name": "baseAmount" },
-    { "type": "String", "name": "risk" }
-  ]
-}
-```
-
----
-
-## C. OTHER TABLE TYPES (Rarely Used)
+## B. OTHER TABLE TYPES (Rarely Used)
 
 ### Data Tables
 **Purpose:** Store relational data as arrays
@@ -315,11 +264,7 @@ Result |            |          | $Premium$Step3
    - Yes → Use a Decision Table (types 1-5)
    - No → Go to step 2
 
-2. **Do you need multi-step calculations?**
-   - Yes → Use Spreadsheet Table
-   - No → Go to step 3
-
-3. **Do you need to define a data structure?**
+2. **Do you need to define a data structure?**
    - Yes → Use Datatype Table
    - No → Use Data or Test table
 
@@ -336,13 +281,3 @@ Result |            |          | $Premium$Step3
 
 ```text
 User: "I want to calculate insurance premiums based on driver type and age"
-```
-
----
-
-## Related Prompts
-
-For more detailed guidance on specific table types, see:
-
-- **`create_rule_decision_tables`** - Comprehensive guide for decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup) with detailed examples and parameter matching strategies
-- **`create_rule_spreadsheet`** - Detailed guide for Spreadsheet tables with formula syntax (`=`, `$`, `*`), JSON structure, and common mistakes to avoid

@@ -167,7 +167,9 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 - Best practices and examples embedded
 
 **Available Prompts**:
-- `create_rule` - Guide for creating OpenL tables
+- `create_rule` - Guide for creating OpenL tables (general overview)
+- `create_rule_decision_tables` - Comprehensive guide for decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup)
+- `create_rule_spreadsheet` - Detailed guide for Spreadsheet tables with formula syntax
 - `datatype_vocabulary` - Custom datatypes and enumerations
 - `create_test` - Test table creation guide
 - `update_test` - Modifying existing tests
@@ -221,10 +223,12 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 - `openl_list_repositories` - List all design repositories
 - `openl_list_branches` - List branches in a repository
 
-**Project Tools (3)**:
+**Project Tools (5)**:
 - `openl_list_projects` - List projects with optional filters (supports pagination)
 - `openl_get_project` - Get comprehensive project details
-- `openl_update_project_status` - Update project status (open/close/save)
+- `openl_open_project` - Open project for editing
+- `openl_save_project` - Save project changes to Git
+- `openl_close_project` - Close project with save/discard options
 
 **Rules Tools (4)**:
 - `openl_list_tables` - List tables/rules with filters (supports pagination)

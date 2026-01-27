@@ -53,14 +53,36 @@ export interface PromptFrontmatter {
  */
 export const PROMPTS: PromptDefinition[] = [
   {
+    name: "append_table",
+    title: "Append to Table",
+    description: "Guide for efficiently appending new rows/fields to existing Datatype and Data tables without replacing the entire structure",
+    arguments: [
+      {
+        name: "tableId",
+        description: "ID of the table to append data to",
+        required: false,
+      },
+      {
+        name: "tableType",
+        description: "Type of table being appended to (Datatype, Data)",
+        required: false,
+      },
+    ],
+  },
+  {
     name: "create_rule",
     title: "Create OpenL Table",
     description: "Comprehensive guide for creating OpenL decision tables, spreadsheets, and datatypes with examples for all table types (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup, Spreadsheet)",
   },
   {
-    name: "datatype_vocabulary",
-    title: "Define Datatypes and Vocabularies",
-    description: "Guide for creating custom datatypes (domain objects) and vocabularies (enumerations) in OpenL Tablets with inheritance, field types, and validation",
+    name: "create_rule_decision_tables",
+    title: "Create Decision Tables",
+    description: "Comprehensive guide for creating decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup) in OpenL Tablets with detailed examples and parameter matching strategies",
+  },
+  {
+    name: "create_rule_spreadsheet",
+    title: "Create Spreadsheet Tables",
+    description: "Detailed guide for creating Spreadsheet tables in OpenL Tablets for multi-step calculations with formula syntax, JSON structure, and common mistakes",
   },
   {
     name: "create_test",
@@ -80,52 +102,23 @@ export const PROMPTS: PromptDefinition[] = [
     ],
   },
   {
-    name: "update_test",
-    title: "Update Test Table",
-    description: "Guide for modifying existing test tables, adding test cases, updating expected values, and handling test failures",
-    arguments: [
-      {
-        name: "testId",
-        description: "ID of the test table to update",
-        required: false,
-      },
-      {
-        name: "tableName",
-        description: "Name of the table being tested",
-        required: false,
-      },
-    ],
+    name: "datatype_vocabulary",
+    title: "Define Datatypes and Vocabularies",
+    description: "Guide for creating custom datatypes (domain objects) and vocabularies (enumerations) in OpenL Tablets with inheritance, field types, and validation",
   },
   {
-    name: "append_table",
-    title: "Append to Table",
-    description: "Guide for efficiently appending new rows/fields to existing Datatype and Data tables without replacing the entire structure",
+    name: "deploy_project",
+    title: "Deploy Project",
+    description: "OpenL deployment workflow with mandatory validation checks, test execution requirements, and environment selection (dev, test, staging, prod)",
     arguments: [
       {
-        name: "tableId",
-        description: "ID of the table to append data to",
+        name: "projectId",
+        description: "ID of project to deploy",
         required: false,
       },
       {
-        name: "tableType",
-        description: "Type of table being appended to (Datatype, Data)",
-        required: false,
-      },
-    ],
-  },
-  {
-    name: "run_test",
-    title: "Run Tests",
-    description: "Test selection logic and workflow for running OpenL tests efficiently based on scope (single table, multiple tables, or all tests)",
-    arguments: [
-      {
-        name: "scope",
-        description: "Test scope: 'single', 'multiple', or 'all'",
-        required: false,
-      },
-      {
-        name: "tableIds",
-        description: "Comma-separated list of table IDs being tested",
+        name: "environment",
+        description: "Target environment: 'dev', 'test', 'staging', or 'prod'",
         required: false,
       },
     ],
@@ -153,35 +146,6 @@ export const PROMPTS: PromptDefinition[] = [
     ],
   },
   {
-    name: "deploy_project",
-    title: "Deploy Project",
-    description: "OpenL deployment workflow with mandatory validation checks, test execution requirements, and environment selection (dev, test, staging, prod)",
-    arguments: [
-      {
-        name: "projectId",
-        description: "ID of project to deploy",
-        required: false,
-      },
-      {
-        name: "environment",
-        description: "Target environment: 'dev', 'test', 'staging', or 'prod'",
-        required: false,
-      },
-    ],
-  },
-  {
-    name: "get_project_errors",
-    title: "Analyze Project Errors",
-    description: "OpenL error analysis workflow with pattern matching, categorization, and fix recommendations for common validation errors",
-    arguments: [
-      {
-        name: "projectId",
-        description: "ID of project to analyze",
-        required: false,
-      },
-    ],
-  },
-  {
     name: "file_history",
     title: "File History",
     description: "Guide for viewing Git-based file version history in OpenL, including commit hash navigation and version comparison",
@@ -199,6 +163,18 @@ export const PROMPTS: PromptDefinition[] = [
     ],
   },
   {
+    name: "get_project_errors",
+    title: "Analyze Project Errors",
+    description: "OpenL error analysis workflow with pattern matching, categorization, and fix recommendations for common validation errors",
+    arguments: [
+      {
+        name: "projectId",
+        description: "ID of project to analyze",
+        required: false,
+      },
+    ],
+  },
+  {
     name: "project_history",
     title: "Project History",
     description: "Guide for viewing project-wide Git commit history, comparing with file history, and understanding when to use each",
@@ -206,6 +182,40 @@ export const PROMPTS: PromptDefinition[] = [
       {
         name: "projectId",
         description: "ID of the project",
+        required: false,
+      },
+    ],
+  },
+  {
+    name: "run_test",
+    title: "Run Tests",
+    description: "Test selection logic and workflow for running OpenL tests efficiently based on scope (single table, multiple tables, or all tests)",
+    arguments: [
+      {
+        name: "scope",
+        description: "Test scope: 'single', 'multiple', or 'all'",
+        required: false,
+      },
+      {
+        name: "tableIds",
+        description: "Comma-separated list of table IDs being tested",
+        required: false,
+      },
+    ],
+  },
+  {
+    name: "update_test",
+    title: "Update Test Table",
+    description: "Guide for modifying existing test tables, adding test cases, updating expected values, and handling test failures",
+    arguments: [
+      {
+        name: "testId",
+        description: "ID of the test table to update",
+        required: false,
+      },
+      {
+        name: "tableName",
+        description: "Name of the table being tested",
         required: false,
       },
     ],

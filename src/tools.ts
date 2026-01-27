@@ -123,7 +123,7 @@ export const TOOLS: ToolDefinition[] = [
       "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     _meta: {
-      version: "1.1.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
     },
@@ -133,17 +133,39 @@ export const TOOLS: ToolDefinition[] = [
     description: "Get comprehensive project information including details, modules, dependencies, and metadata. Returns full project structure, configuration, and status. Use this to understand project organization before making changes.",
     inputSchema: schemas.z.toJSONSchema(schemas.getProjectSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.0.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
     },
   },
   {
-    name: "openl_update_project_status",
-    description: "Update project status with safety checks for unsaved changes. Unified tool for all project state transitions: opening, closing, saving, or switching branches. Status behavior: OPENED (open for editing, read-only if locked by another user), EDITING (has unsaved changes, auto-set by OpenL on first edit), VIEWING_VERSION (viewing outdated version after another user saved, need to re-open), CLOSED (closed and unlocked). Prevents accidental data loss by requiring explicit confirmation when closing EDITING projects. Use cases: 1) Open: {status: 'OPENED'}, 2) Save and close: {status: 'CLOSED', comment: 'changes'}, 3) Save only: {comment: 'intermediate save'}, 4) Force close: {status: 'CLOSED', discardChanges: true}, 5) Switch branch: {branch: 'develop'}",
-    inputSchema: schemas.z.toJSONSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
+    name: "openl_open_project",
+    description: "Open a project for editing. Supports opening on specific branches or viewing specific Git revisions. Use this before making changes to project tables or rules. For branch switching, specify the branch parameter. For viewing a historical version, specify the revision parameter.",
+    inputSchema: schemas.z.toJSONSchema(schemas.openProjectSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.0.0",
+      version: "1.0.0",
+      category: TOOL_CATEGORIES.PROJECT,
+      requiresAuth: true,
+      modifiesState: true,
+    },
+  },
+  {
+    name: "openl_save_project",
+    description: "Save project changes to Git repository. Validates the project before saving and returns commit information. Use this to persist changes made to tables, rules, or project configuration. The project must be open (status: OPENED or EDITING) before saving.",
+    inputSchema: schemas.z.toJSONSchema(schemas.saveProjectSchema) as Record<string, unknown>,
+    _meta: {
+      version: "1.0.0",
+      category: TOOL_CATEGORIES.PROJECT,
+      requiresAuth: true,
+      modifiesState: true,
+    },
+  },
+  {
+    name: "openl_close_project",
+    description: "Close a project. If the project has unsaved changes (status: EDITING), you must either save them (saveChanges: true with comment) or explicitly discard them (discardChanges: true). Prevents accidental data loss. Use saveChanges: true to save and close in one operation, or discardChanges: true to close without saving (destructive operation).",
+    inputSchema: schemas.z.toJSONSchema(schemas.closeProjectSchema) as Record<string, unknown>,
+    _meta: {
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
       modifiesState: true,
@@ -162,7 +184,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_list_project_local_changes",
-    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -172,7 +194,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_restore_project_local_change",
-    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -187,10 +209,10 @@ export const TOOLS: ToolDefinition[] = [
   // =============================================================================
   {
     name: "openl_upload_file",
-    description: "Upload an Excel file (.xlsx or .xls) containing rules to a project. The file is uploaded to OpenL Studio workspace but NOT committed to Git yet - changes remain in-memory until you save the project using update_project_status (with comment or status: 'CLOSED'). Returns file metadata and upload confirmation. Use this to add or replace Excel rule files. IMPORTANT: The fileName parameter can be a simple name (e.g., 'Rules.xlsx'), subdirectory path (e.g., 'rules/Premium.xlsx'), or full path (e.g., 'Example 1 - Bank Rating/Bank Rating.xlsx'). To replace an existing file, use the exact 'file' field from list_tables().",
+    description: "Upload an Excel file (.xlsx or .xls) containing rules to a project. The file is uploaded to OpenL Studio workspace but NOT committed to Git yet - changes remain in-memory until you save the project using openl_save_project. Returns file metadata and upload confirmation. Use this to add or replace Excel rule files. IMPORTANT: The fileName parameter can be a simple name (e.g., 'Rules.xlsx'), subdirectory path (e.g., 'rules/Premium.xlsx'), or full path (e.g., 'Example 1 - Bank Rating/Bank Rating.xlsx'). To replace an existing file, use the exact 'file' field from list_tables().",
     inputSchema: schemas.z.toJSONSchema(schemas.uploadFileSchema) as Record<string, unknown>,
     _meta: {
-      version: "1.2.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
       modifiesState: true,
@@ -201,7 +223,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "Download an Excel file from OpenL project. Can download latest version (HEAD) or specific historical version using Git commit hash. Returns base64-encoded file content. IMPORTANT: Use the exact 'file' field from list_tables() response as the fileName parameter (e.g., 'Example 2 - Corporate Rating/Corporate Rating.xlsx' or 'rules/Premium.xlsx'). The tool automatically handles path normalization by stripping the project name prefix when needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.downloadFileSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.2.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
     },
@@ -215,7 +237,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "List all tables/rules in a project with optional filters for type, name, and file. Returns table metadata including 'tableId' (the 'id' field) which is required for calling get_table(), update_table(), append_table(), or run_project_tests(). Use the 'tableId' field from the response to reference specific tables in other API calls.",
     inputSchema: schemas.z.toJSONSchema(schemas.listTablesSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.1.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
       requiresAuth: true,
     },
@@ -235,7 +257,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "Replace the ENTIRE table structure with a modified version. Use for MODIFYING existing rows, DELETING rows, REORDERING rows, or STRUCTURAL changes. CRITICAL: Must send the FULL table structure (not just modified fields). DO NOT use for simple additions - use append_table instead. Required workflow: 1) Call get_table() to retrieve complete structure, 2) Modify the returned object (e.g., update rules array, change fields, delete rows), 3) Pass the ENTIRE modified object to update_table(). Required fields: id, tableType, kind, name, plus type-specific fields (rules for SimpleRules, rows for Spreadsheet, fields for Datatype). Modifies table in memory (requires save_project to persist changes).",
     inputSchema: schemas.z.toJSONSchema(schemas.updateTableSchema) as Record<string, unknown>,
     _meta: {
-      version: "1.2.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
       requiresAuth: true,
       modifiesState: true,
@@ -246,7 +268,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "Append new rows/fields to an existing table WITHOUT replacing the entire structure. Use for ADDING rows/fields ONLY - does not modify existing data. Examples: Adding 1 row → use append_table. Adding multiple rows → use append_table. Adding fields to Datatype → use append_table. More efficient than update_table for simple additions. Only requires the NEW data to append, not the full table structure. For modifications, deletions, or reordering → use update_table instead. Workflow: 1) Call get_table() to understand current structure, 2) Prepare only the new data to add, 3) Call append_table() with appendData. Modifies table in memory (requires save_project to persist changes).",
     inputSchema: schemas.z.toJSONSchema(schemas.appendTableSchema) as Record<string, unknown>,
     _meta: {
-      version: "1.1.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.RULES,
       requiresAuth: true,
       modifiesState: true,
@@ -314,7 +336,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "Run project tests - unified tool that starts test execution and retrieves results. Automatically uses all headers from the test start response when fetching results. Supports options to target specific tables, test ranges, filtering failures, pagination, and waiting for completion.",
     inputSchema: schemas.z.toJSONSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.0.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.PROJECT,
       requiresAuth: true,
     },
@@ -390,7 +412,7 @@ export const TOOLS: ToolDefinition[] = [
     description: "Revert project to a previous Git commit using commit hash. Creates a new commit that restores old content while preserving full history. Returns new commit hash. Use this to roll back problematic changes while maintaining audit trail.",
     inputSchema: schemas.z.toJSONSchema(schemas.revertVersionSchema) as Record<string, unknown>,
     _meta: {
-      version: "2.0.0",
+      version: "1.0.0",
       category: TOOL_CATEGORIES.VERSION_CONTROL,
       requiresAuth: true,
       modifiesState: true,

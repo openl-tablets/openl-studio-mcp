@@ -48,7 +48,7 @@ AFTER modification:
 2. IF pass AND not saving → done
 3. IF saving → run all tests (omit `tableId`, no exceptions)
 
-BEFORE openl_update_project_status():
+BEFORE openl_save_project():
 - `openl_run_project_tests(projectId, { waitForCompletion: true })` MUST pass
 - `Validate in OpenL WebStudio UI (openl_validate_project temporarily disabled)` MUST pass
 
