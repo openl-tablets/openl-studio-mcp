@@ -71,13 +71,20 @@ export const projectActionSchema = z.object({
   response_format: ResponseFormat.optional(),
 }).strict();
 
-export const updateProjectStatusSchema = z.object({
+
+export const openProjectSchema = z.object({
   projectId: projectIdSchema,
-  status: z.enum(["OPENED", "CLOSED"]).optional().describe("Project status to set. OPENED = open and available for editing (read-only if locked by another user). CLOSED = closed and unlocked. Note: Other statuses (LOCAL, ARCHIVED, VIEWING_VERSION, EDITING) are set automatically by OpenL and cannot be set manually."),
-  comment: commentSchema.describe("Git commit comment. When provided on a modified project, saves changes before applying status change."),
-  branch: branchNameSchema.optional().describe("Switch to a different Git branch"),
-  revision: z.string().optional().describe("Switch to a specific Git revision/commit hash for read-only viewing"),
+  branch: branchNameSchema.optional().describe("Open project on a specific Git branch (e.g., 'main', 'development', 'feature/new-rules')"),
+  revision: z.string().optional().describe("Open project at a specific Git revision/commit hash for read-only viewing"),
   selectedBranches: z.array(z.string()).optional().describe("List of branches to select for multi-branch projects"),
+  response_format: ResponseFormat.optional(),
+}).strict();
+
+export const closeProjectSchema = z.object({
+  projectId: projectIdSchema,
+  saveChanges: z.boolean().optional().describe("If true, save changes before closing (requires comment). If false or omitted and project has unsaved changes, will error unless discardChanges is true."),
+  comment: commentSchema.describe("Git commit comment. Required if saveChanges is true. Optional if saveChanges is false or omitted."),
+  discardChanges: z.boolean().optional().describe("If true, explicitly discard unsaved changes and close project. Use with caution - this is a destructive operation."),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -184,7 +191,7 @@ export const testProjectSchema = z.object({
 
 export const saveProjectSchema = z.object({
   projectId: projectIdSchema,
-  comment: commentSchema,
+  comment: commentSchema.describe("Git commit comment describing the changes (e.g., 'Updated CA premium rates', 'Fixed calculation bug')"),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -192,7 +199,7 @@ export const uploadFileSchema = z.object({
   projectId: projectIdSchema,
   fileName: z.string().describe("Path where the file should be uploaded in the project (.xlsx or .xls). Can be a simple filename (e.g., 'Rules.xlsx'), subdirectory path (e.g., 'rules/Premium.xlsx'), or full path (e.g., 'Example 1 - Bank Rating/Bank Rating.xlsx'). To replace an existing file, use the exact 'file' field value from list_tables()."),
   fileContent: z.string().describe("Base64-encoded file content"),
-  comment: z.string().optional().describe("Optional comment for when the file is eventually saved/committed to Git (e.g., 'Updated CA premium rates'). The upload itself does NOT create a commit - use update_project_status to save changes."),
+  comment: z.string().optional().describe("Optional comment for when the file is eventually saved/committed to Git (e.g., 'Updated CA premium rates'). The upload itself does NOT create a commit - use openl_save_project to save changes."),
   response_format: ResponseFormat.optional(),
 }).strict();
 

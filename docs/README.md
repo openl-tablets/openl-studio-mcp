@@ -55,5 +55,5 @@ docs/
 
 ## Related Documentation
 
-- **[Main README](../../README.md)** - Project overview
-- **[Prompts](../../prompts/)** - AI assistant guidance templates
+- **[Main README](../README.md)** - Project overview
+- **[Prompts](../prompts/)** - AI assistant guidance templates

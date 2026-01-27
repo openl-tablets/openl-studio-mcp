@@ -165,7 +165,9 @@ OpenL Tablets provides two implementations of the MCP (Model Context Protocol) s
 |------------|------------|------|------------|
 | `openl_list_projects` | ✅ | ✅ | ✅ Synchronized |
 | `openl_get_project` | ✅ | ✅ | ✅ Synchronized |
-| `openl_update_project_status` | ✅ | ✅ | ✅ Synchronized |
+| `openl_open_project` | ✅ | ✅ | ✅ Synchronized |
+| `openl_save_project` | ✅ | ✅ | ✅ Synchronized |
+| `openl_close_project` | ✅ | ✅ | ✅ Synchronized |
 | `openl_create_project_branch` | ✅ | ✅ | ✅ Synchronized |
 | `openl_list_project_local_changes` | ✅ | ✅ | ✅ Synchronized |
 | `openl_restore_project_local_change` | ✅ | ✅ | ✅ Synchronized |

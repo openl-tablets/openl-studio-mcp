@@ -409,22 +409,20 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     },
   });
 
+
   registerTool({
-    name: "openl_update_project_status",
-    title: "openl Update Project Status",
+    name: "openl_open_project",
+    title: "openl Open Project",
     version: "1.0.0",
     description:
-      "Update project status with safety checks for unsaved changes. Unified tool for all project state transitions: opening, closing, saving, or switching branches.",
-    inputSchema: schemas.z.toJSONSchema(schemas.updateProjectStatusSchema) as Record<string, unknown>,
+      "Open a project for editing. Supports opening on specific branches or viewing specific Git revisions. Use this before making changes to project tables or rules.",
+    inputSchema: schemas.z.toJSONSchema(schemas.openProjectSchema) as Record<string, unknown>,
     annotations: {
-      destructiveHint: true, // Can discard changes if requested
       openWorldHint: true,
     },
     handler: async (args, client): Promise<ToolResponse> => {
       const typedArgs = args as {
         projectId: string;
-        status?: "OPENED" | "CLOSED";
-        comment?: string;
         branch?: string;
         revision?: string;
         selectedBranches?: string[];
@@ -437,21 +435,149 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      // Note: discardChanges and confirm are client-side safety checks handled by client.updateProjectStatus
-      // They are not part of the Java API but are used for safety
-      const result = await client.updateProjectStatus(typedArgs.projectId, {
-        status: typedArgs.status,
-        comment: typedArgs.comment,
+      await client.openProject(typedArgs.projectId, {
         branch: typedArgs.branch,
         revision: typedArgs.revision,
         selectedBranches: typedArgs.selectedBranches,
       });
+
+      const result = {
+        success: true,
+        message: `Project opened successfully${typedArgs.branch ? ` on branch '${typedArgs.branch}'` : ""}${typedArgs.revision ? ` at revision '${typedArgs.revision}'` : ""}`,
+      };
 
       const formattedResult = formatResponse(result, format);
 
       return {
         content: [{ type: "text", text: formattedResult }],
       };
+    },
+  });
+
+  registerTool({
+    name: "openl_save_project",
+    title: "openl Save Project",
+    version: "1.0.0",
+    description:
+      "Save project changes to Git repository. Validates the project before saving and returns commit information. Use this to persist changes made to tables, rules, or project configuration.",
+    inputSchema: schemas.z.toJSONSchema(schemas.saveProjectSchema) as Record<string, unknown>,
+    annotations: {
+      openWorldHint: true,
+    },
+    handler: async (args, client): Promise<ToolResponse> => {
+      const typedArgs = args as {
+        projectId: string;
+        comment?: string;
+        response_format?: "json" | "markdown";
+      };
+
+      if (!typedArgs || !typedArgs.projectId) {
+        throw new McpError(ErrorCode.InvalidParams, "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()");
+      }
+
+      const format = validateResponseFormat(typedArgs.response_format);
+
+      const result = await client.saveProject(typedArgs.projectId, typedArgs.comment);
+
+      const formattedResult = formatResponse(result, format);
+
+      return {
+        content: [{ type: "text", text: formattedResult }],
+      };
+    },
+  });
+
+  registerTool({
+    name: "openl_close_project",
+    title: "openl Close Project",
+    version: "1.0.0",
+    description:
+      "Close a project. If the project has unsaved changes, you must either save them (saveChanges: true with comment) or explicitly discard them (discardChanges: true). Prevents accidental data loss.",
+    inputSchema: schemas.z.toJSONSchema(schemas.closeProjectSchema) as Record<string, unknown>,
+    annotations: {
+      destructiveHint: true, // Can discard changes if requested
+      openWorldHint: true,
+    },
+    handler: async (args, client): Promise<ToolResponse> => {
+      const typedArgs = args as {
+        projectId: string;
+        saveChanges?: boolean;
+        comment?: string;
+        discardChanges?: boolean;
+        response_format?: "json" | "markdown";
+      };
+
+      if (!typedArgs || !typedArgs.projectId) {
+        throw new McpError(ErrorCode.InvalidParams, "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()");
+      }
+
+      const format = validateResponseFormat(typedArgs.response_format);
+
+      // Check current project status to see if there are unsaved changes
+      const currentProject = await client.getProject(typedArgs.projectId);
+      const hasUnsavedChanges = currentProject.status === "EDITING";
+
+      // Validate that both saveChanges and discardChanges are not set to true
+      if (typedArgs.saveChanges === true && typedArgs.discardChanges === true) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          "Cannot set both saveChanges and discardChanges to true. Choose one option:\n" +
+          "1. Set saveChanges: true (with comment) to save changes before closing\n" +
+          "2. Set discardChanges: true to explicitly discard unsaved changes (destructive operation)"
+        );
+      }
+
+      if (hasUnsavedChanges) {
+        if (typedArgs.saveChanges === true) {
+          // Save changes before closing
+          if (!typedArgs.comment) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              "comment is required when saveChanges is true. Provide a commit message describing the changes."
+            );
+          }
+          await client.saveProject(typedArgs.projectId, typedArgs.comment);
+          await client.closeProject(typedArgs.projectId);
+          const result = {
+            success: true,
+            message: `Project saved and closed successfully with comment: "${typedArgs.comment}"`,
+          };
+          const formattedResult = formatResponse(result, format);
+          return {
+            content: [{ type: "text", text: formattedResult }],
+          };
+        } else if (typedArgs.discardChanges === true) {
+          // Explicitly discard changes
+          await client.closeProject(typedArgs.projectId);
+          const result = {
+            success: true,
+            message: "Project closed (unsaved changes discarded)",
+          };
+          const formattedResult = formatResponse(result, format);
+          return {
+            content: [{ type: "text", text: formattedResult }],
+          };
+        } else {
+          // Error: must choose to save or discard
+          throw new McpError(
+            ErrorCode.InvalidParams,
+            "Project has unsaved changes. You must either:\n" +
+            "1. Set saveChanges: true (with comment) to save changes before closing\n" +
+            "2. Set discardChanges: true to explicitly discard unsaved changes (destructive operation)"
+          );
+        }
+      } else {
+        // No unsaved changes, safe to close
+        await client.closeProject(typedArgs.projectId);
+        const result = {
+          success: true,
+          message: "Project closed successfully",
+        };
+        const formattedResult = formatResponse(result, format);
+        return {
+          content: [{ type: "text", text: formattedResult }],
+        };
+      }
     },
   });
 
@@ -565,7 +691,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
   registerTool({
     name: "openl_list_tables",
     title: "openl List Tables",
-    version: "2.1.0",
+    version: "1.0.0",
     description: "List all tables/rules in a project with optional filters for type, name, and file. Returns table metadata including 'tableId' (the 'id' field) which is required for calling get_table(), update_table(), append_table(), or run_project_tests(). Use the 'tableId' field from the response to reference specific tables in other API calls.",
     inputSchema: schemas.z.toJSONSchema(schemas.listTablesSchema) as Record<string, unknown>,
     annotations: {
@@ -717,7 +843,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
   registerTool({
     name: "openl_update_table",
     title: "openl Update Table",
-    version: "1.2.0",
+    version: "1.0.0",
     description:
       "Replace the ENTIRE table structure with a modified version. Use for MODIFYING existing rows, DELETING rows, REORDERING rows, or STRUCTURAL changes. CRITICAL: Must send the FULL table structure (not just modified fields). DO NOT use for simple additions - use append_table instead. Required workflow: 1) Call get_table() to retrieve complete structure, 2) Modify the returned object, 3) Pass the ENTIRE modified object to update_table().",
     inputSchema: schemas.z.toJSONSchema(schemas.updateTableSchema) as Record<string, unknown>,
@@ -757,7 +883,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
   registerTool({
     name: "openl_append_table",
     title: "openl Append Table",
-    version: "1.1.0",
+    version: "1.0.0",
     description:
       "Append new rows/fields to an existing table WITHOUT replacing the entire structure. Use for ADDING rows/fields ONLY - does not modify existing data. Examples: Adding 1 row → use append_table. Adding multiple rows → use append_table. More efficient than update_table for simple additions. Only requires the NEW data to append, not the full table structure. For modifications, deletions, or reordering → use update_table instead.",
     inputSchema: schemas.z.toJSONSchema(schemas.appendTableSchema) as Record<string, unknown>,
@@ -1384,7 +1510,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl List Project Local Changes",
     version: "1.0.0",
     description:
-      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
@@ -1417,7 +1543,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl Restore Project Local Change",
     version: "1.0.0",
     description:
-      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_update_project_status to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true,
@@ -1463,7 +1589,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
   registerTool({
     name: "openl_run_project_tests",
     title: "openl Run Project Tests",
-    version: "2.0.0",
+    version: "1.0.0",
     description:
       "Run project tests - unified tool that starts test execution and retrieves results. Automatically uses all headers from the test start response when fetching results. Supports options to target specific tables, test ranges, filtering failures, pagination, and waiting for completion.",
     inputSchema: schemas.z.toJSONSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,

@@ -218,7 +218,7 @@ AFTER updating test table:
 1. openl_run_project_tests(projectId, { tableId: testedRuleId, waitForCompletion: true }) → Run tests for the rule
 2. IF all pass → Proceed
 3. IF fail → Review test data (type mismatch, wrong expected value)
-4. openl_update_project_status() → Persist changes (only after tests pass)
+4. openl_save_project() → Persist changes (only after tests pass)
 ```
 
 ## Common Update Scenarios
@@ -313,4 +313,4 @@ Row: { "policy.vehicle": "> UpdatedPolicies.vehicles", "_res_": 1100 }
 | Add context | Add column `_context_.property` |
 | Add description | Add column `_description_` |
 | Verify changes | `openl_run_project_tests(projectId, { tableId: ruleId, waitForCompletion: true })` |
-| Persist | `openl_update_project_status()` (after tests pass) |
+| Persist | `openl_save_project()` (after tests pass) |

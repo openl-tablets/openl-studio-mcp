@@ -412,7 +412,7 @@ Claude: I'll help you with that. First, let me list the projects and find the re
 [Calls openl_list_projects]
 
 Claude: I found the 'insurance-rules' project. Let me open it and see what tables it contains.
-[Calls openl_update_project_status to open the project, then openl_list_tables]
+[Calls openl_open_project to open the project, then openl_list_tables]
 
 Claude: I found a table called 'CalculatePremium' that likely contains the premium logic. Let me get its details.
 [Calls openl_get_table]
@@ -506,7 +506,7 @@ Claude: Successfully deployed 'insurance-rules' to production. You can verify th
 User: The premium calculation seems wrong for motorcycles
 
 Claude: Let me investigate. I'll check the relevant rules.
-[Calls openl_update_project_status to open project, openl_list_tables, then openl_get_table for CalculatePremium]
+[Calls openl_open_project to open project, openl_list_tables, then openl_get_table for CalculatePremium]
 
 Claude: I found the issue. The motorcycle rule has:
 - Condition: vehicleType = "Motorcycle"
@@ -529,12 +529,56 @@ Claude: Updated! Now the premium for young motorcycle riders is calculated as: b
 ## Tips for Working with Claude
 
 1. **Be Specific**: Mention exact project names, table names, and repositories
-2. **Open First**: Remember to open projects before accessing tables
-3. **Check Status**: Ask Claude to verify project status before making changes
-4. **Use Comments**: When modifying tables, provide meaningful commit comments
-5. **Review Changes**: Ask Claude to show you the changes before committing
-6. **Branch for Safety**: Create branches for experimental changes
-7. **Test Before Deploy**: Verify changes in a test environment first
+2. **Open First**: Use `openl_open_project` to open projects before accessing tables
+3. **Save Regularly**: Use `openl_save_project` to save changes with meaningful commit comments
+4. **Close Safely**: Use `openl_close_project` with `saveChanges: true` to save and close, or `discardChanges: true` to discard unsaved changes
+5. **Check Status**: Ask Claude to verify project status before making changes
+6. **Review Changes**: Ask Claude to show you the changes before committing
+7. **Branch for Safety**: Create branches for experimental changes
+8. **Test Before Deploy**: Verify changes in a test environment first
+
+## New Project Management Tools
+
+The following tools provide clearer, more intuitive project management:
+
+### `openl_open_project`
+Opens a project for editing. Supports opening on specific branches or viewing historical revisions.
+
+**Example:**
+```text
+User: Open the {projectId} project on the {branch} branch
+
+Claude: Opening the project on the {branch} branch.
+[Calls openl_open_project with projectId: {projectId} and branch: {branch}]
+```
+
+### `openl_save_project`
+Saves project changes to Git with validation. Returns commit information.
+
+**Example:**
+```text
+User: Save my changes with the comment "{comment}"
+
+Claude: Saving your changes.
+[Calls openl_save_project with projectId: {projectId} and comment: {comment}]
+
+Claude: Changes saved successfully! Commit: abc123def456
+```
+
+### `openl_close_project`
+Closes a project with safety checks. If there are unsaved changes, you must either save them or explicitly discard them.
+
+**Example:**
+```text
+User: Close the project and save my changes
+
+Claude: Closing the project and saving changes.
+[Calls openl_close_project with projectId: {projectId}, saveChanges: {saveChanges}, comment: {comment}]
+
+Claude: Project saved and closed successfully!
+```
+
+**Note:** Use `openl_open_project`, `openl_save_project`, and `openl_close_project` for project management operations.
 
 ## Testing
 

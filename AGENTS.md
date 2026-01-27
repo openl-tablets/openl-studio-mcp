@@ -49,8 +49,9 @@ This MCP server enables AI agents to:
 ### 2. Project Lifecycle
 - List projects with filtering (repository, status, tags)
 - Get comprehensive project details
-- Open/close projects
-- Save project changes
+- Open projects (with branch/revision support)
+- Save project changes (with validation)
+- Close projects (with save/discard safety checks)
 - Create project branches
 - View local change history
 - Restore previous versions
@@ -80,66 +81,66 @@ This MCP server enables AI agents to:
 - Deploy projects to production
 - Redeploy with new versions
 
-## Tools (25 Total)
+## Tools (22 Active, 6 Disabled, 28 Total Defined)
 
 All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
-### Repository Tools (5)
+### Repository Tools (4)
 - `openl_list_repositories` - List all design repositories
 - `openl_list_branches` - List Git branches in a repository
 - `openl_list_repository_features` - Get repository capabilities
 - `openl_repository_project_revisions` - Get project revision history
-- `openl_list_deploy_repositories` - List deployment repositories
 
-### Project Tools (7)
+### Project Tools (11)
 - `openl_list_projects` - List projects with filters
 - `openl_get_project` - Get project details
-- `openl_update_project_status` - Open/close/save projects
+- `openl_open_project` - Open project for editing (supports branch/revision switching)
+- `openl_save_project` - Save project changes to Git with validation
+- `openl_close_project` - Close project with save/discard options (prevents data loss)
 - `openl_create_project_branch` - Create new branch
 - `openl_list_project_local_changes` - View workspace history
 - `openl_restore_project_local_change` - Restore previous version
-- `openl_run_project_tests` - Execute project tests
-
-### File Management (2)
 - `openl_upload_file` - Upload Excel files
 - `openl_download_file` - Download Excel files
+- `openl_run_project_tests` - Execute project tests
 
-### Rules/Tables Tools (5)
+### Rules/Tables Tools (6)
 - `openl_list_tables` - List all tables in project
 - `openl_get_table` - Get table structure and data
 - `openl_update_table` - Replace entire table
 - `openl_append_table` - Add rows/fields to table
 - `openl_create_project_table` - Create new table
+- `openl_execute_rule` - Execute rule with test data
 
 ### Version Control (3)
 - `openl_get_project_history` - Git commit history for project
 - `openl_get_file_history` - Git commit history for file
 - `openl_revert_version` - Revert to previous commit
 
-### Deployment (3)
+### Deployment (4)
+- `openl_list_deploy_repositories` - List deployment repositories
 - `openl_list_deployments` - List active deployments
 - `openl_deploy_project` - Deploy to production
 - `openl_redeploy_project` - Redeploy with new version
 
-### Execution (1)
-- `openl_execute_rule` - Execute rule with test data
-
-## Prompts (12 Total)
+## Prompts (14 Total)
 
 Expert guidance templates for complex OpenL workflows:
 
-1. **create_rule** - Guide for creating OpenL tables
-2. **create_test** - Guide for creating test tables
-3. **update_test** - Guide for modifying tests
-4. **run_test** - Test execution workflow
-5. **execute_rule** - Rule execution guide
-6. **append_table** - Incremental table updates
-7. **datatype_vocabulary** - Data structure definitions
-8. **dimension_properties** - Context-based rule selection
-9. **deploy_project** - Deployment workflow
-10. **get_project_errors** - Error analysis workflow
-11. **file_history** - File version history
-12. **project_history** - Project audit trail
+1. **create_rule** - Guide for creating OpenL tables (general overview)
+2. **create_rule_decision_tables** - Comprehensive guide for decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup)
+3. **create_rule_spreadsheet** - Detailed guide for Spreadsheet tables with formula syntax and JSON structure
+4. **create_test** - Guide for creating test tables
+5. **update_test** - Guide for modifying tests
+6. **run_test** - Test execution workflow
+7. **execute_rule** - Rule execution guide
+8. **append_table** - Incremental table updates
+9. **datatype_vocabulary** - Data structure definitions
+10. **dimension_properties** - Context-based rule selection
+11. **deploy_project** - Deployment workflow
+12. **get_project_errors** - Error analysis workflow
+13. **file_history** - File version history
+14. **project_history** - Project audit trail
 
 ## Resources
 
@@ -298,11 +299,45 @@ Always use placeholders:
 ### Get Project Details
 ```json
 {
-  "tool": "openl_get_project",
-  "arguments": {
-    "projectId": "ZGVzaWduOlByb2plY3Q=",
-    "response_format": "json"
-  }
+ "tool": "openl_get_project",
+ "arguments": {
+ "projectId": "<PROJECT_ID>",
+ "response_format": "<RESPONSE_FORMAT>"
+ }
+}
+```
+
+### Open Project
+```json
+{
+ "tool": "openl_open_project",
+ "arguments": {
+ "projectId": "<PROJECT_ID>",
+ "branch": "<BRANCH>"
+ }
+}
+```
+
+### Save Project
+```json
+{
+ "tool": "openl_save_project",
+ "arguments": {
+ "projectId": "<PROJECT_ID>",
+ "comment": "<COMMENT>"
+ }
+}
+```
+
+### Close Project
+```json
+{
+ "tool": "openl_close_project",
+ "arguments": {
+ "projectId": "<PROJECT_ID>",
+ "saveChanges": <SAVE_CHANGES>,
+ "comment": "<COMMENT>"
+ }
 }
 ```
 
@@ -311,11 +346,11 @@ Always use placeholders:
 {
   "tool": "openl_execute_rule",
   "arguments": {
-    "projectId": "ZGVzaWduOlByb2plY3Q=",
-    "tableId": "calculatePremium",
+    "projectId": "<PROJECT_ID>",
+    "ruleName": "<RULE_NAME>",
     "inputData": {
-      "age": 35,
-      "coverage": 100000
+      "<INPUT_FIELD_1>": <INPUT_VALUE_1>,
+      "<INPUT_FIELD_2>": <INPUT_VALUE_2>
     }
   }
 }

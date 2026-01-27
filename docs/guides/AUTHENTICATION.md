@@ -74,12 +74,12 @@ Configure authentication in the MCP client configuration file:
 When connecting via HTTP, authentication is passed through:
 
 1. **Query parameters** in URL:
-   ```
+   ```text
    http://localhost:3000/mcp/sse?OPENL_BASE_URL=http://studio:8080/rest&OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
    ```
 
 2. **HTTP headers**:
-   ```
+   ```text
    X-OPENL-BASE-URL: http://studio:8080/rest
    X-OPENL-PERSONAL-ACCESS-TOKEN: <your-token>
    ```

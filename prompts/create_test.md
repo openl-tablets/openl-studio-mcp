@@ -306,7 +306,7 @@ openl_run_project_tests(projectId, { tableId: ruleTableId, waitForCompletion: tr
 
 7. Save project:
 ```text
-openl_update_project_status(projectId, comment: "Added tests for calculatePremium")
+openl_save_project(projectId, comment: "Added tests for calculatePremium")
 ```
 
 ## Common Mistakes to Avoid

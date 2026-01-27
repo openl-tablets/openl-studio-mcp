@@ -781,7 +781,7 @@ export class OpenLClient {
         } : undefined,
         timestamp: fileData.modifiedAt || new Date().toISOString(),
         size: fileData.size || buffer.length,
-        message: `File uploaded successfully to workspace. Use update_project_status to save changes to Git.`,
+        message: `File uploaded successfully to workspace. Use openl_save_project to save changes to Git.`,
       };
     } catch (error: any) {
       // Provide helpful error messages for common upload failures

@@ -77,9 +77,9 @@ See [Usage Examples](docs/guides/EXAMPLES.md) for detailed tool usage and [Refer
 
 ## Prompts
 
-12 expert guidance templates for complex OpenL Tablets workflows. Prompts provide contextual assistance, best practices, and step-by-step instructions directly in Claude Desktop or MCP Inspector.
+14 expert guidance templates for complex OpenL Tablets workflows. Prompts provide contextual assistance, best practices, and step-by-step instructions directly in Claude Desktop or MCP Inspector.
 
-**Available prompts:** create_rule, create_test, update_test, run_test, execute_rule, append_table, datatype_vocabulary, dimension_properties, deploy_project, get_project_errors, file_history, project_history.
+**Available prompts:** create_rule, create_rule_decision_tables, create_rule_spreadsheet, create_test, update_test, run_test, execute_rule, append_table, datatype_vocabulary, dimension_properties, deploy_project, get_project_errors, file_history, project_history.
 
 **Usage:** Request prompts in Claude Desktop (e.g., "Use the create_rule prompt") or access via MCP Inspector. See [prompts/](./prompts/) directory for detailed content.
 
@@ -115,7 +115,7 @@ See [Setup Guides](docs/setup/) for client-specific configuration instructions.
 - **Multiple Auth Methods**: Basic Auth and Personal Access Token (PAT)
 - **4 Response Formats**: json, markdown, markdown_concise, markdown_detailed
 - **Pagination Support**: Metadata for all list operations
-- **AI Prompts**: 12 expert guidance templates
+- **AI Prompts**: 14 expert guidance templates
 - **Comprehensive Tests**: 393 tests covering core functionality
 
 ## Development
