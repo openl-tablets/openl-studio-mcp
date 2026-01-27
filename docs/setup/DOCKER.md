@@ -323,7 +323,7 @@ curl -X POST http://localhost:3000/execute \
 ## Additional Information
 
 - [Quick Start Guide](../getting-started/QUICK-START.md) - Get started quickly
-- [Cursor Docker Setup](CURSOR-DOCKER.md) - Connect Cursor to Docker container
+- [MCP Connection Guide](MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) - Connect Cursor to Docker container
 - [Authentication Guide](../guides/AUTHENTICATION.md) - Authentication setup
 - [Troubleshooting Guide](../guides/TROUBLESHOOTING.md) - Common issues
 

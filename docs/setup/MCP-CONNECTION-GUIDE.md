@@ -10,17 +10,48 @@ Choose your setup scenario:
 
 **Before you start:** Make sure you have created a [Personal Access Token](#step-1-creating-a-personal-access-token-pat) in OpenL Tablets UI.
 
+## Quick Jump
+
+**I want to connect...**
+- **Cursor to Remote MCP** → [Scenario 1](#scenario-1-connecting-to-remote-mcp-using-cursor)
+- **Cursor to Docker MCP** → [Scenario 2](#scenario-2-connecting-to-mcp-in-docker-using-cursor)
+- **Claude Desktop to Remote MCP** → [Scenario 3](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
+- **Claude Desktop to Docker MCP** → [Scenario 4](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+
+**I need help with...**
+- **Creating a PAT** → [Step 1: Creating a Personal Access Token](#step-1-creating-a-personal-access-token-pat)
+- **Verifying connection** → [Verifying Connection](#verifying-connection)
+- **Troubleshooting** → [Troubleshooting](#troubleshooting)
+- **Configuration examples** → [Complete Configuration Examples](#complete-configuration-examples)
+
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Step 1: Creating a Personal Access Token (PAT)](#step-1-creating-a-personal-access-token-pat)
-- [Scenario 1: Connecting to Remote MCP using Cursor](#scenario-1-connecting-to-remote-mcp-using-cursor)
-- [Scenario 2: Connecting to MCP in Docker using Cursor](#scenario-2-connecting-to-mcp-in-docker-using-cursor)
-- [Scenario 3: Connecting to Remote MCP using Claude Desktop](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
-- [Scenario 4: Connecting to MCP in Docker using Claude Desktop](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
-- [Verifying Connection](#verifying-connection)
-- [Troubleshooting](#troubleshooting)
-- [Complete Configuration Examples](#complete-configuration-examples)
+### Quick Navigation
+- [Quick Start](#quick-start) - Choose your setup scenario
+- [Prerequisites](#prerequisites) - Required software and tools
+- [Creating a Personal Access Token](#step-1-creating-a-personal-access-token-pat) - PAT setup
+
+### Setup Scenarios
+- [Scenario 1: Remote MCP with Cursor](#scenario-1-connecting-to-remote-mcp-using-cursor)
+  - [Method A: Via mcp-remote Utility](#method-a-via-mcp-remote-utility-recommended)
+  - [Method B: Direct HTTP Connection](#method-b-direct-http-connection-alternative)
+- [Scenario 2: Docker MCP with Cursor](#scenario-2-connecting-to-mcp-in-docker-using-cursor)
+- [Scenario 3: Remote MCP with Claude Desktop](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
+- [Scenario 4: Docker MCP with Claude Desktop](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+
+### Verification & Troubleshooting
+- [Verifying Connection](#verifying-connection) - Test your setup
+- [Troubleshooting](#troubleshooting) - Common issues and solutions
+  - [MCP Server Not Connecting](#issue-mcp-server-not-connecting)
+  - [ENOTFOUND Errors](#issue-enotfound-or-getaddrinfo-enotfound-error)
+  - [401 Unauthorized Error](#issue-401-unauthorized-error)
+  - [Docker Container Not Available](#issue-docker-container-not-available)
+  - [mcp-remote Not Found](#issue-mcp-remote-not-found)
+  - [Incorrect Node.js Version](#issue-incorrect-nodejs-version)
+
+### Reference
+- [Complete Configuration Examples](#complete-configuration-examples) - Ready-to-use configs
+- [Additional Resources](#additional-resources) - Related documentation
 
 ---
 
@@ -792,8 +823,7 @@ After configuring any of the scenarios, perform verification:
 - [Authentication Guide](../guides/AUTHENTICATION.md) - Detailed authentication information (Basic Auth, PAT)
 - [Troubleshooting Guide](../guides/TROUBLESHOOTING.md) - Common issues and solutions
 - [Quick Start Guide](../getting-started/QUICK-START.md) - Quick start guide
-- [Docker Setup](./DOCKER.md) - Running MCP server in Docker
-- [Cursor Docker Setup](./CURSOR-DOCKER.md) - Detailed Docker connection guide (alternative reference)
+- [Docker Setup](./DOCKER.md) - Running MCP server in Docker (technical details)
 
 ---
 
