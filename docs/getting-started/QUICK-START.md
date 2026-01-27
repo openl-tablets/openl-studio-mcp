@@ -104,6 +104,96 @@ Follow the setup guide for your AI client (same as Step 3 in Method 1).
 
 ---
 
+## 🎯 Method 3: Docker + Personal Access Token (PAT)
+
+Quick setup for Cursor IDE connecting to MCP server in Docker using Personal Access Token.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Personal Access Token created in OpenL Tablets UI
+- Cursor IDE installed
+
+### Step 1: Configure Docker Container
+
+**IMPORTANT**: Authentication credentials should NOT be set in Docker configuration. They must be provided via MCP client configuration.
+
+The Docker configuration should only include the base URL:
+
+```yaml
+mcp-server:
+  environment:
+    PORT: 3000
+    OPENL_BASE_URL: http://studio:8080/rest
+    NODE_ENV: production
+    # Authentication is NOT set here!
+```
+
+Start the container:
+```bash
+docker compose up -d mcp-server
+```
+
+### Step 2: Verify Availability
+
+```bash
+curl http://localhost:3000/health
+```
+
+Should return `{"status":"ok",...}`
+
+### Step 3: Configure Cursor
+
+**Option A: PAT via HTTP Headers (Recommended)**
+
+1. Open Cursor Settings (`Cmd + ,`)
+2. Find the **"MCP"** or **"Model Context Protocol"** section
+3. Click **"Add New Global MCP Server"**
+4. Enter name: `openl-mcp-server-docker`
+5. Paste JSON configuration:
+
+```json
+{
+  "url": "http://localhost:3000/mcp/sse",
+  "transport": "sse",
+  "headers": {
+    "Authorization": "Token <your-pat-token>"
+  }
+}
+```
+
+**Option B: PAT via Query Parameters**
+
+If Cursor doesn't support headers:
+
+```json
+{
+  "url": "http://localhost:3000/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>",
+  "transport": "sse"
+}
+```
+
+**Note:** Base URL (`OPENL_BASE_URL`) must be configured in Docker container environment variables. Only authentication token is passed from client.
+
+### Step 4: Test
+
+In Cursor chat:
+```text
+List repositories in OpenL Tablets
+```
+
+### For Remote Docker
+
+If Docker container is on a remote server:
+
+1. Replace `localhost` with server IP or domain name
+2. Make sure port 3000 is open in firewall
+3. Base URL must be configured in Docker container environment variables on the server
+
+For complete setup instructions, see [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor).
+
+---
+
 ## 🔍 Health Check
 
 ### Automatic Check
@@ -231,8 +321,8 @@ export OPENL_PASSWORD="admin"
 
 ## 📚 Next Steps
 
-- [Configuration Guide](CONFIGURATION.md) - Detailed configuration options
 - [Setup Guides](../setup/) - Client-specific setup instructions
+- [Authentication Guide](../guides/AUTHENTICATION.md) - Detailed configuration options
 - [Usage Examples](../guides/EXAMPLES.md) - Learn how to use MCP tools
 - [Troubleshooting](../guides/TROUBLESHOOTING.md) - Common issues and solutions
 

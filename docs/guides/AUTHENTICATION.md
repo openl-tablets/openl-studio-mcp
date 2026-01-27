@@ -4,6 +4,7 @@ This guide covers the authentication methods supported by the OpenL Tablets MCP 
 
 ## Table of Contents
 - [Authentication Methods](#authentication-methods)
+- [Setup](#setup)
 - [Basic Authentication](#basic-authentication)
 - [Personal Access Token Authentication](#personal-access-token-authentication)
 - [Client Document ID](#client-document-id)
@@ -18,6 +19,94 @@ The MCP server supports two authentication methods:
 2. **Personal Access Token (PAT)** - User-generated tokens for programmatic access
 
 Choose the method that best fits your security requirements and infrastructure.
+
+## Setup
+
+**IMPORTANT**: Authentication variables (tokens, passwords) **MUST NOT** be set in Docker configuration or server environment variables. They should be configured **only** in the MCP client configuration when connecting through Cursor or Claude Desktop.
+
+### How It Works
+
+The MCP server supports two modes of operation:
+
+1. **stdio transport** (for Cursor/Claude Desktop) - authentication is set in the MCP client configuration via environment variables in the config file
+2. **HTTP transport** (for Docker) - authentication is passed via query parameters or HTTP headers when connecting
+
+### For Cursor IDE or Claude Desktop (stdio transport)
+
+Configure authentication in the MCP client configuration file:
+
+**Example for Cursor:**
+```json
+{
+  "mcpServers": {
+    "openl-mcp-server": {
+      "command": "node",
+      "args": ["<path-to-project>/dist/index.js"],
+      "env": {
+        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
+        "OPENL_CLIENT_DOCUMENT_ID": "cursor-ide-1"
+      }
+    }
+  }
+}
+```
+
+**Example for Claude Desktop** (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "openl-mcp-server": {
+      "command": "node",
+      "args": ["<path-to-project>/dist/index.js"],
+      "env": {
+        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
+        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-1"
+      }
+    }
+  }
+}
+```
+
+### For HTTP Transport (Docker)
+
+When connecting via HTTP, authentication is passed through:
+
+1. **Query parameters** in URL:
+   ```
+   http://localhost:3000/mcp/sse?OPENL_BASE_URL=http://studio:8080/rest&OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
+   ```
+
+2. **HTTP headers**:
+   ```
+   X-OPENL-BASE-URL: http://studio:8080/rest
+   X-OPENL-PERSONAL-ACCESS-TOKEN: <your-token>
+   ```
+
+### Docker Configuration
+
+In Docker configuration (`compose.yaml`), **only** the base URL is set:
+
+```yaml
+environment:
+  PORT: 3000
+  OPENL_BASE_URL: http://studio:8080/rest
+  NODE_ENV: production
+  # Authentication is NOT set here!
+```
+
+⚠️ **Security**: Never set tokens, passwords, or other secrets in:
+- Docker compose files
+- Host environment variables (for Docker)
+- Git repository
+- Logs
+
+✅ **Correct**: Set secrets only in:
+- MCP client configuration files (Cursor/Claude Desktop)
+- Query parameters or headers when connecting via HTTP (for one-time connections)
+
+For complete configuration examples, see [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#complete-configuration-examples).
 
 ## Basic Authentication
 
@@ -301,6 +390,13 @@ export OPENL_CLIENT_DOCUMENT_ID=mcp-prod-instance-1
 export OPENL_TIMEOUT=60000
 npm start
 ```
+
+## Related Documentation
+
+- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md) - Complete connection setup guide
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common authentication issues
+- [Quick Start Guide](../getting-started/QUICK-START.md) - Quick setup instructions
+- [Usage Examples](EXAMPLES.md) - Examples using authentication
 
 ## Resources
 

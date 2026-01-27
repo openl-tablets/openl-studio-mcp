@@ -211,6 +211,72 @@ OPENL_PERSONAL_ACCESS_TOKEN=your-token
 - Credentials never logged
 - Request tracking via Client Document ID
 
+## Security Best Practices for AI Agents
+
+### Critical Rule: Never Write Sensitive Data in Code
+
+When writing code, configuration files, or examples as an AI agent:
+
+**❌ NEVER DO THIS:**
+- Hardcode passwords, tokens, or API keys in source code
+- Commit files with real credentials to Git
+- Use real values in examples or documentation
+
+**✅ ALWAYS DO THIS:**
+- Use environment variables: `process.env.VARIABLE_NAME`
+- Use placeholders in examples: `<your-token>`, `<your-password>`
+- Create `.env.example` files with placeholders
+- Add `.env` to `.gitignore`
+
+### Examples
+
+**Wrong:**
+```typescript
+const token = "openl_pat_abc123.xyz789"; // ❌ Real token in code
+const password = "mySecretPassword123"; // ❌ Real password in code
+```
+
+**Correct:**
+```typescript
+const token = process.env.OPENL_PERSONAL_ACCESS_TOKEN; // ✅ From environment
+const password = process.env.OPENL_PASSWORD; // ✅ From environment
+
+if (!token) {
+  throw new Error("OPENL_PERSONAL_ACCESS_TOKEN is required");
+}
+```
+
+### When Creating Configuration Examples
+
+Always use placeholders:
+```json
+{
+  "OPENL_BASE_URL": "http://localhost:8080/rest",
+  "OPENL_PERSONAL_ACCESS_TOKEN": "<your-token>",
+  "OPENL_USERNAME": "<your-username>",
+  "OPENL_PASSWORD": "<your-password>"
+}
+```
+
+### Environment Variables Best Practices
+
+1. **For local development:**
+   - Use `.env` files (never commit these)
+   - Create `.env.example` with placeholders
+   - Add `.env` to `.gitignore`
+
+2. **For production:**
+   - Use secure vaults or secret management systems
+   - Never hardcode credentials in deployment configs
+   - Rotate credentials regularly
+
+3. **When writing code:**
+   - Always read from `process.env`
+   - Validate that required variables are set
+   - Provide clear error messages if variables are missing
+
+**Remember:** Never use real values, even in examples or test code. Always use placeholders or environment variables.
+
 ### OpenL-Specific Features
 - Dual versioning (Git commits + dimension properties)
 - Table type awareness (Rules, Spreadsheet, Datatype, etc.)

@@ -34,12 +34,10 @@ For detailed setup instructions, see [Quick Start Guide](docs/getting-started/QU
 
 ### Getting Started
 - [Quick Start](docs/getting-started/QUICK-START.md) - Get up and running quickly
-- [Configuration](docs/getting-started/CONFIGURATION.md) - Environment variables and settings *(coming soon)*
 
 ### Setup Guides
 - [MCP Connection Guide](docs/setup/MCP-CONNECTION-GUIDE.md) - Complete guide for connecting Cursor and Claude Desktop to MCP server (Remote and Docker)
 - [Docker Setup](docs/setup/DOCKER.md) - Running MCP server in Docker (technical details)
-- [Cursor with Docker](docs/setup/CURSOR-DOCKER.md) - Detailed Docker connection guide (alternative reference)
 
 ### Guides
 - [Usage Examples](docs/guides/EXAMPLES.md) - Practical examples of using MCP tools
@@ -59,123 +57,31 @@ For detailed setup instructions, see [Quick Start Guide](docs/getting-started/QU
 
 ## OpenL Tablets Concepts
 
-### Versioning (Dual System)
-
-OpenL has TWO independent versioning systems:
-
-**1. Git-Based (Temporal)**
-- Every save creates Git commit automatically
-- Version = commit hash (e.g., "7a3f2b1c")
-- Tools: `openl_get_file_history`, `openl_get_project_history`, `openl_revert_version`, `openl_compare_versions`
-
-**2. Dimension Properties (Business Context)**
-- Multiple rule versions in same commit
-- Properties: `state`, `lob`, `effectiveDate`, `expirationDate`, `caProvince`, `country`, `currency`
-- OpenL selects version by runtime context
-- Managed via OpenL WebStudio UI
-
-### Table Types
-
-**Decision Tables** (5 variants):
-- `Rules` - Standard with C1/C2/A1/RET markers
-- `SimpleRules` - Positional matching (left-to-right)
-- `SmartRules` - Smart matching by column name
-- `SimpleLookup` - 2D matrix lookup
-- `SmartLookup` - 2D smart lookup
-
-**Spreadsheet Tables**:
-- Multi-step calculations with `$columnName$rowName` references
-- Return `SpreadsheetResult` (full matrix) or specific type (final value)
-
-**Other**: `Method`, `TBasic`, `Data`, `Datatype`, `Test`, `Run`, `Properties`, `Configuration`
+OpenL Tablets uses **dual versioning**: Git-based commits (temporal) and dimension properties (business context). Supports multiple table types: Decision Tables (Rules, SimpleRules, SmartRules, Lookups), Spreadsheet Tables, and others (Method, Datatype, Test, etc.).
 
 See [prompts/create_rule.md](./prompts/create_rule.md) for detailed table type guidance.
 
-## Tools (20 Active, 6 Temporarily Disabled)
+## Tools
 
-All tools are prefixed with `openl_` for MCP compliance and versioned (v1.0.0+).
+The MCP server provides 20 active tools for managing OpenL Tablets repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
-### Repository Management (5) ✅
-- `openl_list_repositories` - List all design repositories
-- `openl_list_branches` - List Git branches in a repository
-- `openl_list_repository_features` - Get repository capabilities (branching, searchable, etc.)
-- `openl_repository_project_revisions` - Get project revision history from repository
-- `openl_list_deploy_repositories` - List deployment repositories
+**Categories:**
+- **Repository Management** (5 tools) - List repositories, branches, features
+- **Project Management** (7 tools) - List, open, save, branch projects
+- **Rules & Tables** (5 tools) - List, get, update, append, create tables
+- **Deployment** (3 tools) - List, deploy, redeploy projects
 
-### Project Management (7) ✅
-- `openl_list_projects` - List projects with filters (repository, status, tags)
-- `openl_get_project` - Get comprehensive project details
-- `openl_update_project_status` - Open/close/save projects, switch branches
-- `openl_create_project_branch` - Create new branch in a project
-- `openl_list_project_local_changes` - View workspace history (local changes)
-- `openl_restore_project_local_change` - Restore project to previous local version
-- `openl_run_project_tests` - Execute project tests (all or specific tables)
+6 additional tools are temporarily disabled pending implementation fixes.
 
-### Rules & Tables (5) ✅
-- `openl_list_tables` - List all tables/rules in a project with filters
-- `openl_get_table` - Get detailed table structure and data
-- `openl_update_table` - Replace entire table (modify, delete, reorder rows)
-- `openl_append_table` - Add rows/fields to table (incremental changes)
-- `openl_create_project_table` - Create new table programmatically (BETA API)
+See [Usage Examples](docs/guides/EXAMPLES.md) for detailed tool usage and [Reference Documentation](docs/reference/) for complete tool reference.
 
-### Deployment (3) ✅
-- `openl_list_deployments` - List all active deployments
-- `openl_deploy_project` - Deploy project to production
-- `openl_redeploy_project` - Redeploy existing deployment with new version
+## Prompts
 
-### Temporarily Disabled (6) ⚠️
-The following tools are disabled pending implementation fixes:
-- `openl_upload_file` - Upload Excel files to a project
-- `openl_download_file` - Download Excel files (current or historical versions)
-- `openl_execute_rule` - Execute rule with test data for validation
-- `openl_revert_version` - Revert project to previous Git commit
-- `openl_get_file_history` - Git commit history for specific file
-- `openl_get_project_history` - Git commit history for entire project
+12 expert guidance templates for complex OpenL Tablets workflows. Prompts provide contextual assistance, best practices, and step-by-step instructions directly in Claude Desktop or MCP Inspector.
 
-## Prompts (12 Total)
+**Available prompts:** create_rule, create_test, update_test, run_test, execute_rule, append_table, datatype_vocabulary, dimension_properties, deploy_project, get_project_errors, file_history, project_history.
 
-Expert guidance templates for complex OpenL Tablets workflows. Each prompt includes a concise summary section highlighting the most common use cases and critical requirements.
-
-Prompts provide contextual assistance, best practices, and step-by-step instructions directly in Claude Desktop or MCP Inspector.
-
-### Available Prompts
-
-| Prompt | Description | Summary |
-|--------|-------------|---------|
-| **create_rule** | Comprehensive guide for creating OpenL tables | Choose table type based on use case: Decision Tables for conditional logic, SimpleLookup/SmartLookup for key-value mappings, Spreadsheet for calculations |
-| **create_test** | Step-by-step guide for creating OpenL test tables | Test tables mirror method signatures with columns matching tested table parameters plus _res_ (expected result) or _error_ (expected error) |
-| **update_test** | Guide for modifying existing tests | Use openl_get_table() to fetch structure, modify rows, then openl_update_table() with FULL view. Always run tests after updates |
-| **run_test** | Test selection logic and workflow | Run targeted tests first (1-5 tables → specific tableIds, 6+ → runAll). Before save/deploy, ALWAYS run all tests |
-| **execute_rule** | Guide for executing OpenL rules | Execute rules for quick validation using openl_execute_rule() with inputData as JSON matching rule parameters |
-| **append_table** | Guide for appending to tables | Use openl_append_table for incremental additions to Datatypes or Data tables without fetching full structure |
-| **datatype_vocabulary** | Guide for defining datatypes | Define reusable data structures: Datatype tables create custom types, Vocabulary tables define allowed values |
-| **dimension_properties** | Explanation of dimension properties | Dimension properties enable context-based rule selection: multiple versions of same rule selected at runtime by properties like state, lob, effectiveDate |
-| **deploy_project** | Deployment workflow | All deployments MUST pass validation (0 errors), run all tests (100% pass), and follow environment progression (dev → test → staging → prod) |
-| **get_project_errors** | Error analysis workflow | Systematic error resolution: Fix by category (type mismatches, missing references, syntax errors, circular dependencies). Target 0 errors before deployment |
-| **file_history** | Guide for viewing file version history | Track file changes with Git commit history: Every save creates a Git commit. Use openl_get_file_history() to view commits |
-| **project_history** | Guide for viewing project history | Project-wide audit trail showing all commits across entire project, with author, files changed, tables modified |
-
-### Using Prompts
-
-**In Claude Desktop:**
-```
-"Use the create_rule prompt"
-"Show me the dimension_properties prompt"
-```
-
-**With Arguments:**
-```
-"Use create_test prompt with tableName=calculatePremium"
-"Show deploy_project prompt for projectId=design-Insurance"
-```
-
-**In MCP Inspector:**
-1. Navigate to "Prompts" tab
-2. Select prompt from list
-3. Provide arguments if needed
-4. View rendered guidance
-
-See [prompts/](./prompts/) directory for detailed prompt content.
+**Usage:** Request prompts in Claude Desktop (e.g., "Use the create_rule prompt") or access via MCP Inspector. See [prompts/](./prompts/) directory for detailed content.
 
 ## Configuration
 
@@ -190,7 +96,7 @@ OPENL_USERNAME=admin
 OPENL_PASSWORD=admin
 
 # Auth Method 2: Personal Access Token
-OPENL_PERSONAL_ACCESS_TOKEN=openl_pat_...
+OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
 
 # Optional
 OPENL_CLIENT_DOCUMENT_ID=mcp-server-1
@@ -205,31 +111,12 @@ See [Setup Guides](docs/setup/) for client-specific configuration instructions.
 
 ## Key Features
 
-### MCP Best Practices
-- **4 Response Formats**: json, markdown, markdown_concise, markdown_detailed
-- **Pagination Metadata**: has_more, next_offset, total_count for all list operations
-- **Actionable Error Messages**: Suggestions for corrective actions
-- **Destructive Operation Confirmation**: Explicit confirm flag for safety-critical operations
-- **Tool Versioning**: All tools versioned (v1.0.0) for change tracking
-- **Prompt Summaries**: Concise summaries in all prompts for quick reference
-
-### OpenL Tablets Integration
 - **Type-Safe**: Zod schemas with strict validation and TypeScript inference
-- **OpenL-Specific**: Proper table types, dimension properties, Git-based versioning
-- **Dual Versioning**: Git commits (temporal) + dimension properties (business context)
-- **AI Prompts**: 12 expert guidance templates with conditional rendering
-
-### Authentication & Security
 - **Multiple Auth Methods**: Basic Auth and Personal Access Token (PAT)
-- **Personal Access Token**: User-generated tokens for programmatic access
-- **Basic Auth**: Username/password with Base64 encoding
-- **Sensitive Data Protection**: Automatic redaction of credentials in error messages
-
-### Developer Experience
-- **Enhanced Errors**: Detailed context (endpoint, method, tool, suggested fix)
-- **Tool Metadata**: Version, category, operation flags
-- **Character Limit**: 25K response truncation with helpful guidance
-- **Comprehensive Tests**: 393 tests covering validators, formatters, auth, client, utils
+- **4 Response Formats**: json, markdown, markdown_concise, markdown_detailed
+- **Pagination Support**: Metadata for all list operations
+- **AI Prompts**: 12 expert guidance templates
+- **Comprehensive Tests**: 393 tests covering core functionality
 
 ## Development
 
@@ -265,6 +152,15 @@ mcp-server/
 │   └── reference/          # Reference materials
 └── README.md               # This file
 ```
+
+## Related Documentation
+
+- [Documentation Index](docs/README.md) - Complete documentation navigation
+- [Quick Start Guide](docs/getting-started/QUICK-START.md) - Get started quickly
+- [MCP Connection Guide](docs/setup/MCP-CONNECTION-GUIDE.md) - Connect Cursor or Claude Desktop
+- [Usage Examples](docs/guides/EXAMPLES.md) - Learn how to use MCP tools
+- [Authentication Guide](docs/guides/AUTHENTICATION.md) - Authentication setup
+- [Troubleshooting Guide](docs/guides/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Resources
 

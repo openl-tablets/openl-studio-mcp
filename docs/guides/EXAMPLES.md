@@ -686,8 +686,14 @@ Claude, I'm getting an error when trying to update a table. Can you check:
 
 Claude can access the error messages and guide you through resolution.
 
+## Related Documentation
+
+- [Main README](../../README.md) - Installation and configuration
+- [Authentication Guide](AUTHENTICATION.md) - Authentication setup
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
+- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md) - Connection setup
+
 ## Resources
 
-- See README.md for installation and configuration
-- Check the OpenL Tablets documentation for rule syntax
+- [OpenL Tablets Documentation](https://openl-tablets.org/) - Rule syntax and OpenL concepts
 - Use Claude to explore the API capabilities: "What can you do with OpenL Tablets?"

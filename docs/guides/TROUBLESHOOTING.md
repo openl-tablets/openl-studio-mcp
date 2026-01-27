@@ -7,6 +7,7 @@ This guide covers common issues and their solutions when working with the OpenL 
 - [Viewing Debug Logs](#viewing-debug-logs)
 - [Common Issues](#common-issues)
 - [Connection Issues](#connection-issues)
+- [Remote SSE Connection Issues](#remote-sse-connection-issues)
 - [Configuration Issues](#configuration-issues)
 
 ---
@@ -271,6 +272,117 @@ environment:
 
 ---
 
+## Remote SSE Connection Issues
+
+### Problem: Connection Issues with Remote SSE
+
+If you're experiencing:
+- `Request timed out` errors
+- Connection issues with remote SSE transport
+- Authentication failures
+
+### Root Cause
+
+Possible causes:
+1. Incorrect Node.js or `mcp-remote` paths
+2. Network connectivity issues
+3. Invalid or expired PAT token
+4. Remote SSE endpoint may not be responding correctly
+
+### Solution: Use Local MCP Server with Remote OpenL Backend
+
+Instead of connecting to remote MCP server via SSE, run the MCP server locally and connect it to the remote OpenL backend via REST API.
+
+**Configuration:**
+
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "openl": {
+      "command": "node",
+      "args": [
+        "<path-to-project>/dist/index.js"
+      ],
+      "env": {
+        "OPENL_BASE_URL": "https://<your-openl-server>/studio/rest",
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
+        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-remote"
+      }
+    }
+  }
+}
+```
+
+**Prerequisites:**
+
+1. **Build the MCP server:**
+   ```bash
+   cd <path-to-project>
+   npm install
+   npm run build
+   ```
+
+2. **Verify the build:**
+   ```bash
+   ls -la dist/index.js
+   # Should exist and be executable
+   ```
+
+**Advantages:**
+- ✅ Reliable stdio transport (no network issues)
+- ✅ Full control over authentication
+- ✅ Better error messages and debugging
+- ✅ Works even if remote SSE endpoint has issues
+- ✅ No dependency on `mcp-remote` package
+
+### Alternative: Verify Remote SSE Configuration
+
+Make sure you're using the correct format with `--header` flag:
+
+```json
+{
+  "mcpServers": {
+    "openl-remote": {
+      "command": "/path/to/node",
+      "args": [
+        "/path/to/mcp-remote",
+        "https://<your-openl-server>/mcp/sse",
+        "--header",
+        "Authorization: Token <your-pat-token>"
+      ]
+    }
+  }
+}
+```
+
+**Important:** Use absolute paths for both `command` and the first `args` element (mcp-remote path).
+
+### Why This Works Better
+
+1. **stdio transport** is more reliable than SSE for MCP
+2. **Local process** gives better error visibility
+3. **REST API** connection to OpenL is well-tested and stable
+4. **No npm package dependencies** - just Node.js and your built MCP server
+
+### Verification
+
+After updating the configuration:
+
+1. **Restart Claude Desktop completely**
+2. **Check MCP server status** in settings (should show "Connected")
+3. **Test with a simple query:**
+   ```
+   List repositories in OpenL Tablets
+   ```
+
+If you still see timeouts, check:
+- Network connectivity to `https://<your-openl-server>`
+- PAT token validity
+- MCP server build status
+
+---
+
 ## Configuration Issues
 
 ### Issue: File doesn't exist
@@ -301,6 +413,13 @@ environment:
 - AI client logs are automatically saved to their respective log directories
 - For debugging, it's recommended to run the server directly in terminal
 - Use `DEBUG=1` environment variable for more verbose logs
+
+## Related Documentation
+
+- [Authentication Guide](AUTHENTICATION.md) - Authentication setup and troubleshooting
+- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#troubleshooting) - Connection troubleshooting
+- [Quick Start Guide](../getting-started/QUICK-START.md) - Quick setup instructions
+- [Usage Examples](EXAMPLES.md) - Usage examples and workflows
 
 For more help:
 - [Quick Start Guide](../getting-started/QUICK-START.md)
