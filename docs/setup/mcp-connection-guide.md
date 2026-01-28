@@ -1,6 +1,6 @@
 # 🔌 Complete Guide to MCP Server Connection Setup
 
-This is a detailed step-by-step guide for setting up connections to the OpenL Tablets MCP server for various usage scenarios.
+This is a detailed step-by-step guide for setting up connections to the OpenL Studio MCP server for various usage scenarios.
 
 ## Quick Start
 
@@ -8,7 +8,7 @@ Choose your setup scenario:
 - **Remote MCP Server** → [Scenario 1 (Cursor)](#scenario-1-connecting-to-remote-mcp-using-cursor) or [Scenario 3 (Claude Desktop)](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
 - **Docker MCP Server** → [Scenario 2 (Cursor)](#scenario-2-connecting-to-mcp-in-docker-using-cursor) or [Scenario 4 (Claude Desktop)](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
 
-**Before you start:** Make sure you have created a [Personal Access Token](#step-1-creating-a-personal-access-token-pat) in OpenL Tablets UI.
+**Before you start:** Make sure you have created a [Personal Access Token](#step-1-creating-a-personal-access-token-pat) in OpenL Studio UI.
 
 ## Quick Jump
 
@@ -141,11 +141,11 @@ npm config get prefix
 
 ## Step 1: Creating a Personal Access Token (PAT)
 
-Personal Access Token (PAT) is a secure way to authenticate without using a password. The token is created in the OpenL Tablets interface and used for API access.
+Personal Access Token (PAT) is a secure way to authenticate without using a password. The token is created in the OpenL Studio interface and used for API access.
 
 ### Step-by-Step Instructions
 
-1. **Open OpenL Tablets Studio in your browser**
+1. **Open OpenL Studio in your browser**
    - Navigate to your OpenL server address
    - Log in using your corporate SSO or authentication method
 
@@ -601,7 +601,7 @@ After configuring any of the scenarios, perform verification:
    - Open chat in Cursor
    - Enter request:
      ```text
-     List repositories in OpenL Tablets
+     List repositories in OpenL Studio
      ```
    - Or:
      ```text
@@ -621,11 +621,11 @@ After configuring any of the scenarios, perform verification:
    - Start a new conversation
    - Enter request:
      ```text
-     What OpenL Tablets tools are available?
+     What OpenL Studio tools are available?
      ```
    - Or:
      ```text
-     List repositories in OpenL Tablets
+     List repositories in OpenL Studio
      ```
    - Claude should use MCP tools and show results
 
@@ -655,7 +655,7 @@ After configuring any of the scenarios, perform verification:
 3. **Check token:**
    - Ensure token is copied completely
    - Check that token hasn't expired (if expiration date was set)
-   - Ensure token wasn't deleted in OpenL Tablets UI
+   - Ensure token wasn't deleted in OpenL Studio UI
 
 4. **Check network availability (for remote connections):**
    ```bash
@@ -717,7 +717,7 @@ After configuring any of the scenarios, perform verification:
    - Note the space after "Token"
 
 3. **Check token expiration:**
-   - Go to OpenL Tablets UI
+   - Go to OpenL Studio UI
    - Check token list
    - Ensure token hasn't expired
 
@@ -818,10 +818,10 @@ After configuring any of the scenarios, perform verification:
 
 ## Additional Resources
 
-- [Authentication Guide](../guides/AUTHENTICATION.md) - Detailed authentication information (Basic Auth, PAT)
-- [Troubleshooting Guide](../guides/TROUBLESHOOTING.md) - Common issues and solutions
-- [Quick Start Guide](../getting-started/QUICK-START.md) - Quick start guide
-- [Docker Setup](./DOCKER.md) - Running MCP server in Docker (technical details)
+- [Authentication Guide](../guides/authentication.md) - Detailed authentication information (Basic Auth, PAT)
+- [Troubleshooting Guide](../guides/troubleshooting.md) - Common issues and solutions
+- [Quick Start Guide](../getting-started/quick-start.md) - Quick start guide
+- [Docker Setup](./docker.md) - Running MCP server in Docker (technical details)
 
 ---
 

@@ -1,6 +1,6 @@
 # Best Practices Implementation
 
-This document outlines all the best practices implemented in the OpenL Tablets MCP Server project.
+This document outlines all the best practices implemented in the OpenL Studio MCP Server project.
 
 ## Table of Contents
 
@@ -18,15 +18,23 @@ This document outlines all the best practices implemented in the OpenL Tablets M
 
 ### Modular Architecture ✓
 
-**8 Well-Defined Modules**:
-- `index.ts` (697 lines) - Server orchestration
-- `client.ts` (1642 lines) - API client
-- `auth.ts` (648 lines) - Authentication
-- `tools.ts` (472 lines) - Tool definitions
-- `schemas.ts` (379 lines) - Input validation
-- `types.ts` (774 lines) - Type definitions
-- `constants.ts` (98 lines) - Configuration
-- `utils.ts` (625 lines) - Security utilities
+**Core Modules**:
+- `index.ts` - Server orchestration (stdio transport)
+- `server.ts` - HTTP server (SSE/StreamableHTTP transport)
+- `mcp-proxy.ts` - MCP proxy server
+- `client.ts` - OpenL Studio API client
+- `auth.ts` - Authentication (Basic Auth, PAT)
+- `tool-handlers.ts` - Tool execution handlers
+- `tools.ts` - Tool definitions and schemas
+- `schemas.ts` - Input validation schemas
+- `types.ts` - Type definitions
+- `formatters.ts` - Response formatting
+- `validators.ts` - Input validation utilities
+- `utils.ts` - Security and utility functions
+- `logger.ts` - Logging utilities
+- `prompts.ts` - Prompt definitions
+- `prompts-registry.ts` - Prompt registry
+- `constants.ts` - Configuration constants
 
 **Benefits**:
 - Clear separation of concerns
@@ -37,11 +45,17 @@ This document outlines all the best practices implemented in the OpenL Tablets M
 ### File Structure ✓
 
 ```text
-mcp-server/
+openl-studio-mcp/
 ├── src/               # Source code (TypeScript)
 ├── dist/              # Compiled output (JavaScript)
 ├── tests/             # Test suites
-├── docs/              # Documentation (5 comprehensive guides)
+├── docs/              # Documentation
+│   ├── getting-started/
+│   ├── setup/
+│   ├── guides/
+│   ├── development/
+│   └── reference/
+├── prompts/           # AI assistant guidance templates
 └── config files       # TypeScript, Jest, ESLint configs
 ```
 
@@ -66,7 +80,7 @@ mcp-server/
 
 ### Zod Schema Validation ✓
 
-All 15 tools have Zod schemas with:
+All tools have Zod schemas with:
 - Runtime validation
 - TypeScript type inference
 - Descriptive field documentation
@@ -83,16 +97,15 @@ All 15 tools have Zod schemas with:
 - Credentials in URLs
 
 **All error paths sanitized**:
-- OAuth token acquisition errors
 - API client errors
 - Tool execution errors
 - Configuration loading errors
+- Authentication errors
 
 ### Input Validation ✓
 
 **URL validation**:
 - Base URL format checked
-- OAuth token URL format validated
 - Invalid URLs rejected early
 
 **Timeout validation**:
@@ -100,14 +113,9 @@ All 15 tools have Zod schemas with:
 - Capped at 10 minutes
 - Safe defaults on invalid input
 
-**OAuth configuration validation**:
-- Client secret required
-- Token URL required
-- Grant type whitelisted
-
 **Configuration validation**:
-- At least one auth method required
-- Complete OAuth config enforced
+- At least one auth method required (Basic Auth or PAT)
+- Complete authentication config enforced
 
 ### Circular Reference Protection ✓
 
@@ -170,34 +178,28 @@ npm run test:coverage # With coverage
 
 ### Complete Documentation Set ✓
 
-1. **[README.md](../../README.md)** - Main documentation
-   - Installation and setup
-   - Configuration examples
-   - Tool usage examples
-   - Architecture overview
+**Getting Started:**
+- **[Quick Start Guide](../getting-started/quick-start.md)** - Get up and running quickly
 
-2. **[Authentication Guide](../guides/AUTHENTICATION.md)** - Authentication setup
-   - All 3 authentication methods
-   - Configuration examples
-   - Security best practices
-   - Troubleshooting guide
+**Setup Guides:**
+- **[MCP Connection Guide](../setup/mcp-connection-guide.md)** - Connect Cursor or Claude Desktop
+- **[Docker Setup](../setup/docker.md)** - Running MCP server in Docker
 
-3. **[Contributing Guide](CONTRIBUTING.md)** - Development guide
-   - Development setup
-   - How to add tools
-   - Code style guidelines
-   - Testing guidelines
+**Usage Guides:**
+- **[Usage Examples](../guides/examples.md)** - Real-world usage examples
+- **[Authentication Guide](../guides/authentication.md)** - Authentication setup (Basic Auth, PAT)
+- **[Troubleshooting Guide](../guides/troubleshooting.md)** - Common issues and solutions
+- **[Debug PAT Guide](../guides/debug-pat.md)** - Personal Access Token debugging
 
-4. **[Testing Guide](TESTING.md)** - Testing documentation
-   - Test structure
-   - Running tests
-   - Writing new tests
-   - Coverage reporting
+**Development:**
+- **[Contributing Guide](contributing.md)** - Development guide
+- **[Architecture](architecture.md)** - System architecture
+- **[Testing Guide](testing.md)** - Testing documentation
+- **[Code Standards](code-standards.md)** - This document
+- **[Tool Review](tool-review.md)** - Technical review of MCP tools vs OpenL API
 
-5. **[Usage Examples](../guides/EXAMPLES.md)** - Usage examples
-   - Real-world usage examples
-   - All tools documented
-   - Request/response examples
+**Reference:**
+- **[Enable Disabled Tools](../reference/enable-disabled-tools.md)** - Temporarily disabled tools
 
 ### Code Documentation ✓
 
@@ -219,16 +221,24 @@ npm run test:coverage # With coverage
 ### Code Metrics ✓
 
 ```text
-Module           Lines   Complexity
+Module              Complexity
 --------------------------------
-index.ts         697     Moderate
-client.ts        1642    Low
-auth.ts          648     Moderate
-tools.ts         472     Low
-schemas.ts       379     Low
-types.ts         774     Low
-constants.ts     98      Low
-utils.ts         625     Low
+index.ts            Moderate
+server.ts           Moderate
+mcp-proxy.ts        Low
+client.ts           Low
+auth.ts             Moderate
+tool-handlers.ts    Moderate
+tools.ts            Low
+schemas.ts          Low
+types.ts            Low
+formatters.ts       Low
+validators.ts       Low
+utils.ts            Low
+logger.ts           Low
+prompts.ts          Low
+prompts-registry.ts Low
+constants.ts        Low
 ```
 
 ### Naming Conventions ✓
@@ -236,16 +246,16 @@ utils.ts         625     Low
 - **Classes**: PascalCase
 - **Functions**: camelCase
 - **Constants**: UPPER_SNAKE_CASE
-- **Files**: kebab-case
+- **Files**: kebab-case (lowercase with hyphens)
+  - Exception: Files in `prompts/` use `snake_case` as they serve as MCP prompt identifiers
 - **Interfaces**: PascalCase
 
 ## Performance
 
 ### Efficient Design ✓
 
-- **Token caching**: OAuth tokens cached with expiration
 - **Connection pooling**: Axios default pooling
-- **Lazy evaluation**: Tokens fetched only when needed
+- **Lazy evaluation**: Authentication handled efficiently
 - **Concurrent requests**: Promise caching prevents duplicate requests
 
 ### Resource Management ✓
@@ -259,14 +269,14 @@ utils.ts         625     Low
 ### Extensibility ✓
 
 **Easy to add new tools**:
-1. Define Zod schema
-2. Add tool definition
-3. Add client method (if needed)
-4. Add handler in index.ts
-5. Add tests
+1. Define Zod schema in `schemas.ts`
+2. Add tool definition in `tools.ts`
+3. Add client method in `client.ts` (if needed)
+4. Add handler in `tool-handlers.ts`
+5. Add tests in `tests/`
 
 **Well-documented extension points**:
-- [Contributing Guide](CONTRIBUTING.md) has step-by-step guides
+- [Contributing Guide](contributing.md) has step-by-step guides
 - Clear examples for each type of change
 - Consistent patterns throughout
 
@@ -280,12 +290,14 @@ utils.ts         625     Low
 
 ### Dependencies ✓
 
-**Production dependencies** (5):
-- `@modelcontextprotocol/sdk`: Latest stable (v1.25.1)
+**Production dependencies**:
+- `@modelcontextprotocol/sdk`: Latest stable (v1.25.3)
 - `axios`: HTTP client
+- `cors`: CORS middleware
+- `express`: HTTP server framework
 - `form-data`: File uploads
+- `yaml`: YAML parsing
 - `zod`: Schema validation
-- `zod-to-json-schema`: Schema conversion
 
 **No unnecessary dependencies** ✓
 
@@ -305,7 +317,7 @@ All dependencies actively maintained and secure:
 
 ### SDK Version ✓
 
-- **Latest stable**: v1.25.1
+- **Latest stable**: v1.25.3
 - **All features**: Using latest protocol features
 - **Type support**: Full TypeScript support
 - **Protocol compliance**: MCP 2025 specification
@@ -313,13 +325,13 @@ All dependencies actively maintained and secure:
 ### Schema Validation ✓
 
 - **Zod schemas**: All tools validated with runtime type checking
-- **JSON Schema conversion**: Automatic conversion via `zod-to-json-schema` for MCP protocol compatibility
+- **JSON Schema conversion**: Automatic conversion via Zod's built-in `toJSONSchema()` method for MCP protocol compatibility
 - **Type inference**: Automatic TypeScript types generated from Zod schemas
 - **Runtime validation**: Input validation performed before tool execution
 
 ### Tool Metadata ✓
 
-**MCP SDK Annotations** (v1.25.1 supported):
+**MCP SDK Annotations** (v1.25.3 supported):
 - **annotations**: Standard MCP annotations including:
   - `readOnlyHint`: Indicates read-only operations
   - `destructiveHint`: Marks potentially destructive operations
@@ -337,7 +349,7 @@ All dependencies actively maintained and secure:
 ### Health Check ✓
 
 **Implementation Feature**:
-- Connectivity verification to OpenL Tablets API
+- Connectivity verification to OpenL Studio API
 - Authentication detection and validation
 - Status reporting for troubleshooting
 - Error diagnostics with sanitized messages
@@ -413,7 +425,7 @@ This project implements **industry best practices** across all dimensions:
 - ✅ **Code Quality**: TypeScript strict, ESLint clean, well-structured
 - ✅ **Security**: Credential protection, input validation, sanitized errors
 - ✅ **Testing**: 393 tests, comprehensive coverage, clear structure
-- ✅ **Documentation**: 2,492 lines across 5 guides
+- ✅ **Documentation**: 5 comprehensive guides
 - ✅ **Type Safety**: Zod validation, proper types throughout
 - ✅ **Error Handling**: Consistent, sanitized, contextual
 - ✅ **Performance**: Efficient, cached, resource-aware

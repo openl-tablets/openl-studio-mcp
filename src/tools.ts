@@ -1,7 +1,7 @@
 /**
  * MCP Tool Definitions
  *
- * This module defines all available tools for the OpenL Tablets MCP server.
+ * This module defines all available tools for the OpenL Studio MCP server.
  * Each tool includes:
  * - Name and description
  * - Input schema (Zod-based validation)
@@ -45,7 +45,7 @@ export interface ToolDefinition {
 }
 
 /**
- * All available MCP tools for OpenL Tablets
+ * All available MCP tools for OpenL Studio
  *
  * Tools are organized by category:
  * - System: Health checks and diagnostics
@@ -61,7 +61,7 @@ export const TOOLS: ToolDefinition[] = [
   // =============================================================================
   {
     name: "openl_list_repositories",
-    description: "List all design repositories in OpenL Tablets. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
+    description: "List all design repositories in OpenL Studio. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
     inputSchema: schemas.z.toJSONSchema(schemas.z.object({
       response_format: schemas.ResponseFormat.optional(),
       limit: schemas.z.number().int().positive().max(200).default(50).optional(),
@@ -105,7 +105,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_list_deploy_repositories",
-    description: "List all deployment repositories in OpenL Tablets. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
+    description: "List all deployment repositories in OpenL Studio. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
     inputSchema: schemas.z.toJSONSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -184,7 +184,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_list_project_local_changes",
-    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    description: "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in OpenL Studio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -194,7 +194,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_restore_project_local_change",
-    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+    description: "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in OpenL Studio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -285,8 +285,6 @@ export const TOOLS: ToolDefinition[] = [
       modifiesState: true,
     },
   },
-  // NOTE: openl_create_rule was removed - it returned 405 Method Not Allowed in OpenL 6.0.0.
-  // Use openl_create_project_table instead, which uses the BETA API and works correctly.
 
   // =============================================================================
   // Deployment Tools

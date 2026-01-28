@@ -1,12 +1,12 @@
-# OpenL Tablets MCP Server - Implementation Plan
+# OpenL Studio MCP Server - Implementation Plan
 
-> **Status**: Experimental (v1.0.0) - 11/18 tools active, 7 temporarily disabled
-> **Last Updated**: 2025-11-16
+> **Status**: Experimental (v1.0.0) - 22/28 tools active, 6 temporarily disabled
+> **Last Updated**: 2026-01-28
 > **Major Milestone**: Completed architectural refactoring from monolithic to modular design
 
 ## Executive Summary
 
-The OpenL Tablets MCP Server underwent a **major architectural refactoring** in November 2025, transforming from a monolithic 766-line `index.ts` file to a clean, modular architecture with dedicated modules for tool handling, formatting, validation, and logging.
+The OpenL Studio MCP Server underwent a **major architectural refactoring** in November 2025, transforming from a monolithic 766-line `index.ts` file to a clean, modular architecture with dedicated modules for tool handling, formatting, validation, and logging.
 
 **Key Improvements**:
 - ✅ **RegisterTool Pattern**: Replaced 400+ line switch statement with registry-based tool management
@@ -15,7 +15,7 @@ The OpenL Tablets MCP Server underwent a **major architectural refactoring** in 
 - ✅ **Response Formatting**: Unified JSON/Markdown formatting with pagination support
 - ✅ **Structured Logging**: stderr-only logging with credential sanitization
 - ✅ **MCP Annotations**: First-class support for readOnlyHint, idempotentHint, destructiveHint, openWorldHint
-- ✅ **Tool Prefix**: All 18 tools now use `openl_` prefix for namespacing (11 active, 7 disabled)
+- ✅ **Tool Prefix**: All 28 tools now use `openl_` prefix for namespacing (22 active, 6 disabled)
 - ✅ **Character Limits**: Automatic truncation at 25,000 characters
 - ✅ **Pagination**: Built-in pagination (limit: 50, max: 200) for all list operations
 
@@ -99,7 +99,7 @@ The OpenL Tablets MCP Server underwent a **major architectural refactoring** in 
 ┌───────────────────▼─────────────────────────────┐
 │            MCP Server (index.ts)                │
 │  ┌──────────────────────────────────────────┐   │
-│  │  Tool Handlers (24 tools)                │   │
+│  │  Tool Handlers (28 tools)                │   │
 │  ├──────────────────────────────────────────┤   │
 │  │  Resource Providers (3 resources)        │   │
 │  ├──────────────────────────────────────────┤   │
@@ -108,7 +108,7 @@ The OpenL Tablets MCP Server underwent a **major architectural refactoring** in 
 └───────────────────┬─────────────────────────────┘
                     │ Uses
 ┌───────────────────▼─────────────────────────────┐
-│         OpenL Tablets API Client                │
+│         OpenL Studio API Client                │
 │  ┌──────────────────────────────────────────┐   │
 │  │  Authentication Manager                  │   │
 │  │  - Basic Auth, API Key, OAuth 2.1        │   │
@@ -121,8 +121,8 @@ The OpenL Tablets MCP Server underwent a **major architectural refactoring** in 
 └───────────────────┬─────────────────────────────┘
                     │ HTTP/REST
 ┌───────────────────▼─────────────────────────────┐
-│      OpenL Tablets WebStudio REST API           │
-│      (http://host:port/rest)          │
+│      OpenL Studio REST API                      │
+│      (http://host:port/rest)                    │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -142,7 +142,7 @@ The MCP server has been **refactored from a 766-line monolithic index.ts to a mo
 - `src/tool-handlers.ts` (998 lines, **NEW**)
   - RegisterTool pattern (replaces switch statements)
   - Tool registry and execution
-  - 24 tool registration functions
+  - 28 tool registration functions
   - MCP annotations (readOnlyHint, idempotentHint, destructiveHint, openWorldHint)
   - Centralized tool error handling
   - Handler type definitions
@@ -207,7 +207,7 @@ The MCP server has been **refactored from a 766-line monolithic index.ts to a mo
 #### Layer 6: Definitions
 - `src/schemas.ts` (270 lines, **ENHANCED**)
   - Zod schemas with .strict() mode
-  - Input validation (24 tool schemas)
+  - Input validation (28 tool schemas)
   - Type inference
   - Runtime safety
 
@@ -447,7 +447,7 @@ const toolHandlers = new Map<string, ToolDefinition>();
 export function registerAllTools(server: Server, client: OpenLClient): void {
   registerTool({ /* tool 1 */ });
   registerTool({ /* tool 2 */ });
-  // ... 24 tools total
+  // ... 28 tools total
 }
 
 // Execute tool by name
@@ -696,10 +696,10 @@ const formatted = formatResponse(paginated.data, format, {
 
 | Annotation | Count | Examples |
 |------------|-------|----------|
-| readOnlyHint | 20/24 | openl_list_*, openl_get_*, openl_search_* |
-| idempotentHint | 18/24 | Most read operations |
-| destructiveHint | 3/24 | openl_delete_project, openl_erase_project, openl_update_rules |
-| openWorldHint | 22/24 | Almost all tools (dynamic data) |
+| readOnlyHint | 20/28 | openl_list_*, openl_get_*, openl_search_* |
+| idempotentHint | 18/28 | Most read operations |
+| destructiveHint | 3/28 | openl_delete_project, openl_erase_project, openl_update_rules |
+| openWorldHint | 22/28 | Almost all tools (dynamic data) |
 
 **Benefits**:
 - AI agents can understand tool semantics
@@ -773,7 +773,7 @@ arguments:
     required: false
 ---
 
-# Creating Rules in OpenL Tablets
+# Creating Rules in OpenL Studio
 
 {if tableName}
 ## Creating Table: **{tableName}**
@@ -889,12 +889,12 @@ dist/
 **package.json**:
 ```json
 {
-  "name": "openl-tablets-mcp-server",
+  "name": "openl-studio-mcp-server",
   "version": "1.0.0",
   "type": "module",  // ES Modules
   "main": "dist/index.js",
   "bin": {
-    "openl-tablets-mcp": "dist/index.js"
+    "openl-studio-mcp": "dist/index.js"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -912,8 +912,8 @@ dist/
 
 **1. npm Package**:
 ```bash
-npm install -g openl-tablets-mcp-server
-openl-tablets-mcp
+npm install -g openl-studio-mcp-server
+openl-studio-mcp
 ```
 
 **2. Docker Container**:
@@ -930,7 +930,7 @@ CMD ["node", "dist/index.js"]
 ```json
 {
   "mcpServers": {
-    "openl-tablets": {
+    "openl-studio": {
       "command": "node",
       "args": ["/path/to/dist/index.js"],
       "env": {
@@ -1203,6 +1203,6 @@ annotations: {
 
 ---
 
-*Last Updated: 2025-11-16*
+*Last Updated: 2026-01-28*
 *Version: 2.0.0* (Post-Refactoring)
 *Status: Refactored & Production-Ready*

@@ -1,6 +1,6 @@
 # 🔍 Troubleshooting Guide
 
-This guide covers common issues and their solutions when working with the OpenL Tablets MCP Server.
+This guide covers common issues and their solutions when working with the OpenL Studio MCP Server.
 
 ## Table of Contents
 
@@ -213,7 +213,7 @@ Then open `debug.log` to view all errors.
 ### Issue: "Cannot connect to OpenL API"
 
 **Solution:**
-1. Ensure OpenL Tablets is running:
+1. Ensure OpenL Studio is running:
    ```bash
    curl http://localhost:8080/rest/projects
    ```
@@ -373,7 +373,7 @@ After updating the configuration:
 2. **Check MCP server status** in settings (should show "Connected")
 3. **Test with a simple query:**
    ```
-   List repositories in OpenL Tablets
+   List repositories in OpenL Studio
    ```
 
 If you still see timeouts, check:
@@ -416,13 +416,13 @@ If you still see timeouts, check:
 
 ## Related Documentation
 
-- [Authentication Guide](AUTHENTICATION.md) - Authentication setup and troubleshooting
-- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#troubleshooting) - Connection troubleshooting
-- [Quick Start Guide](../getting-started/QUICK-START.md) - Quick setup instructions
-- [Usage Examples](EXAMPLES.md) - Usage examples and workflows
+- [Authentication Guide](authentication.md) - Authentication setup and troubleshooting
+- [MCP Connection Guide](../setup/mcp-connection-guide.md#troubleshooting) - Connection troubleshooting
+- [Quick Start Guide](../getting-started/quick-start.md) - Quick setup instructions
+- [Usage Examples](examples.md) - Usage examples and workflows
 
 For more help:
-- [Quick Start Guide](../getting-started/QUICK-START.md)
-- [Setup Guides](../setup/)
-- [Authentication Guide](AUTHENTICATION.md)
+- [Quick Start Guide](../getting-started/quick-start.md)
+- [MCP Connection Guide](../setup/mcp-connection-guide.md)
+- [Authentication Guide](authentication.md)
 

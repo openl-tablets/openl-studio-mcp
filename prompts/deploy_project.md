@@ -12,7 +12,7 @@ arguments:
 
 ## Summary
 
-**Critical Pre-Deployment Checklist**: All deployments MUST pass validation (0 errors), run all tests (100% pass), and follow environment progression (dev → test → staging → prod). Use OpenL WebStudio UI for validation and testing since MCP tools are temporarily disabled.
+**Critical Pre-Deployment Checklist**: All deployments MUST pass validation (0 errors), run all tests (100% pass), and follow environment progression (dev → test → staging → prod). Use OpenL Studio UI for validation and testing since MCP tools are temporarily disabled.
 
 # OpenL Deployment Workflow
 
@@ -28,11 +28,11 @@ arguments:
 
 BEFORE any deployment (MANDATORY):
 1. Validate project manually → MUST pass (0 errors)
-   Note: `openl_validate_project` is temporarily disabled - use OpenL WebStudio UI to validate
+   Note: `openl_validate_project` is temporarily disabled - use OpenL Studio UI to validate
 2. Run all tests → ALL must pass
-   Use `openl_run_project_tests()` to run tests (unified tool), or use OpenL WebStudio UI
+   Use `openl_run_project_tests()` to run tests (unified tool), or use OpenL Studio UI
 3. Check for errors → MUST be 0
-   Note: `openl_get_project_errors` is temporarily disabled - use OpenL WebStudio UI
+   Note: `openl_get_project_errors` is temporarily disabled - use OpenL Studio UI
 
 WHEN deploying, SELECT environment path:
 - New feature/major change → dev → test → staging → prod{if environment} (You're targeting: {environment}){end if}
@@ -41,7 +41,7 @@ WHEN deploying, SELECT environment path:
 - Critical hotfix → test → prod (expedited)
 
 IF deployment fails:
-1. Check OpenL WebStudio UI for validation issues
+1. Check OpenL Studio UI for validation issues
    (or use `openl_get_project_errors` when re-enabled)
 2. Fix errors and re-validate
 3. Redeploy

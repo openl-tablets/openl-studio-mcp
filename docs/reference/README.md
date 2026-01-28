@@ -1,20 +1,19 @@
 # Reference Documentation
 
-Technical reference materials for the OpenL Tablets MCP Server.
+Technical reference materials for the OpenL Studio MCP Server.
 
 ## Available References
 
-- **[MCP Comparison](MCP_COMPARISON.md)** - TypeScript vs Java MCP server comparison
-- **[Enable Disabled Tools](ENABLE_DISABLED_TOOLS.md)** - How to enable temporarily disabled tools
+- **[Enable Disabled Tools](enable-disabled-tools.md)** - How to enable temporarily disabled tools
 
 ## Quick Links
 
 - [Main Documentation Index](../README.md)
-- [Usage Examples](../guides/EXAMPLES.md)
-- [Development Documentation](../development/)
+- [Usage Examples](../guides/examples.md)
+- [Development Documentation](../development/README.md)
 
 ## Related Documentation
 
-- [Contributing Guide](../development/CONTRIBUTING.md)
-- [Architecture](../development/ARCHITECTURE.md)
-- [Tool Review](../development/TOOL_REVIEW.md)
+- [Contributing Guide](../development/contributing.md)
+- [Architecture](../development/architecture.md)
+- [Tool Review](../development/tool-review.md)

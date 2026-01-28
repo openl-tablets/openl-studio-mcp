@@ -1,7 +1,7 @@
 /**
  * Zod Schemas for MCP Tool Input Validation
  *
- * This module defines all input schemas for OpenL Tablets MCP tools using Zod.
+ * This module defines all input schemas for OpenL Studio MCP tools using Zod.
  * Benefits:
  * - Type-safe input validation with runtime checks
  * - Automatic TypeScript type inference
@@ -41,7 +41,7 @@ export const repositoryNameSchema = z.string().describe("Repository name (displa
 
 export const projectNameSchema = z.string().describe("Project name within the repository (e.g., 'InsuranceRules', 'AutoPremium', 'ClaimProcessing')");
 
-export const tableIdSchema = z.string().describe("Table identifier - unique ID assigned by OpenL Tablets when table is created (e.g., 'calculatePremium_1234')");
+export const tableIdSchema = z.string().describe("Table identifier - unique ID assigned by OpenL Studio when table is created (e.g., 'calculatePremium_1234')");
 
 export const branchNameSchema = z.string().describe("Git branch name (e.g., 'main', 'development', 'feature/new-rules')");
 
@@ -162,7 +162,7 @@ export const createBranchSchema = z.object({
 export const deployProjectSchema = z.object({
   projectId: projectIdSchema.describe("Project ID to deploy - base64-encoded format (default). Use the exact 'projectId' value from openl_list_projects() response (e.g., base64-encoded string)."),
   deploymentName: z.string().describe("Name for the deployment (e.g., 'InsuranceRules', 'AutoPremium'). This will be the deployment identifier."),
-  productionRepositoryId: z.string().describe("Target production repository name (display name, not ID). Use the 'name' field from openl_list_deploy_repositories() response (e.g., if list_deploy_repositories returns {id: 'production-deploy', name: 'Production Deployment'}, use 'Production Deployment' here, NOT 'production-deploy'). Must be configured in OpenL Tablets."),
+  productionRepositoryId: z.string().describe("Target production repository name (display name, not ID). Use the 'name' field from openl_list_deploy_repositories() response (e.g., if list_deploy_repositories returns {id: 'production-deploy', name: 'Production Deployment'}, use 'Production Deployment' here, NOT 'production-deploy'). Must be configured in OpenL Studio."),
   comment: commentSchema.describe("Deployment reason comment (e.g., 'Deploy version 1.2.0', 'Production release')"),
   response_format: ResponseFormat.optional(),
 }).strict();

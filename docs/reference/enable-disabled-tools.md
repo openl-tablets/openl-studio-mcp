@@ -18,12 +18,7 @@ The following tools are currently disabled:
    - Download Excel files from a project
    - Reason: "Tool is not working correctly and needs implementation fixes"
 
-3. ~~**`openl_create_rule`**~~ **REMOVED**
-   - ~~Create new tables/rules in a project~~
-   - **Status**: Permanently removed (returned 405 Method Not Allowed in OpenL 6.0.0)
-   - **Replacement**: Use `openl_create_project_table` instead, which uses BETA API and works correctly
-
-4. **`openl_execute_rule`**
+3. **`openl_execute_rule`**
    - Execute rules with input data for testing
    - Reason: "Tool is not working correctly and needs implementation fixes"
 
@@ -45,7 +40,7 @@ To enable any of these tools:
 
 1. **Open the file:**
    ```bash
-   mcp-server/src/tool-handlers.ts
+   src/tool-handlers.ts
    ```
 
 2. **Find the disabled tool** (search for the tool name, e.g., search for `openl_upload_file`)
@@ -57,7 +52,6 @@ To enable any of these tools:
 
 4. **Rebuild the project:**
    ```bash
-   cd mcp-server
    npm run build
    ```
 
@@ -89,7 +83,7 @@ To enable any of these tools:
 
 ⚠️ **Warning:** These tools are disabled because they may not work correctly. Before enabling:
 
-1. **Test thoroughly** - Make sure the tool works with your OpenL Tablets instance
+1. **Test thoroughly** - Make sure the tool works with your OpenL Studio instance
 2. **Check client.ts** - Some tools may require additional methods in `client.ts`
 3. **Review error handling** - Ensure proper error handling is in place
 4. **Test edge cases** - Test with various inputs and scenarios
@@ -112,15 +106,15 @@ If a tool doesn't work after enabling:
 
 1. **Check the logs** - Look for errors in MCP server logs
 2. **Verify client methods** - Ensure `client.ts` has the required methods
-3. **Check API compatibility** - Verify the OpenL Tablets API supports the operation
+3. **Check API compatibility** - Verify the OpenL Studio API supports the operation
 4. **Review schemas** - Make sure input schemas match the API requirements
 
 ## Related Files
 
-- **Tool definitions:** `mcp-server/src/tool-handlers.ts`
-- **Client methods:** `mcp-server/src/client.ts`
-- **Schemas:** `mcp-server/src/schemas.ts`
-- **Types:** `mcp-server/src/types.ts`
+- **Tool definitions:** `src/tool-handlers.ts`
+- **Client methods:** `src/client.ts`
+- **Schemas:** `src/schemas.ts`
+- **Types:** `src/types.ts`
 
 
 

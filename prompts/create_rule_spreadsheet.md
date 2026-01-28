@@ -1,15 +1,15 @@
 ---
 name: create_rule_spreadsheet
-description: Guide for creating Spreadsheet tables in OpenL Tablets for multi-step calculations
+description: Guide for creating Spreadsheet tables in OpenL Studio for multi-step calculations
 ---
 
 ## Summary
 
 **Spreadsheet Tables** are used for multi-step calculations with intermediate values, audit trails, and formula-based computations. Use when you need insurance premium calculations, financial computations with breakdown, or multi-stage pricing logic. Note: Excel formulas are NOT supported - use OpenL syntax instead.
 
-# Creating Spreadsheet Tables in OpenL Tablets
+# Creating Spreadsheet Tables in OpenL Studio
 
-You are helping the user create a Spreadsheet table in OpenL Tablets.
+You are helping the user create a Spreadsheet table in OpenL Studio.
 
 ## SPREADSHEET TABLES (For Calculations)
 

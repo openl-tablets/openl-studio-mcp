@@ -379,7 +379,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 ```text
 # After appending, always verify:
 1. openl_get_table(tableId) → Confirm fields added
-2. Manually validate in OpenL WebStudio UI → Check for type errors
+2. Manually validate in OpenL Studio UI → Check for type errors
    (openl_validate_project is temporarily disabled)
 3. IF validation passes → openl_save_project(comment="...")
 4. IF validation fails → Review field types and references
@@ -393,7 +393,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 
 ### After openl_append_table
 - `openl_get_table()` → Verify append succeeded
-- Validate in OpenL WebStudio UI → Check for errors
+- Validate in OpenL Studio UI → Check for errors
 - `openl_save_project()` → Save changes
 
 ### Alternatives

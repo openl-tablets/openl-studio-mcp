@@ -201,8 +201,7 @@ describe("Tool Handler Integration Tests", () => {
       expect(result.content[0].text).toContain("calculatePremium");
     });
 
-    // REMOVED: openl_create_rule was removed (returned 405 in OpenL 6.0.0)
-    // Use openl_create_project_table instead - see test below
+    // Test for openl_create_project_table - see test below
     it.skip("should execute openl_create_project_table", async () => {
       // TODO: Add test for openl_create_project_table (BETA API)
       // This test should verify the new BETA API format with moduleName and full table structure

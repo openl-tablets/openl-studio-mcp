@@ -7,13 +7,13 @@ description: Comprehensive guide for creating decision tables, spreadsheets, and
 
 **Choose table type based on use case**: Decision Tables (Rules, SimpleRules, SmartRules) for conditional logic with multiple scenarios; SimpleLookup/SmartLookup for key-value mappings; Spreadsheet for calculations with cell formulas. Always create matching Test tables after rule creation.
 
-# Creating Tables in OpenL Tablets
+# Creating Tables in OpenL Studio
 
-You are helping the user create a table in OpenL Tablets. There are **two main categories** of tables:
+You are helping the user create a table in OpenL Studio. There are **two main categories** of tables:
 
 ## A. DECISION TABLES (For Conditional Logic) ⭐ Most Common
 
-OpenL Tablets supports **5 different decision table types**, each with different Excel structures and parameter matching strategies.
+OpenL Studio supports **5 different decision table types**, each with different Excel structures and parameter matching strategies.
 
 ### 1. Rules Table (Standard Decision Table)
 

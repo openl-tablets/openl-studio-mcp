@@ -1,13 +1,13 @@
-# OpenL Tablets MCP Server - Functional Specification
+# OpenL Studio MCP Server - Functional Specification
 
 ## Overview
 
-The OpenL Tablets MCP Server is a Model Context Protocol implementation that provides AI coding agents with seamless access to the OpenL Tablets Business Rules Management System through a type-safe, comprehensive API.
+The OpenL Studio MCP Server is a Model Context Protocol implementation that provides AI coding agents with seamless access to the OpenL Studio Business Rules Management System through a type-safe, comprehensive API.
 
 ## Target Users
 
 **Primary**: AI coding agents (Claude Code, GitHub Copilot, Cursor, Windsurf, Gemini Code Assist)
-**Secondary**: Developers integrating OpenL Tablets with AI workflows
+**Secondary**: Developers integrating OpenL Studio with AI workflows
 **Tertiary**: DevOps teams automating rules management
 
 ## Core Capabilities
@@ -143,8 +143,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 **Multiple authentication methods**:
 - **Basic Authentication**: Username/password
-- **API Key Authentication**: Bearer token
-- **OAuth 2.1**: Client credentials grant
+- **Personal Access Token (PAT)**: Bearer token for programmatic access
 
 **Features**:
 - Token caching with expiration
@@ -161,7 +160,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 ### 9. Prompt Library
 
 **Expert guidance templates**:
-- 11 comprehensive prompts for common workflows
+- 14 comprehensive prompts for common workflows
 - Dynamic argument substitution
 - Conditional content blocks
 - Best practices and examples embedded
@@ -184,7 +183,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 **Use Cases**:
 - Guide AI agents through complex workflows
 - Provide context-aware assistance
-- Teach OpenL Tablets concepts
+- Teach OpenL Studio concepts
 - Show best practices
 
 ### 10. Response Formatting & Pagination
@@ -215,39 +214,47 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 ### FR-1: Tool Execution
 
-**Requirement**: MCP server provides 18 tools, of which 11 are currently active and 7 are temporarily disabled.
+**Requirement**: MCP server provides 28 tools, of which 22 are currently active and 6 are temporarily disabled.
 
-**Active Tools (11)**:
+**Active Tools (22)**:
 
-**Repository Tools (2)**:
+**Repository Tools (4)**:
 - `openl_list_repositories` - List all design repositories
 - `openl_list_branches` - List branches in a repository
+- `openl_list_repository_features` - Get repository features
+- `openl_repository_project_revisions` - Get project revision history
 
-**Project Tools (5)**:
+**Project Tools (9)**:
 - `openl_list_projects` - List projects with optional filters (supports pagination)
 - `openl_get_project` - Get comprehensive project details
 - `openl_open_project` - Open project for editing
 - `openl_save_project` - Save project changes to Git
 - `openl_close_project` - Close project with save/discard options
+- `openl_create_project_branch` - Create new branch
+- `openl_list_project_local_changes` - List local change history
+- `openl_restore_project_local_change` - Restore previous local version
+- `openl_run_project_tests` - Run project tests
 
-**Rules Tools (4)**:
+**Rules Tools (5)**:
 - `openl_list_tables` - List tables/rules with filters (supports pagination)
 - `openl_get_table` - Get table details and data
 - `openl_update_table` - Update table content
 - `openl_append_table` - Append data to existing table
+- `openl_create_project_table` - Create new table/rule
 
-**Deployment Tools (2)**:
+**Deployment Tools (4)**:
+- `openl_list_deploy_repositories` - List deployment repositories
 - `openl_list_deployments` - List all deployments (supports pagination)
 - `openl_deploy_project` - Deploy project to production
+- `openl_redeploy_project` - Redeploy with new version
 
-
-- `openl_upload_file` - Upload Excel file to project *(needs implementation fixes)*
-- `openl_download_file` - Download Excel file from project *(needs implementation fixes)*
-- `openl_get_file_history` - Get file commit history *(needs implementation fixes)*
-- `openl_create_rule` - Create new rule *(needs implementation fixes)*
-- `openl_execute_rule` - Execute rule with test data *(needs implementation fixes)*
-- `openl_get_project_history` - Get project commit history *(needs implementation fixes)*
-- `openl_revert_version` - Revert to previous version *(needs implementation fixes)*
+**Disabled Tools (6)** - Temporarily disabled pending implementation fixes:
+- `openl_upload_file` - Upload Excel file to project
+- `openl_download_file` - Download Excel file from project
+- `openl_execute_rule` - Execute rule with test data
+- `openl_revert_version` - Revert to previous version
+- `openl_get_file_history` - Get file commit history
+- `openl_get_project_history` - Get project commit history
 
 **Note**: All active tools support the `response_format` parameter (json/markdown). All list operations support pagination via `limit` and `offset` parameters.
 
@@ -303,7 +310,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 ### FR-4: Resource Exposure
 
-**Requirement**: Expose OpenL Tablets data as MCP resources.
+**Requirement**: Expose OpenL Studio data as MCP resources.
 
 **Resources**:
 - `openl://repositories` - List of repositories
@@ -322,7 +329,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 ### FR-5: Prompt System
 
-**Requirement**: Provide 11 prompts with argument substitution.
+**Requirement**: Provide 14 prompts with argument substitution.
 
 **Prompt Features**:
 - YAML frontmatter metadata
@@ -361,7 +368,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 ### FR-7: Authentication Management
 
-**Requirement**: Support 3 authentication methods with token caching.
+**Requirement**: Support 2 authentication methods (Basic Auth, Personal Access Token).
 
 **Basic Authentication**:
 - Username and password
@@ -373,21 +380,19 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 - Header injection
 - No expiration handling
 
-**OAuth 2.1**:
-- Client credentials grant
-- Token acquisition with client_secret
-- Token caching with expiration
-- Automatic refresh
-- Concurrent request handling
+**Personal Access Token (PAT)**:
+- Bearer token authentication
+- Token provided via environment variable
+- No token caching needed (static token)
 
 **Configuration Validation**:
-- At least one auth method required
-- Complete OAuth config enforced
+- At least one auth method required (Basic Auth or PAT)
 - URL format validation
+- Timeout limits enforced
 
 ### FR-8: OpenL API Compatibility
 
-**Requirement**: Support OpenL Tablets 6.0.0+ REST API.
+**Requirement**: Support OpenL Studio 6.0.0+ REST API.
 
 **API Changes Supported**:
 - Base64-encoded project IDs
@@ -406,7 +411,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 **Requirement**: Efficient resource usage and caching.
 
 **Performance Optimizations**:
-- OAuth token caching (30-60 minute expiration)
+- Token-based authentication (PAT)
 - Axios connection pooling (default)
 - Concurrent request deduplication
 - Lazy token acquisition
@@ -436,10 +441,10 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 **Documentation Deliverables**:
 - README.md - Installation, configuration, usage
-- AUTHENTICATION.md - Auth setup for all 3 methods
-- CONTRIBUTING.md - Development guide
-- TESTING.md - Testing documentation
-- EXAMPLES.md - Real-world usage examples
+- authentication.md - Auth setup for both methods (Basic Auth, PAT)
+- contributing.md - Development guide
+- testing.md - Testing documentation
+- examples.md - Real-world usage examples
 - JSDoc on all public APIs
 - Inline comments for complex logic
 
@@ -546,7 +551,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 - 99% uptime for server process
 - Graceful degradation on OpenL server errors
-- Automatic retry for transient failures (OAuth)
+- Automatic retry for transient failures
 - Clean error messages for all failure modes
 
 ### NFR-4: Maintainability
@@ -560,7 +565,7 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 ### NFR-5: Compatibility
 
 - Node.js 24.0.0 or higher
-- OpenL Tablets 6.0.0 or higher
+- OpenL Studio 6.0.0 or higher
 - MCP SDK 1.21.1 or higher
 - ES Modules (type: "module")
 
@@ -576,12 +581,12 @@ The OpenL Tablets MCP Server is a Model Context Protocol implementation that pro
 
 The MCP server is considered successful when:
 
-1. ✅ All 11 active tools execute successfully (7 tools temporarily disabled)
+1. ✅ All 22 active tools execute successfully (6 tools temporarily disabled)
 2. ✅ All active tools support response_format parameter
 3. ✅ All list operations support pagination
 4. ✅ Character limits enforced on all responses
-5. ✅ All 11 prompts render correctly
-6. ✅ All 3 authentication methods work
+5. ✅ All 14 prompts render correctly
+6. ✅ Both authentication methods work (Basic Auth, PAT)
 7. ⏳ Test coverage >38% (target: 80%)
 8. ✅ ESLint enforced (no errors on commit)
 9. ✅ TypeScript strict mode clean
@@ -594,7 +599,7 @@ The MCP server is considered successful when:
 
 The following are explicitly NOT supported:
 
-- OpenL Tablets WebStudio UI automation
+- OpenL Studio UI automation
 - Direct database access to OpenL repositories
 - Custom rule parsing/compilation
 - Excel file generation from scratch
@@ -618,6 +623,6 @@ Potential enhancements for future versions:
 
 ---
 
-*Last Updated: 2025-11-16*
+*Last Updated: 2026-01-28*
 *Version: 1.0.0*
-*Status: Experimental (11/18 tools active, 7 temporarily disabled pending fixes)*
+*Status: Production-ready (22/28 tools active, 6 temporarily disabled pending fixes)*

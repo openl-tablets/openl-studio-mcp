@@ -1,7 +1,7 @@
 /**
- * OpenL Tablets API Client
+ * OpenL Studio API Client
  *
- * Provides a high-level interface for interacting with OpenL Tablets WebStudio REST API.
+ * Provides a high-level interface for interacting with OpenL Studio REST API.
  * Handles all HTTP communication, error handling, and response parsing.
  */
 
@@ -12,7 +12,7 @@ import { DEFAULTS, PROJECT_ID_PATTERN, TEST_POLLING } from "./constants.js";
 import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } from "./utils.js";
 
 /**
- * Client for OpenL Tablets WebStudio REST API
+ * Client for OpenL Studio REST API
  *
  * Usage:
  * ```typescript
@@ -33,7 +33,7 @@ export class OpenLClient {
   private jsessionId: string | null = null; // Store JSESSIONID cookie for session management
 
   /**
-   * Create a new OpenL Tablets API client
+   * Create a new OpenL Studio API client
    *
    * @param config - Client configuration including base URL and authentication
    */
@@ -109,7 +109,7 @@ export class OpenLClient {
   }
 
   /**
-   * Get the base URL of the OpenL Tablets instance
+   * Get the base URL of the OpenL Studio instance
    */
   public getBaseUrl(): string {
     return this.baseUrl;
@@ -1049,10 +1049,10 @@ export class OpenLClient {
       if (errorMsg.includes('405')) {
         return {
           success: false,
-          message: `Table creation via REST API is not supported in OpenL Tablets 6.0.0. ` +
+          message: `Table creation via REST API is not supported in OpenL Studio 6.0.0. ` +
                   `Tables must be created by uploading/modifying Excel files directly. ` +
                   `Use upload_file to upload an Excel file with the table definition, or ` +
-                  `use the OpenL WebStudio UI to create tables interactively.`,
+                  `use the OpenL Studio UI to create tables interactively.`,
         };
       }
 
@@ -1234,11 +1234,11 @@ export class OpenLClient {
    * Get project local changes (workspace history)
    *
    * @returns List of local change history items
-   * @note This endpoint requires the project to be loaded in WebStudio session.
+   * @note This endpoint requires the project to be loaded in OpenL Studio session.
    *       The endpoint `/history/project` uses session-based project context.
    */
   async getProjectLocalChanges(): Promise<Types.ProjectHistoryItem[]> {
-    // Note: This endpoint requires the project to be loaded in WebStudio session
+    // Note: This endpoint requires the project to be loaded in OpenL Studio session
     // The endpoint is /history/project and uses session-based project context
     const response = await this.axiosInstance.get<Types.ProjectHistoryItem[]>(
       "/history/project"
@@ -1251,11 +1251,11 @@ export class OpenLClient {
    *
    * @param historyId - History ID to restore
    * @returns Success status (204 No Content on success)
-   * @note This endpoint requires the project to be loaded in WebStudio session.
+   * @note This endpoint requires the project to be loaded in OpenL Studio session.
    *       The endpoint `/history/restore` uses session-based project context.
    */
   async restoreProjectLocalChange(historyId: string): Promise<void> {
-    // Note: This endpoint requires the project to be loaded in WebStudio session
+    // Note: This endpoint requires the project to be loaded in OpenL Studio session
     // The endpoint is /history/restore and uses session-based project context
     await this.axiosInstance.post(
       "/history/restore",

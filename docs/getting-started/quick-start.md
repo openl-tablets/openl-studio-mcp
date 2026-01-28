@@ -1,8 +1,8 @@
 # 🚀 Quick Start: Running Everything Together
 
-This guide will help you start OpenL Tablets and MCP server for working with Claude Desktop or Cursor IDE.
+This guide will help you start OpenL Studio and MCP server for working with Claude Desktop or Cursor IDE.
 
-**Note**: This guide uses `$PROJECT_ROOT` to refer to the OpenL Tablets project directory. Set it before running commands:
+**Note**: This guide uses `$PROJECT_ROOT` to refer to the OpenL Studio project directory. Set it before running commands:
 
 ```bash
 export PROJECT_ROOT="<path-to-project>"
@@ -12,7 +12,7 @@ Or replace `$PROJECT_ROOT` with your actual project path in all commands below.
 
 ## 📋 What Needs to Be Started
 
-1. **OpenL Tablets** - Rules server (port 8080)
+1. **OpenL Studio** - Rules server (port 8080)
 2. **MCP Server** - Bridge between AI clients and OpenL (runs automatically)
 3. **AI Client** - Claude Desktop or Cursor IDE
 
@@ -22,7 +22,7 @@ Or replace `$PROJECT_ROOT` with your actual project path in all commands below.
 
 The easiest way is to run everything through Docker.
 
-### Step 1: Start OpenL Tablets
+### Step 1: Start OpenL Studio
 
 ```bash
 cd $PROJECT_ROOT
@@ -49,15 +49,15 @@ You should see a page with links to Studio and Services.
 ### Step 3: Configure MCP Server
 
 Follow the setup guide for your AI client:
-- **Claude Desktop**: See [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-3-connecting-to-remote-mcp-using-claude-desktop) (Remote) or [Docker Setup](../setup/MCP-CONNECTION-GUIDE.md#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop) (Docker)
-- **Cursor IDE**: See [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-1-connecting-to-remote-mcp-using-cursor) (Remote) or [Docker Setup](../setup/MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) (Docker)
+- **Claude Desktop**: See [MCP Connection Guide](../setup/mcp-connection-guide.md#scenario-3-connecting-to-remote-mcp-using-claude-desktop) (Remote) or [Docker Setup](../setup/mcp-connection-guide.md#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop) (Docker)
+- **Cursor IDE**: See [MCP Connection Guide](../setup/mcp-connection-guide.md#scenario-1-connecting-to-remote-mcp-using-cursor) (Remote) or [Docker Setup](../setup/mcp-connection-guide.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) (Docker)
 
 ### Step 4: Test Connection
 
 In your AI client chat, try:
 
 ```
-List repositories in OpenL Tablets
+List repositories in OpenL Studio
 ```
 
 The AI should use MCP tools and show the list of repositories.
@@ -68,7 +68,7 @@ The AI should use MCP tools and show the list of repositories.
 
 If you don't have Docker or want to run locally.
 
-### Step 1: Build OpenL Tablets
+### Step 1: Build OpenL Studio
 
 ```bash
 cd $PROJECT_ROOT
@@ -88,7 +88,7 @@ chmod +x start
 The script will automatically:
 - Download Java (if needed)
 - Download Jetty server
-- Start OpenL Studio at `http://localhost:8080/webstudio`
+- Start OpenL Studio at `http://localhost:8080`
 
 ### Step 3: Verify It Works
 
@@ -111,7 +111,7 @@ Quick setup for Cursor IDE connecting to MCP server in Docker using Personal Acc
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Personal Access Token created in OpenL Tablets UI
+- Personal Access Token created in OpenL Studio UI
 - Cursor IDE installed
 
 ### Step 1: Configure Docker Container
@@ -179,7 +179,7 @@ If Cursor doesn't support headers:
 
 In Cursor chat:
 ```text
-List repositories in OpenL Tablets
+List repositories in OpenL Studio
 ```
 
 ### For Remote Docker
@@ -190,7 +190,7 @@ If Docker container is on a remote server:
 2. Make sure port 3000 is open in firewall
 3. Base URL must be configured in Docker container environment variables on the server
 
-For complete setup instructions, see [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor).
+For complete setup instructions, see [MCP Connection Guide](../setup/mcp-connection-guide.md#scenario-2-connecting-to-mcp-in-docker-using-cursor).
 
 ---
 
@@ -277,14 +277,14 @@ export OPENL_PASSWORD="admin"
    docker compose logs
    ```
 
-For more detailed troubleshooting, see [Troubleshooting Guide](../guides/TROUBLESHOOTING.md).
+For more detailed troubleshooting, see [Troubleshooting Guide](../guides/troubleshooting.md).
 
 ---
 
 ## 📊 Startup Order (Brief Version)
 
 ```bash
-# Terminal 1: Start OpenL Tablets
+# Terminal 1: Start OpenL Studio
 cd $PROJECT_ROOT
 docker compose up
 
@@ -303,14 +303,14 @@ export OPENL_PASSWORD="admin"
 # 3. Configure MCP server (see Setup Guides)
 # 4. Restart AI client
 # 5. Check MCP server in settings
-# 6. Try in AI client: "List repositories in OpenL Tablets"
+# 6. Try in AI client: "List repositories in OpenL Studio"
 ```
 
 ---
 
 ## ✅ Readiness Checklist
 
-- [ ] OpenL Tablets is running and accessible at http://localhost:8080
+- [ ] OpenL Studio is running and accessible at [http://localhost:8080](http://localhost:8080)
 - [ ] Can log into OpenL Studio via browser (admin/admin)
 - [ ] MCP server is configured in AI client configuration
 - [ ] AI client restarted after configuration
@@ -322,9 +322,9 @@ export OPENL_PASSWORD="admin"
 ## 📚 Next Steps
 
 - [Setup Guides](../setup/) - Client-specific setup instructions
-- [Authentication Guide](../guides/AUTHENTICATION.md) - Detailed configuration options
-- [Usage Examples](../guides/EXAMPLES.md) - Learn how to use MCP tools
-- [Troubleshooting](../guides/TROUBLESHOOTING.md) - Common issues and solutions
+- [Authentication Guide](../guides/authentication.md) - Detailed configuration options
+- [Usage Examples](../guides/examples.md) - Learn how to use MCP tools
+- [Troubleshooting](../guides/troubleshooting.md) - Common issues and solutions
 
 ---
 

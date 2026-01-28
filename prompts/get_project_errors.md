@@ -9,7 +9,7 @@ arguments:
 
 ## Summary
 
-**Systematic error resolution**: Use OpenL WebStudio UI for validation (MCP tools temporarily disabled). Fix by category: type mismatches (add conversion), missing references (create tables), syntax errors (check BEX grammar), circular dependencies (extract shared logic). Target 0 errors before deployment.
+**Systematic error resolution**: Use OpenL Studio UI for validation (MCP tools temporarily disabled). Fix by category: type mismatches (add conversion), missing references (create tables), syntax errors (check BEX grammar), circular dependencies (extract shared logic). Target 0 errors before deployment.
 
 # OpenL Error Analysis
 
@@ -18,11 +18,11 @@ arguments:
 {end if}
 
 ## Workflow
-1. Check OpenL WebStudio UI for validation errors
-   Note: `openl_get_project_errors` is temporarily disabled - use WebStudio UI
+1. Check OpenL Studio UI for validation errors
+   Note: `openl_get_project_errors` is temporarily disabled - use OpenL Studio UI
 2. Categorize by OpenL error pattern
 3. Apply OpenL-specific fix
-4. Validate in WebStudio UI → Confirm (0 errors)
+4. Validate in OpenL Studio UI → Confirm (0 errors)
    Note: `openl_validate_project` is temporarily disabled
 
 ## OpenL Error Patterns → Fixes
@@ -63,7 +63,7 @@ IF 10-50 errors → Fix by Excel file
 IF >50 errors → Fix root cause first (may cascade fix others)
 
 ## BEFORE save/deploy
-- Validate in OpenL WebStudio UI → MUST be 0 errors
+- Validate in OpenL Studio UI → MUST be 0 errors
   (openl_validate_project temporarily disabled)
-- Run all tests in WebStudio UI → MUST pass
+- Run all tests in OpenL Studio UI → MUST pass
   Use `openl_run_project_tests()` to run tests (unified tool)

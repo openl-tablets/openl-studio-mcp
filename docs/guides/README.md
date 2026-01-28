@@ -1,30 +1,30 @@
 # Usage Guides
 
-Practical guides for using the OpenL Tablets MCP Server.
+Practical guides for using the OpenL Studio MCP Server.
 
 ## Available Guides
 
-- **[Usage Examples](EXAMPLES.md)** - Practical examples of using MCP tools
-- **[Authentication Guide](AUTHENTICATION.md)** - All authentication methods (Basic Auth, Personal Access Token)
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues, debugging, and solutions
-- **[Debug PAT](DEBUG-PAT.md)** - Debugging Personal Access Token issues
+- **[Usage Examples](examples.md)** - Practical examples of using MCP tools
+- **[Authentication Guide](authentication.md)** - All authentication methods (Basic Auth, Personal Access Token)
+- **[Troubleshooting Guide](troubleshooting.md)** - Common issues, debugging, and solutions
+- **[Debug PAT](debug-pat.md)** - Debugging Personal Access Token issues
 
 ## Quick Links
 
-- [Quick Start Guide](../getting-started/QUICK-START.md) - Get started quickly
+- [Quick Start Guide](../getting-started/quick-start.md) - Get started quickly
 - [Setup Guides](../setup/) - Client setup instructions
-- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md) - Connect Cursor or Claude Desktop
+- [MCP Connection Guide](../setup/mcp-connection-guide.md) - Connect Cursor or Claude Desktop
 
 ## Common Tasks
 
 **I want to...**
-- **Learn how to use MCP tools** → [Usage Examples](EXAMPLES.md)
-- **Configure authentication** → [Authentication Guide](AUTHENTICATION.md)
-- **Troubleshoot issues** → [Troubleshooting Guide](TROUBLESHOOTING.md)
-- **Debug PAT problems** → [Debug PAT](DEBUG-PAT.md)
+- **Learn how to use MCP tools** → [Usage Examples](examples.md)
+- **Configure authentication** → [Authentication Guide](authentication.md)
+- **Troubleshoot issues** → [Troubleshooting Guide](troubleshooting.md)
+- **Debug PAT problems** → [Debug PAT](debug-pat.md)
 
 ## Related Documentation
 
 - [Main Documentation Index](../README.md)
-- [Development Documentation](../development/)
-- [Reference Materials](../reference/)
+- [Development Documentation](../development/README.md)
+- [Reference Materials](../reference/README.md)

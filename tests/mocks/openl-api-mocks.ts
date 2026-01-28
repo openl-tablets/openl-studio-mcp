@@ -1,5 +1,5 @@
 /**
- * Mock data for OpenL Tablets API responses
+ * Mock data for OpenL Studio API responses
  */
 
 import type * as Types from '../../src/types.js';

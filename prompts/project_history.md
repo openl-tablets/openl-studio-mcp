@@ -47,7 +47,7 @@ openl_get_project_history({if projectId}projectId="{projectId}", {end if}limit=2
 **Compare project states:**
 ```text
 1. openl_get_project_history({if projectId}projectId="{projectId}"{end if}) → get commitHashes
-2. Note: openl_compare_versions is temporarily disabled - use OpenL WebStudio UI for comparison
+2. Note: openl_compare_versions is temporarily disabled - use OpenL Studio UI for comparison
 ```
 
 **Revert project:**

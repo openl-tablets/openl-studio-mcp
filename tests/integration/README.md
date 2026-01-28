@@ -1,6 +1,6 @@
-# OpenL Tablets Live Integration Tests
+# OpenL Studio Live Integration Tests
 
-These tests run against an actual OpenL Tablets 6.0.0 instance to verify MCP tool functionality.
+These tests run against an actual OpenL Studio 6.0.0 instance to verify MCP tool functionality.
 
 ## Setup
 
@@ -9,7 +9,7 @@ These tests run against an actual OpenL Tablets 6.0.0 instance to verify MCP too
 Create `.env.test` file in `mcp-server/` directory:
 
 ```bash
-# OpenL Tablets Connection
+# OpenL Studio Connection
 OPENL_BASE_URL=http://localhost:8080/rest
 OPENL_USERNAME=admin
 OPENL_PASSWORD=admin
@@ -20,7 +20,7 @@ SKIP_LIVE_TESTS=false
 
 ### 2. Ensure OpenL Instance is Running
 
-Make sure your OpenL Tablets 6.0.0 instance is running and accessible:
+Make sure your OpenL Studio 6.0.0 instance is running and accessible:
 
 ```bash
 curl http://localhost:8080/rest/repos \
@@ -65,12 +65,12 @@ Tests are organized by priority and functionality:
 
 Successful test run:
 ```
-OpenL Tablets 6.0.0 Live Integration Tests
-  🔌 Connecting to OpenL Tablets at: http://localhost:8080/rest
+OpenL Studio 6.0.0 Live Integration Tests
+  🔌 Connecting to OpenL Studio at: http://localhost:8080/rest
 
   0. Health Check
     ✓ should connect to OpenL instance (250ms)
-      ✅ Connected to OpenL Tablets
+      ✅ Connected to OpenL Studio
          Base URL: http://localhost:8080/rest
          Auth: basic
 

@@ -1,35 +1,34 @@
 # Documentation Index
 
-Welcome to the OpenL Tablets MCP Server documentation. This index helps you navigate to the right guide based on your needs.
+Welcome to the OpenL Studio MCP Server documentation. This index helps you navigate to the right guide based on your needs.
 
 ## Quick Navigation
 
 ### 🚀 Getting Started
 New to the project? Start here:
-- **[Quick Start Guide](getting-started/QUICK-START.md)** - Get up and running in 5 minutes
+- **[Quick Start Guide](getting-started/quick-start.md)** - Get up and running in 5 minutes
 
 ### ⚙️ Setup & Configuration
 Setting up the MCP server for your environment:
-- **[MCP Connection Guide](setup/MCP-CONNECTION-GUIDE.md)** - Connect Cursor or Claude Desktop to MCP server
-- **[Docker Setup](setup/DOCKER.md)** - Run MCP server in Docker
-- **[Authentication Guide](guides/AUTHENTICATION.md)** - Configure authentication (Basic Auth, PAT)
+- **[MCP Connection Guide](setup/mcp-connection-guide.md)** - Connect Cursor or Claude Desktop to MCP server
+- **[Docker Setup](setup/docker.md)** - Run MCP server in Docker
+- **[Authentication Guide](guides/authentication.md)** - Configure authentication (Basic Auth, PAT)
 
 ### 📖 Usage Guides
 Learn how to use the MCP server:
-- **[Usage Examples](guides/EXAMPLES.md)** - Practical examples of using MCP tools
-- **[Troubleshooting Guide](guides/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Usage Examples](guides/examples.md)** - Practical examples of using MCP tools
+- **[Troubleshooting Guide](guides/troubleshooting.md)** - Common issues and solutions
 
 ### 👨‍💻 Development
 Contributing to the project:
-- **[Contributing Guide](development/CONTRIBUTING.md)** - How to contribute
-- **[Architecture](development/ARCHITECTURE.md)** - System architecture
-- **[Testing Guide](development/TESTING.md)** - Testing strategy
-- **[Code Standards](development/CODE_STANDARDS.md)** - Coding standards
+- **[Contributing Guide](development/contributing.md)** - How to contribute
+- **[Architecture](development/architecture.md)** - System architecture
+- **[Testing Guide](development/testing.md)** - Testing strategy
+- **[Code Standards](development/code-standards.md)** - Coding standards
 
 ### 📚 Reference
 Technical reference materials:
-- **[MCP Comparison](reference/MCP_COMPARISON.md)** - TypeScript vs Java MCP server
-- **[Enable Disabled Tools](reference/ENABLE_DISABLED_TOOLS.md)** - Temporarily disabled tools
+- **[Enable Disabled Tools](reference/enable-disabled-tools.md)** - Temporarily disabled tools
 
 ## Documentation Structure
 
@@ -45,13 +44,13 @@ docs/
 ## Common Tasks
 
 **I want to...**
-- **Set up MCP server** → [Quick Start](getting-started/QUICK-START.md)
-- **Connect Cursor/Claude Desktop** → [MCP Connection Guide](setup/MCP-CONNECTION-GUIDE.md)
-- **Configure authentication** → [Authentication Guide](guides/AUTHENTICATION.md)
-- **Use MCP tools** → [Usage Examples](guides/EXAMPLES.md)
-- **Troubleshoot issues** → [Troubleshooting Guide](guides/TROUBLESHOOTING.md)
-- **Contribute code** → [Contributing Guide](development/CONTRIBUTING.md)
-- **Understand architecture** → [Architecture](development/ARCHITECTURE.md)
+- **Set up MCP server** → [Quick Start](getting-started/quick-start.md)
+- **Connect Cursor/Claude Desktop** → [MCP Connection Guide](setup/mcp-connection-guide.md)
+- **Configure authentication** → [Authentication Guide](guides/authentication.md)
+- **Use MCP tools** → [Usage Examples](guides/examples.md)
+- **Troubleshoot issues** → [Troubleshooting Guide](guides/troubleshooting.md)
+- **Contribute code** → [Contributing Guide](development/contributing.md)
+- **Understand architecture** → [Architecture](development/architecture.md)
 
 ## Related Documentation
 
