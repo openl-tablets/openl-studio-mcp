@@ -2,7 +2,7 @@
  * MCP Prompts Registry
  *
  * Registers and loads prompt templates from the prompts/ directory.
- * Prompts provide expert guidance for OpenL Tablets workflows.
+ * Prompts provide expert guidance for OpenL Studio workflows.
  */
 
 import { readFileSync } from "fs";
@@ -49,7 +49,7 @@ export interface PromptFrontmatter {
  * Registry of all available prompts
  *
  * Each prompt corresponds to a markdown file in the prompts/ directory.
- * Prompts provide contextual guidance for complex OpenL Tablets workflows.
+ * Prompts provide contextual guidance for complex OpenL Studio workflows.
  */
 export const PROMPTS: PromptDefinition[] = [
   {
@@ -77,12 +77,12 @@ export const PROMPTS: PromptDefinition[] = [
   {
     name: "create_rule_decision_tables",
     title: "Create Decision Tables",
-    description: "Comprehensive guide for creating decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup) in OpenL Tablets with detailed examples and parameter matching strategies",
+    description: "Comprehensive guide for creating decision tables (Rules, SimpleRules, SmartRules, SimpleLookup, SmartLookup) in OpenL Studio with detailed examples and parameter matching strategies",
   },
   {
     name: "create_rule_spreadsheet",
     title: "Create Spreadsheet Tables",
-    description: "Detailed guide for creating Spreadsheet tables in OpenL Tablets for multi-step calculations with formula syntax, JSON structure, and common mistakes",
+    description: "Detailed guide for creating Spreadsheet tables in OpenL Studio for multi-step calculations with formula syntax, JSON structure, and common mistakes",
   },
   {
     name: "create_test",
@@ -104,7 +104,7 @@ export const PROMPTS: PromptDefinition[] = [
   {
     name: "datatype_vocabulary",
     title: "Define Datatypes and Vocabularies",
-    description: "Guide for creating custom datatypes (domain objects) and vocabularies (enumerations) in OpenL Tablets with inheritance, field types, and validation",
+    description: "Guide for creating custom datatypes (domain objects) and vocabularies (enumerations) in OpenL Studio with inheritance, field types, and validation",
   },
   {
     name: "deploy_project",

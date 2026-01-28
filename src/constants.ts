@@ -1,5 +1,5 @@
 /**
- * Constants and configuration defaults for the OpenL Tablets MCP Server
+ * Constants and configuration defaults for the OpenL Studio MCP Server
  */
 
 /**
@@ -57,7 +57,7 @@ export const PROJECT_ID_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
 export const SERVER_INFO = {
   NAME: "openl-mcp-server",
   VERSION: "1.0.0",
-  DESCRIPTION: "Model Context Protocol server for OpenL Tablets",
+  DESCRIPTION: "Model Context Protocol server for OpenL Studio",
 } as const;
 
 /**

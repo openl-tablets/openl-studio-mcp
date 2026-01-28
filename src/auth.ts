@@ -1,5 +1,5 @@
 /**
- * Authentication module for OpenL Tablets MCP Server
+ * Authentication module for OpenL Studio MCP Server
  *
  * Supports multiple authentication methods:
  * - Basic Authentication (username/password)
@@ -50,7 +50,7 @@ function safeAuthHeaderLog(authHeader: string | undefined): string {
 }
 
 /**
- * Authentication manager for OpenL Tablets API
+ * Authentication manager for OpenL Studio API
  *
  * Handles:
  * - Token lifecycle management

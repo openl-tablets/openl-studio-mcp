@@ -1,5 +1,5 @@
 /**
- * Tool Handlers for OpenL Tablets MCP Server
+ * Tool Handlers for OpenL Studio MCP Server
  *
  * This module implements the registerTool pattern to replace the switch statement
  * in index.ts. Each tool is registered individually with its own handler function.
@@ -111,13 +111,13 @@ export async function executeTool(
 }
 
 /**
- * Register all OpenL Tablets tools
+ * Register all OpenL Studio tools
  *
  * This function registers all tools with their handlers, replacing the
  * switch statement pattern with a more modular registry-based approach.
  *
  * @param server - MCP Server instance (for future use)
- * @param client - OpenL Tablets API client (for future use)
+ * @param client - OpenL Studio API client (for future use)
  */
 export function registerAllTools(_server: Server, _client: OpenLClient): void {
   // =============================================================================
@@ -129,7 +129,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl List Repositories",
     version: "1.0.0",
     description:
-      "List all design repositories in OpenL Tablets. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
+      "List all design repositories in OpenL Studio. Returns repository information including 'id' (internal identifier) and 'name' (display name). Use the 'name' field when working with repositories in other tools. Example: if response contains {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' (the name) in other tools like list_projects(repository: 'Design Repository').",
     inputSchema: schemas.z.toJSONSchema(
       schemas.z
         .object({
@@ -1416,7 +1416,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl List Deploy Repositories",
     version: "1.0.0",
     description:
-      "List all deployment repositories in OpenL Tablets. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
+      "List all deployment repositories in OpenL Studio. Returns repository names, their types, and status information. Use this to discover all available deployment repositories before deploying projects.",
     inputSchema: schemas.z.toJSONSchema(schemas.listDeployRepositoriesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
@@ -1510,7 +1510,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl List Project Local Changes",
     version: "1.0.0",
     description:
-      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+      "List local change history for a project. Returns list of workspace history items with versions, authors, timestamps, and comments. Use this to see all local changes before restoring a previous version. NOTE: This endpoint requires the project to be loaded in OpenL Studio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectLocalChangesSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
@@ -1524,7 +1524,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs?.response_format);
 
-      // Note: This endpoint requires project to be loaded in WebStudio session.
+      // Note: This endpoint requires project to be loaded in OpenL Studio session.
       // The endpoint `/history/project` uses session-based project context.
       const changes = await client.getProjectLocalChanges();
 
@@ -1543,7 +1543,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl Restore Project Local Change",
     version: "1.0.0",
     description:
-      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in WebStudio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
+      "Restore a project to a specified version from its local history. Use the historyId from list_project_local_changes response. This restores the workspace state to a previous local change. NOTE: This endpoint requires the project to be loaded in OpenL Studio session (use openl_open_project to open the project first). The endpoint uses session-based project context, so no projectId parameter is needed.",
     inputSchema: schemas.z.toJSONSchema(schemas.restoreProjectLocalChangeSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true,
@@ -1564,7 +1564,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      // Note: This endpoint requires project to be loaded in WebStudio session.
+      // Note: This endpoint requires project to be loaded in OpenL Studio session.
       // The endpoint `/history/restore` uses session-based project context.
       await client.restoreProjectLocalChange(typedArgs.historyId);
 
@@ -1812,7 +1812,7 @@ function handleToolError(error: unknown, toolName: string): McpError {
     }
 
     // Build final error message
-    let finalMessage = `OpenL Tablets API error`;
+    let finalMessage = `OpenL Studio API error`;
     if (status) {
       finalMessage += ` (${status})`;
     }

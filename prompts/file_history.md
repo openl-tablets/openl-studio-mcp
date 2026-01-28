@@ -48,7 +48,7 @@ openl_download_file(fileName, version=commitHash)
 
 **COMPARE versions:**
 ```text
-Note: openl_compare_versions is temporarily disabled - use OpenL WebStudio UI for version comparison
+Note: openl_compare_versions is temporarily disabled - use OpenL Studio UI for version comparison
 ```
 
 **RECOVER deleted file:**

@@ -1,6 +1,6 @@
-# OpenL Tablets MCP Server - Usage Examples
+# OpenL Studio MCP Server - Usage Examples
 
-This document provides practical examples of using the OpenL Tablets MCP Server with AI assistants.
+This document provides practical examples of using the OpenL Studio MCP Server with AI assistants.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
@@ -22,13 +22,13 @@ npm install
 npm run build
 ```
 
-2. Add to your Claude Desktop config (see [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#complete-configuration-examples))
+2. Add to your Claude Desktop config (see [MCP Connection Guide](../setup/mcp-connection-guide.md#complete-configuration-examples))
 
 3. Restart Claude Desktop
 
 4. Verify connection by asking Claude:
-   - "Can you list the OpenL Tablets repositories?"
-   - "Show me all projects in OpenL Tablets"
+   - "Can you list the OpenL Studio repositories?"
+   - "Show me all projects in OpenL Studio"
 
 ## Repository Operations
 
@@ -36,7 +36,7 @@ npm run build
 
 **Prompt to Claude:**
 ```text
-List all OpenL Tablets repositories and their features
+List all OpenL Studio repositories and their features
 ```
 
 **What happens:**
@@ -62,7 +62,7 @@ List all OpenL Tablets repositories and their features
 **With Markdown formatting:**
 You can request the response in Markdown format for better readability:
 ```text
-List all OpenL Tablets repositories in markdown format
+List all OpenL Studio repositories in markdown format
 ```
 
 **Tool call with response_format:**
@@ -77,7 +77,7 @@ List all OpenL Tablets repositories in markdown format
 
 **Example Response (Markdown format):**
 ```markdown
-# OpenL Tablets Repositories
+# OpenL Studio Repositories
 
 ## Design Repository
 - **ID:** design
@@ -106,7 +106,7 @@ What features does the 'design' repository support?
 
 **Prompt to Claude:**
 ```text
-Show me all projects in OpenL Tablets
+Show me all projects in OpenL Studio
 ```
 
 **With filters:**
@@ -733,11 +733,11 @@ Claude can access the error messages and guide you through resolution.
 ## Related Documentation
 
 - [Main README](../../README.md) - Installation and configuration
-- [Authentication Guide](AUTHENTICATION.md) - Authentication setup
-- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
-- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md) - Connection setup
+- [Authentication Guide](authentication.md) - Authentication setup
+- [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions
+- [MCP Connection Guide](../setup/mcp-connection-guide.md) - Connection setup
 
 ## Resources
 
-- [OpenL Tablets Documentation](https://openl-tablets.org/) - Rule syntax and OpenL concepts
-- Use Claude to explore the API capabilities: "What can you do with OpenL Tablets?"
+- [OpenL Studio Documentation](https://openl-tablets.org/) - Rule syntax and OpenL concepts
+- Use Claude to explore the API capabilities: "What can you do with OpenL Studio?"

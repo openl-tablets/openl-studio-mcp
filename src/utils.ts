@@ -1,5 +1,5 @@
 /**
- * Utility functions for the OpenL Tablets MCP Server
+ * Utility functions for the OpenL Studio MCP Server
  */
 
 import { createHash } from "crypto";
@@ -350,7 +350,7 @@ export function extractApiErrorInfo(
 /**
  * Parse project ID from OpenL API response
  *
- * OpenL Tablets API 6.0.0+ returns project IDs as base64-encoded strings in the format:
+ * OpenL Studio API 6.0.0+ returns project IDs as base64-encoded strings in the format:
  * "repository:projectName" (e.g., "design:Example 1 - Bank Rating")
  *
  * Older versions may return project IDs as objects with {repository, projectName} structure.
@@ -373,7 +373,7 @@ export function parseProjectId(id: string | { repository: string; projectName: s
     };
   }
 
-  // Handle string format (OpenL Tablets 6.0.0+)
+  // Handle string format (OpenL Studio 6.0.0+)
   if (typeof id === "string") {
     try {
       // Decode base64

@@ -1,6 +1,6 @@
-# OpenL Tablets MCP Server - Spec Kit
+# OpenL Studio MCP Server - Spec Kit
 
-This directory contains [GitHub Spec Kit](https://github.com/github/spec-kit) artifacts for the OpenL Tablets MCP Server. Spec Kit implements "Spec-Driven Development" - a methodology where specifications become executable and directly generate working implementations.
+This directory contains [GitHub Spec Kit](https://github.com/github/spec-kit) artifacts for the OpenL Studio MCP Server. Spec Kit implements "Spec-Driven Development" - a methodology where specifications become executable and directly generate working implementations.
 
 ## What is Spec Kit?
 
@@ -215,11 +215,13 @@ mcp-server/
 ├── tests/                          # Test suite (implementation)
 ├── prompts/                        # Prompt templates (implementation)
 ├── README.md                       # User documentation
-├── AUTHENTICATION.md               # Auth setup guide
-├── CONTRIBUTING.md                 # Developer guide
-├── TESTING.md                      # Testing guide
-├── EXAMPLES.md                     # Usage examples
-└── BEST_PRACTICES.md               # Implementation practices
+├── docs/                           # Documentation
+│   ├── guides/
+│   │   ├── authentication.md       # Auth setup guide
+│   │   └── examples.md             # Usage examples
+│   └── development/
+│       ├── contributing.md          # Developer guide
+│       └── testing.md               # Testing guide
 ```
 
 **Relationship**:
@@ -311,7 +313,7 @@ feat(auth): add SAML authentication support
 - **Spec Kit Project**: [https://github.com/github/spec-kit](https://github.com/github/spec-kit)
 - **Spec Kit Documentation**: [https://github.com/github/spec-kit#readme](https://github.com/github/spec-kit#readme)
 - **MCP Server README**: ../README.md
-- **Contributing Guide**: ../CONTRIBUTING.md
+- **Contributing Guide**: ../docs/development/contributing.md
 
 ## Quick Reference
 
@@ -344,4 +346,4 @@ feat(auth): add SAML authentication support
 **Spec Kit Version**: 2.0.0
 **MCP Server Version**: 2.0.0
 **Last Updated**: 2025-11-16
-**Maintained By**: OpenL Tablets MCP Server Team
+**Maintained By**: OpenL Studio MCP Server Team

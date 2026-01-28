@@ -1,5 +1,5 @@
 /**
- * Unit tests for OpenL Tablets API Client
+ * Unit tests for OpenL Studio API Client
  */
 
 import nock from 'nock';
@@ -21,7 +21,7 @@ import {
 const BASE_URL = 'http://localhost:8080';
 const API_PATH = '/rest';
 
-describe('OpenL Tablets API Client', () => {
+describe('OpenL Studio API Client', () => {
   beforeEach(() => {
     nock.cleanAll();
   });

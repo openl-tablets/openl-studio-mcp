@@ -1,4 +1,4 @@
-# OpenL Tablets MCP Server - Task List
+# OpenL Studio MCP Server - Task List
 
 ## Status Overview
 
@@ -424,7 +424,7 @@
   - [x] Implement pagination (limit/offset)
   - [x] Add character limit enforcement (25K)
 - [x] Phase 4: Documentation
-  - [x] Update README, EXAMPLES, CONTRIBUTING
+  - [x] Update README, examples, contributing
   - [x] Update tests with new tool names
   - [x] Update Spec Kit artifacts
 
@@ -496,11 +496,10 @@
 
 #### T-107: Create Documentation
 - [x] README.md
-- [x] AUTHENTICATION.md
-- [x] CONTRIBUTING.md
-- [x] TESTING.md
-- [x] EXAMPLES.md
-- [x] BEST_PRACTICES.md
+- [x] authentication.md
+- [x] contributing.md
+- [x] testing.md
+- [x] examples.md
 
 **Completed**: 2024-Q4
 **Updated**: 2025-11-16 (Updated for refactored tools and new features)

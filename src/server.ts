@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Express HTTP Server for OpenL Tablets MCP Server
+ * Express HTTP Server for OpenL Studio MCP Server
  * 
  * Provides HTTP REST API for accessing MCP tools as a standalone service.
  * This allows the MCP server to be used as a microservice in Docker Compose.
@@ -177,7 +177,7 @@ async function initializeMCPServer(): Promise<void> {
       {
         uri: "openl://repositories",
         name: "OpenL Repositories",
-        description: "All design repositories in OpenL Tablets",
+        description: "All design repositories in OpenL Studio",
         mimeType: "application/json",
       },
       {
@@ -270,7 +270,7 @@ function setupSessionHandlers(server: Server, client: OpenLClient): void {
       {
         uri: "openl://repositories",
         name: "OpenL Repositories",
-        description: "All design repositories in OpenL Tablets",
+        description: "All design repositories in OpenL Studio",
         mimeType: "application/json",
       },
       {

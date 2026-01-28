@@ -50,7 +50,7 @@ AFTER modification:
 
 BEFORE openl_save_project():
 - `openl_run_project_tests(projectId, { waitForCompletion: true })` MUST pass
-- `Validate in OpenL WebStudio UI (openl_validate_project temporarily disabled)` MUST pass
+- `Validate in OpenL Studio UI (openl_validate_project temporarily disabled)` MUST pass
 
 BEFORE openl_deploy_project():
 - All above + `openl_get_project_errors()` MUST be 0

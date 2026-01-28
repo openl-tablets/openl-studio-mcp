@@ -155,7 +155,7 @@ describe("loadPromptContent", () => {
       expect(content).toBeDefined();
       expect(typeof content).toBe("string");
       expect(content.length).toBeGreaterThan(100);
-      expect(content).toContain("Creating Tables in OpenL Tablets");
+      expect(content).toContain("Creating Tables in OpenL Studio");
     });
 
     test("should load all registered prompts without error", () => {

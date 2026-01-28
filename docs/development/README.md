@@ -1,21 +1,21 @@
 # Development Documentation
 
-Documentation for developers contributing to the OpenL Tablets MCP Server.
+Documentation for developers contributing to the OpenL Studio MCP Server.
 
 ## Available Guides
 
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
-- **[Architecture](ARCHITECTURE.md)** - System architecture and design
-- **[Testing Guide](TESTING.md)** - Testing strategy and how to run tests
-- **[Code Standards](CODE_STANDARDS.md)** - Best practices and coding standards
-- **[Tool Review](TOOL_REVIEW.md)** - Technical review of MCP tools vs OpenL API
+- **[Contributing Guide](contributing.md)** - How to contribute to the project
+- **[Architecture](architecture.md)** - System architecture and design
+- **[Testing Guide](testing.md)** - Testing strategy and how to run tests
+- **[Code Standards](code-standards.md)** - Best practices and coding standards
+- **[Tool Review](tool-review.md)** - Technical review of MCP tools vs OpenL API
 
 ## Quick Start for Developers
 
-1. **Read the Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
-2. **Understand the Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
-3. **Set up Development Environment**: See [Contributing Guide - Development Setup](CONTRIBUTING.md#development-setup)
-4. **Run Tests**: See [Testing Guide](TESTING.md)
+1. **Read the Contributing Guide**: [contributing.md](contributing.md)
+2. **Understand the Architecture**: [architecture.md](architecture.md)
+3. **Set up Development Environment**: See [Contributing Guide - Development Setup](contributing.md#development-setup)
+4. **Run Tests**: See [Testing Guide](testing.md)
 
 ## Development Workflow
 
@@ -46,5 +46,5 @@ npm run watch
 ## Related Documentation
 
 - [Main Documentation Index](../README.md)
-- [Usage Guides](../guides/)
-- [Reference Materials](../reference/)
+- [Usage Guides](../guides/README.md)
+- [Reference Materials](../reference/README.md)

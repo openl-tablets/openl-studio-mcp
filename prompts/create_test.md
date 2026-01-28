@@ -14,7 +14,7 @@ arguments:
 
 **Test tables mirror method signatures**: Create with columns matching tested table parameters plus _res_ (expected result) or _error_ (expected error). Minimum 3 rows required (header, column definitions, at least 1 test case). Run tests immediately after creation to verify structure.
 
-# Creating Test Tables in OpenL Tablets
+# Creating Test Tables in OpenL Studio
 
 {if tableName}
 ## Creating Test for: **{tableName}**
@@ -133,12 +133,13 @@ Driver Type   Age    Premium
 "SAFE"        65     900.0
 ```
 
-**create_rule parameters:**
+**Test table structure:**
 ```json
 {
   "tableType": "Test",
+  "kind": "Test",
   "name": "calculatePremiumTest",
-  "parameters": [
+  "fields": [
     { "type": "String", "name": "driverType" },
     { "type": "int", "name": "age" },
     { "type": "double", "name": "_res_" }
@@ -171,12 +172,13 @@ Age    Expected Error
 null   "Age is required"
 ```
 
-**create_rule parameters:**
+**Test table structure:**
 ```json
 {
   "tableType": "Test",
+  "kind": "Test",
   "name": "validateAgeTest",
-  "parameters": [
+  "fields": [
     { "type": "int", "name": "age" },
     { "type": "String", "name": "_error_" }
   ]
@@ -222,26 +224,36 @@ Base          Risk         Premium Result   Tax Result
 
 **Use `_res_.fieldName`** to access SpreadsheetResult fields
 
-## Integration with create_rule Tool
+## Integration with create_project_table Tool
 
-Use the existing `create_rule` tool with `tableType="Test"`:
+Use the `openl_create_project_table` tool to create test tables:
 
 ```json
 {
-  "name": "create_rule",
+  "name": "openl_create_project_table",
   "arguments": {
     "projectId": "design-insurance-rules",
-    "name": "calculatePremiumTest",
-    "tableType": "Test",
-    "parameters": [
-      { "type": "String", "name": "driverType" },
-      { "type": "int", "name": "age" },
-      { "type": "double", "name": "_res_" }
-    ],
-    "comment": "Created test for calculatePremium rule"
+    "moduleName": "Tests",
+    "table": {
+      "id": "calculatePremiumTest",
+      "tableType": "Test",
+      "kind": "Test",
+      "name": "calculatePremiumTest",
+      "fields": [
+        { "type": "String", "name": "driverType" },
+        { "type": "int", "name": "age" },
+        { "type": "double", "name": "_res_" }
+      ],
+      "rows": [
+        { "driverType": "SAFE", "age": 25, "_res_": 1000.0 },
+        { "driverType": "RISKY", "age": 45, "_res_": 1500.0 }
+      ]
+    }
   }
 }
 ```
+
+**Note**: Use `openl_get_table` on an existing test table to see the complete structure format.
 
 ## Complete Workflow
 
@@ -351,12 +363,16 @@ For double/float comparisons, add precision property:
 
 ```json
 {
-  "name": "create_rule",
+  "name": "openl_create_project_table",
   "arguments": {
-    "tableType": "Test",
-    "properties": {
-      "precision": 2  // 2 decimal places tolerance
-    }
+    "projectId": "<projectId>",
+    "moduleName": "Tests",
+    "table": {
+      "tableType": "Test",
+      "kind": "Test",
+      "properties": {
+        "precision": 2  // 2 decimal places tolerance
+      }
   }
 }
 ```

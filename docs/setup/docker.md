@@ -27,7 +27,7 @@ MCP Server can now run as a standalone HTTP application on Express, allowing it 
          │
          ▼
 ┌─────────────────┐
-│  OpenL Studio   │  ← OpenL Tablets API
+│  OpenL Studio   │  ← OpenL Studio API
 │  (studio:8080)  │
 └─────────────────┘
 ```
@@ -254,7 +254,7 @@ environment:
   PORT: 3001
 ```
 
-For more troubleshooting, see [Troubleshooting Guide](../guides/TROUBLESHOOTING.md).
+For more troubleshooting, see [Troubleshooting Guide](../guides/troubleshooting.md).
 
 ## Production Deployment
 
@@ -322,8 +322,8 @@ curl -X POST http://localhost:3000/execute \
 
 ## Additional Information
 
-- [Quick Start Guide](../getting-started/QUICK-START.md) - Get started quickly
-- [MCP Connection Guide](MCP-CONNECTION-GUIDE.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) - Connect Cursor to Docker container
-- [Authentication Guide](../guides/AUTHENTICATION.md) - Authentication setup
-- [Troubleshooting Guide](../guides/TROUBLESHOOTING.md) - Common issues
+- [Quick Start Guide](../getting-started/quick-start.md) - Get started quickly
+- [MCP Connection Guide](mcp-connection-guide.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) - Connect Cursor to Docker container
+- [Authentication Guide](../guides/authentication.md) - Authentication setup
+- [Troubleshooting Guide](../guides/troubleshooting.md) - Common issues
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * OpenL Tablets MCP Server
+ * OpenL Studio MCP Server
  *
- * Model Context Protocol server for OpenL Tablets Rules Management System.
+ * Model Context Protocol server for OpenL Studio Rules Management System.
  * Provides tools and resources for managing rules projects, tables, and deployments.
  *
  * Features:
@@ -12,7 +12,7 @@
  * - Request tracking with Client Document ID
  * - Comprehensive error handling
  *
- * @see https://github.com/openl-tablets/openl-tablets
+ * @see https://github.com/openl-tablets/openl-studio-mcp
  * @see https://modelcontextprotocol.io/
  */
 
@@ -38,7 +38,7 @@ import { safeStringify, sanitizeError } from "./utils.js";
 import type * as Types from "./types.js";
 
 /**
- * MCP Server for OpenL Tablets
+ * MCP Server for OpenL Studio
  *
  * Handles MCP protocol communication and routes requests to the OpenL client.
  */
@@ -49,7 +49,7 @@ class OpenLMCPServer {
   /**
    * Create a new MCP server instance
    *
-   * @param config - OpenL Tablets configuration
+   * @param config - OpenL Studio configuration
    */
   constructor(config: Types.OpenLConfig) {
     // Initialize OpenL API client
@@ -103,7 +103,7 @@ class OpenLMCPServer {
         {
           uri: "openl://repositories",
           name: "OpenL Repositories",
-          description: "All design repositories in OpenL Tablets",
+          description: "All design repositories in OpenL Studio",
           mimeType: "application/json",
         },
         {
@@ -347,7 +347,8 @@ class OpenLMCPServer {
  * Load configuration from query parameters (for HTTP SSE transport)
  *
  * @param query - Query parameters from HTTP request
- * @returns OpenL Tablets configuration or null if not enough parameters
+ * @returns OpenL Studio configuration or null if not enough parameters
+ * @throws Error if configuration is invalid (invalid URL format, invalid timeout, missing authentication)
  */
 export function loadConfigFromQuery(query: Record<string, string | undefined>): Types.OpenLConfig | null {
   const baseUrl = query.OPENL_BASE_URL;
@@ -362,13 +363,14 @@ export function loadConfigFromQuery(query: Record<string, string | undefined>): 
     throw new Error(`Invalid OPENL_BASE_URL format: ${baseUrl}`);
   }
 
-  // Parse timeout if provided
+  // Parse and validate timeout if provided
   let timeout: number | undefined;
   if (query.OPENL_TIMEOUT) {
     const parsedTimeout = parseInt(query.OPENL_TIMEOUT, 10);
-    if (!isNaN(parsedTimeout) && parsedTimeout > 0) {
-      timeout = parsedTimeout;
+    if (isNaN(parsedTimeout) || parsedTimeout <= 0) {
+      throw new Error(`Invalid OPENL_TIMEOUT value: ${query.OPENL_TIMEOUT}`);
     }
+    timeout = parsedTimeout;
   }
 
   const config: Types.OpenLConfig = {
@@ -380,6 +382,15 @@ export function loadConfigFromQuery(query: Record<string, string | undefined>): 
     timeout,
   };
 
+  // Validate at least one authentication method is configured
+  // Require either both username and password (Basic Auth) or Personal Access Token
+  if (!((config.username && config.password) || config.personalAccessToken)) {
+    throw new Error(
+      "At least one authentication method must be configured " +
+        "(both username and password for Basic Auth, or Personal Access Token)"
+    );
+  }
+
   return config;
 }
 
@@ -390,7 +401,7 @@ export function loadConfigFromQuery(query: Record<string, string | undefined>): 
  * Authentication credentials should be provided via environment variables set in the MCP client
  * configuration file (Cursor/Claude Desktop settings), NOT in Docker/environment variables.
  *
- * @returns OpenL Tablets configuration
+ * @returns OpenL Studio configuration
  * @throws Error if required configuration is missing or invalid
  */
 export async function loadConfigFromEnv(): Promise<Types.OpenLConfig> {
@@ -460,7 +471,7 @@ async function main(): Promise<void> {
     await server.start();
   } catch (error: unknown) {
     const sanitizedMessage = sanitizeError(error);
-    console.error("Failed to start OpenL Tablets MCP server:", sanitizedMessage);
+    console.error("Failed to start OpenL Studio MCP server:", sanitizedMessage);
     process.exit(1);
   }
 }

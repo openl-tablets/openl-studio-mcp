@@ -115,7 +115,7 @@ If header doesn't start with `Token `, check:
 If you get 401, check:
 - PAT hasn't expired (if expiration was set)
 - PAT wasn't deleted in UI
-- OpenL Tablets is configured for OAuth2/SAML mode
+- OpenL Studio is configured for OAuth2/SAML mode
 - Token format is correct
 
 ## Manual Header Testing

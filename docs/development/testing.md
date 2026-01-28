@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document describes the testing strategy and how to run tests for the OpenL Tablets MCP Server.
+This document describes the testing strategy and how to run tests for the OpenL Studio MCP Server.
 
 ## Test Structure
 

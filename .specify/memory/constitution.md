@@ -1,10 +1,10 @@
-# OpenL Tablets MCP Server - Constitution
+# OpenL Studio MCP Server - Constitution
 
 ## Project Identity
 
-**Name**: OpenL Tablets MCP Server
+**Name**: OpenL Studio MCP Server
 **Purpose**: Model Context Protocol server for OpenL Tablets Business Rules Management System
-**Version**: 2.0.0
+**Version**: 1.0.0
 **License**: MIT
 **Repository**: https://github.com/openl-tablets/openl-tablets/tree/main/mcp-server
 
@@ -68,11 +68,10 @@ catch (error: unknown) {
 
 **Documentation Set**:
 - README.md - User-facing overview
-- AUTHENTICATION.md - Auth setup guide
-- CONTRIBUTING.md - Developer guide
-- TESTING.md - Testing documentation
-- EXAMPLES.md - Usage examples
-- BEST_PRACTICES.md - Implementation practices
+- authentication.md - Auth setup guide
+- contributing.md - Developer guide
+- testing.md - Testing documentation
+- examples.md - Usage examples
 
 ### 5. Test-Driven Quality
 
@@ -218,7 +217,7 @@ export function registerListProjectsTool(
   server.registerTool(
     "openl_list_projects",
     {
-      description: "List all OpenL Tablets projects",
+      description: "List all OpenL Studio projects",
       inputSchema: zodToJsonSchema(ListProjectsArgsSchema),
       annotations: {
         readOnlyHint: true,
@@ -416,7 +415,7 @@ export function registerAllTools(
 1. Update types in `types.ts`
 2. Implement in `auth.ts`
 3. Update `getAuthMethod()`
-4. Document in `AUTHENTICATION.md`
+4. Document in `authentication.md`
 
 ## Quality Gates
 

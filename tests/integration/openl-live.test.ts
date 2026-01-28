@@ -1,11 +1,11 @@
 /**
- * OpenL Tablets 6.0.0 Live Integration Tests
+ * OpenL Studio 6.0.0 Live Integration Tests
  *
- * These tests run against an actual OpenL Tablets instance.
+ * These tests run against an actual OpenL Studio instance.
  * Skip in CI by setting SKIP_LIVE_TESTS=true
  *
  * Configuration via environment variables:
- * - OPENL_BASE_URL: OpenL WebStudio REST API base URL (default: http://localhost:8080/rest)
+ * - OPENL_BASE_URL: OpenL Studio REST API base URL (default: http://localhost:8080/rest)
  * - OPENL_USERNAME: Username (default: admin)
  * - OPENL_PASSWORD: Password (default: admin)
  * - SKIP_LIVE_TESTS: Set to 'true' to skip these tests (default in CI)
@@ -19,7 +19,7 @@ const shouldSkip = process.env.SKIP_LIVE_TESTS !== 'false';
 
 const describeIntegration = shouldSkip ? describe.skip : describe;
 
-describeIntegration('OpenL Tablets 6.0.0 Live Integration Tests', () => {
+describeIntegration('OpenL Studio 6.0.0 Live Integration Tests', () => {
   let client: OpenLClient;
   let testProjectId: string;
   let testTableId: string;
@@ -34,7 +34,7 @@ describeIntegration('OpenL Tablets 6.0.0 Live Integration Tests', () => {
 
     client = new OpenLClient(config);
 
-    console.log(`\n🔌 Connecting to OpenL Tablets at: ${config.baseUrl}\n`);
+    console.log(`\n🔌 Connecting to OpenL Studio at: ${config.baseUrl}\n`);
   });
 
   // ============================================================================
@@ -49,7 +49,7 @@ describeIntegration('OpenL Tablets 6.0.0 Live Integration Tests', () => {
       expect(health.status).toBe('healthy');
       expect(health.baseUrl).toBeDefined();
 
-      console.log('✅ Connected to OpenL Tablets');
+      console.log('✅ Connected to OpenL Studio');
       console.log(`   Base URL: ${health.baseUrl}`);
       console.log(`   Auth: ${health.authMethod}`);
     });

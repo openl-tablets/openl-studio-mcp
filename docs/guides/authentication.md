@@ -1,6 +1,6 @@
 # Authentication Guide
 
-This guide covers the authentication methods supported by the OpenL Tablets MCP Server: Personal Access Token (PAT) and Basic Authentication.
+This guide covers the authentication methods supported by the OpenL Studio MCP Server: Personal Access Token (PAT) and Basic Authentication.
 
 ## Table of Contents
 - [Authentication Methods](#authentication-methods)
@@ -106,7 +106,7 @@ environment:
 - MCP client configuration files (Cursor/Claude Desktop)
 - Query parameters or headers when connecting via HTTP (for one-time connections)
 
-For complete configuration examples, see [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md#complete-configuration-examples).
+For complete configuration examples, see [MCP Connection Guide](../setup/mcp-connection-guide.md#complete-configuration-examples).
 
 ## Basic Authentication
 
@@ -125,7 +125,7 @@ OPENL_PASSWORD=admin
 ```json
 {
   "mcpServers": {
-    "openl-tablets": {
+    "openl-studio": {
       "command": "node",
       "args": ["/path/to/dist/index.js"],
       "env": {
@@ -151,25 +151,25 @@ OPENL_PASSWORD=admin
 
 ## Personal Access Token Authentication
 
-Personal Access Token (PAT) authentication uses user-generated tokens created in the OpenL Tablets UI. PATs provide a secure way to authenticate API requests without using passwords.
+Personal Access Token (PAT) authentication uses user-generated tokens created in the OpenL Studio UI. PATs provide a secure way to authenticate API requests without using passwords.
 
 ### Features
 
-- ✅ **User-Generated** - Created and managed in OpenL Tablets UI
+- ✅ **User-Generated** - Created and managed in OpenL Studio UI
 - ✅ **Token Format** - `openl_pat_<publicId>.<secret>`
 - ✅ **Expiration Support** - Optional expiration dates for enhanced security
 - ✅ **User Isolation** - Each user manages their own tokens
-- ✅ **OAuth2/SAML Only** - Available only when OpenL Tablets is configured for OAuth2 or SAML authentication
+- ✅ **OAuth2/SAML Only** - Available only when OpenL Studio is configured for OAuth2 or SAML authentication
 
 ### Prerequisites
 
-- OpenL Tablets must be configured with OAuth2 or SAML authentication mode
+- OpenL Studio must be configured with OAuth2 or SAML authentication mode
 - You must have a valid OAuth2/SAML session to create PATs
 - PATs cannot be used to manage other PATs (enforced by security)
 
 ### Creating a Personal Access Token
 
-1. Log in to OpenL Tablets Studio
+1. Log in to OpenL Studio
 2. Navigate to **User Settings** → **Personal Access Tokens**
 3. Click **Create Token**
 4. Provide a name and optional expiration date
@@ -192,7 +192,7 @@ OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
 ```json
 {
   "mcpServers": {
-    "openl-tablets": {
+    "openl-studio": {
       "command": "node",
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
@@ -314,14 +314,14 @@ X-Client-Document-ID: mcp-server-instance-1
 
 **Symptoms:**
 ```
-OpenL Tablets API error (401): Authentication required
+OpenL Studio API error (401): Authentication required
 ```
 
 **Solutions:**
 1. Verify username and password are correct
 2. Check user account is not locked
 3. Ensure user has required permissions
-4. Verify OpenL Tablets is configured for basic auth
+4. Verify OpenL Studio is configured for basic auth
 
 ### General Issues
 
@@ -335,7 +335,7 @@ Error: timeout of 30000ms exceeded
 **Solutions:**
 1. Increase timeout: `OPENL_TIMEOUT=60000`
 2. Check network connectivity
-3. Verify OpenL Tablets is running
+3. Verify OpenL Studio is running
 4. Check firewall rules
 
 #### SSL/TLS Errors
@@ -355,7 +355,7 @@ Error: unable to verify the first certificate
 
 ### Common
 ```bash
-OPENL_BASE_URL          # OpenL Tablets API base URL
+OPENL_BASE_URL          # OpenL Studio API base URL
 OPENL_CLIENT_DOCUMENT_ID # Client tracking identifier
 OPENL_TIMEOUT           # Request timeout in milliseconds
 ```
@@ -393,13 +393,13 @@ npm start
 
 ## Related Documentation
 
-- [MCP Connection Guide](../setup/MCP-CONNECTION-GUIDE.md) - Complete connection setup guide
-- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common authentication issues
-- [Quick Start Guide](../getting-started/QUICK-START.md) - Quick setup instructions
-- [Usage Examples](EXAMPLES.md) - Examples using authentication
+- [MCP Connection Guide](../setup/mcp-connection-guide.md) - Complete connection setup guide
+- [Troubleshooting Guide](troubleshooting.md) - Common authentication issues
+- [Quick Start Guide](../getting-started/quick-start.md) - Quick setup instructions
+- [Usage Examples](examples.md) - Examples using authentication
 
 ## Resources
 
-- [OpenL Tablets Documentation](https://openl-tablets.org/)
+- [OpenL Studio Documentation](https://openl-tablets.org/)
 - [MCP Server README](../../README.md)
-- [Testing Guide](../development/TESTING.md)
+- [Testing Guide](../development/testing.md)

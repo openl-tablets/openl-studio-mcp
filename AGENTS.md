@@ -1,13 +1,13 @@
-# OpenL Tablets MCP Server - Agent Description
+# OpenL Studio MCP Server - Agent Description
 
 ## Overview
 
-The OpenL Tablets MCP Server is a Model Context Protocol (MCP) server that provides AI coding agents with seamless access to the OpenL Tablets Business Rules Management System (BRMS). It acts as a bridge between AI assistants (like Claude Desktop, Cursor IDE) and the OpenL Tablets REST API, enabling natural language interaction with business rules management.
+The OpenL Studio MCP Server is a Model Context Protocol (MCP) server that provides AI coding agents with seamless access to the OpenL Studio Business Rules Management System (BRMS). It acts as a bridge between AI assistants (like Claude Desktop, Cursor IDE) and the OpenL Studio REST API, enabling natural language interaction with business rules management.
 
 ## Purpose
 
 This MCP server enables AI agents to:
-- **Discover** repositories, projects, and rules in OpenL Tablets
+- **Discover** repositories, projects, and rules in OpenL Studio
 - **Read** project structures, table definitions, and rule logic
 - **Modify** rules, tables, and project configurations
 - **Execute** rules with test data for validation
@@ -32,7 +32,7 @@ This MCP server enables AI agents to:
          │ (JSON, Basic Auth / PAT)
          ▼
 ┌─────────────────┐
-│ OpenL Tablets   │  ← Business Rules Server
+│ OpenL Studio   │  ← Business Rules Server
 │  (Java/Jetty)   │     (port 8080)
 └─────────────────┘
 ```
@@ -417,7 +417,7 @@ docker run -e OPENL_BASE_URL=http://openl:8080/rest \
 ```yaml
 services:
   mcp-server:
-    image: ghcr.io/openl-tablets/mcp-server:x
+    image: ghcr.io/openl-tablets/openl-studio-mcp:x
     environment:
       OPENL_BASE_URL: https://openl.example.com/studio/rest
 ```
@@ -427,15 +427,15 @@ services:
 **Current Version**: 1.0.0  
 **MCP SDK**: 1.25.1  
 **Node.js**: 24+  
-**OpenL Tablets**: 6.0.0+
+**OpenL Studio**: 6.0.0+
 
 ## License
 
-LGPL-3.0 (follows OpenL Tablets project license)
+LGPL-3.0 (follows OpenL Studio project license)
 
 ## External Resources
 
-- [OpenL Tablets](https://github.com/openl-tablets/openl-tablets)
+- [OpenL Studio](https://github.com/openl-tablets/openl-tablets)
 - [OpenL Documentation](https://openl-tablets.org/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)

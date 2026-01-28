@@ -18,7 +18,7 @@
          │ (JSON)
          ▼
 ┌─────────────────┐
-│  OpenL Tablets  │  ← Rules server
+│  OpenL Studio  │  ← Rules server
 │   (Java/Jetty)  │     (port 8080)
 └─────────────────┘
 ```
@@ -32,13 +32,13 @@
 
 ### 2. MCP Server
 - **What it is:** Bridge between Claude and OpenL
-- **Where:** Standalone repository (separate from OpenL Tablets project)
+- **Where:** Standalone repository (separate from OpenL Studio project)
 - **Role:** 
   - Converts Claude commands to API requests to OpenL
   - Provides 18 tools for working with OpenL
   - Manages authentication
 
-### 3. OpenL Tablets
+### 3. OpenL Studio
 - **What it is:** Server for managing business rules
 - **Where:** Running via Docker or locally
 - **Role:** Stores and executes rules, projects, tables
@@ -81,10 +81,10 @@ Contains MCP server settings (path, environment variables)
 ```text
 dist/index.js          # Compiled server
 src/                   # Source code
-docs/setup/MCP-CONNECTION-GUIDE.md  # Complete configuration guide with examples
+docs/setup/mcp-connection-guide.md  # Complete configuration guide with examples
 ```
 
-### OpenL Tablets
+### OpenL Studio
 ```text
 compose.yaml                       # Docker Compose configuration
 DEMO/start                         # Local startup script
@@ -142,7 +142,7 @@ cat ~/Library/Application\ Support/Claude/config.json | grep openl-mcp-server
 - Check MCP server status
 
 ### Level 4: Does everything work?
-In Claude: "List repositories in OpenL Tablets"
+In Claude: "List repositories in OpenL Studio"
 
 ## Common Issues
 
@@ -181,7 +181,7 @@ npm test
 npm run lint
 ```
 
-### OpenL Tablets Commands
+### OpenL Studio Commands
 ```bash
 # View OpenL logs (Docker)
 docker compose logs -f studio
@@ -189,6 +189,6 @@ docker compose logs -f studio
 # Start OpenL via Docker
 docker compose up
 
-# Start OpenL locally (in OpenL Tablets repository)
+# Start OpenL locally (in OpenL Studio repository)
 cd DEMO && ./start
 ```

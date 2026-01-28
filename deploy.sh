@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OpenL Tablets MCP Server Deployment Script
+# OpenL Studio MCP Server Deployment Script
 
 set -e
 
@@ -91,7 +91,7 @@ docker_logs() {
 # Display help
 show_help() {
     cat << EOF
-OpenL Tablets MCP Server Deployment Script
+OpenL Studio MCP Server Deployment Script
 
 Usage: ./deploy.sh [command]
 

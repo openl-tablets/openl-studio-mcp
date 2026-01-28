@@ -1,5 +1,5 @@
 /**
- * TypeScript types for OpenL Tablets REST API
+ * TypeScript types for OpenL Studio REST API
  */
 
 export type AuthMethod = "basic" | "pat";
