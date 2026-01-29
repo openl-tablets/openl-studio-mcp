@@ -368,30 +368,89 @@
 
 ## Testing & Validation Tools
 
-### 25. `openl_run_project_tests`
+### 25. `openl_start_project_tests`
 
 **Status**: ✅ Complete  
-**OpenL API**: `POST /projects/{projectId}/tests/run` + `GET /projects/{projectId}/tests/summary`
+**OpenL API**: `POST /projects/{projectId}/tests/run`
 
-**Description**: Unified tool that starts test execution and retrieves results in a single call. Automatically uses all headers from the test start response when fetching results.
+**Description**: Start project test execution. The project will be automatically opened if closed. Returns execution status and metadata. Test results can be retrieved using separate tools.
 
 **Extra/Missed Inputs**:
-- ✅ All API parameters covered: `projectId`, `tableId` (as `fromModule`), `testRanges`, `failuresOnly`, pagination
-- ✅ `waitForCompletion` parameter allows immediate status check or polling until completion
-- ✅ Automatically captures and reuses all HTTP headers from test start response
-- ✅ Tool correctly handles async test execution with polling mechanism
+- ✅ All API parameters covered: `projectId`, `tableId`, `testRanges`
+- ✅ Automatically opens project if closed
+- ✅ Automatically captures and stores HTTP headers from test start response for use in result retrieval tools
+- ✅ `fromModule` parameter reserved for future use (not currently passed to API)
 
 **Recommendations**:
-- ✅ Preferred tool for running tests - combines start and results retrieval
-- ✅ Headers from start response are automatically used in all result requests
-- ✅ Supports all options: table filtering, test ranges, failure filtering, pagination
-- ✅ Polling mechanism implemented with exponential backoff
-- ✅ Timeout handling for long-running tests
-- ✅ Can return current status immediately if `waitForCompletion: false`
+- ✅ Preferred tool for starting test execution
+- ✅ Headers from start response are automatically stored for use in `openl_get_test_results*` tools
+- ✅ Supports table filtering and test ranges
+- ✅ Ensures project is opened before running tests
 
 ---
 
-### 26. `openl_validate_project` (Missing Tool)
+### 26. `openl_get_test_results_summary`
+
+**Status**: ✅ Complete  
+**OpenL API**: `GET /projects/{projectId}/tests/summary`
+
+**Description**: Get brief test execution summary without detailed test cases. Returns aggregated statistics (execution time, total tests, passed, failed) without the testCases array.
+
+**Extra/Missed Inputs**:
+- ✅ All API parameters covered: `projectId`, `failures`, `unpaged`
+- ✅ Uses stored headers from test execution session
+- ✅ Returns only summary fields (no testCases array)
+
+**Recommendations**:
+- ✅ Use for quick status checks without loading full test details
+- ✅ Requires test execution to be started first with `openl_start_project_tests`
+
+---
+
+### 27. `openl_get_test_results`
+
+**Status**: ✅ Complete  
+**OpenL API**: `GET /projects/{projectId}/tests/summary`
+
+**Description**: Get full test execution results with pagination support. Returns complete test execution summary including testCases array grouped by table. **IMPORTANT**: Pagination applies to test tables (not individual test cases). Each page returns test results aggregated by table (e.g., 'TestTable1' with 7 tests, 'TestTable2' with 8 tests).
+
+**Extra/Missed Inputs**:
+- ✅ All API parameters covered: `projectId`, `failuresOnly`, `failures`, `page`, `offset`, `size`, `limit` (alias for size), `unpaged`
+- ✅ Validates mutual exclusivity: `page` vs `offset`, `unpaged` vs `page`/`offset`/`size`
+- ✅ Uses stored headers from test execution session
+- ✅ Supports pagination and filtering
+- ⚠️ **Note**: Pagination is per-table, not per-test-case. If a project has 5 test tables, pagination will show these 5 tables across pages, not individual test cases.
+
+**Recommendations**:
+- ✅ Use for full test results with pagination
+- ✅ Requires test execution to be started first with `openl_start_project_tests`
+- ✅ Supports pagination options: page-based or offset-based
+- ⚠️ **Important**: Understand that pagination controls which test tables are shown, not individual test cases within tables
+- ⚠️ **Note**: The 'unpaged' parameter may not work correctly on the backend - use pagination (page/offset/size) instead
+
+---
+
+### 28. `openl_get_test_results_by_table`
+
+**Status**: ✅ Complete  
+**OpenL API**: `GET /projects/{projectId}/tests/summary` + client-side filtering
+
+**Description**: Get test execution results filtered by specific table ID. Returns filtered test execution summary with only test cases for the specified table.
+
+**Extra/Missed Inputs**:
+- ✅ All API parameters covered: `projectId`, `tableId`, `failuresOnly`, `failures`, `unpaged`
+- ✅ Uses stored headers from test execution session
+- ✅ Filters testCases by tableId on client side
+- ⚠️ **Note**: The 'unpaged' parameter may not work correctly on the backend - use pagination if needed
+
+**Recommendations**:
+- ✅ Use for getting results for a specific table
+- ✅ Requires test execution to be started first with `openl_start_project_tests`
+- ✅ Filters results on client side after retrieving from API
+
+---
+
+### 29. `openl_validate_project` (Missing Tool)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: `GET /projects/{projectId}/validation` (may return 404 - endpoint may not exist)
@@ -409,7 +468,7 @@
 
 ---
 
-### 27. `openl_get_project_errors` (Missing Tool)
+### 30. `openl_get_project_errors` (Missing Tool)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: Uses `GET /projects/{projectId}/validation` internally
@@ -428,7 +487,7 @@
 
 ## Execution Tools
 
-### 28. `openl_execute_rule`
+### 31. `openl_execute_rule`
 
 **Status**: 🔴 DISABLED (Temporarily)  
 **OpenL API**: `POST /projects/{projectId}/rules/{ruleName}/execute` with input data
@@ -447,7 +506,7 @@
 
 ## Comparison Tools
 
-### 29. `openl_compare_versions` (Missing Tool)
+### 32. `openl_compare_versions` (Missing Tool)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: `GET /projects/{projectId}/versions/compare?base={commitHash}&target={commitHash}`
@@ -466,7 +525,7 @@
 
 ## Additional Client Methods Not Exposed as Tools
 
-### 30. `deleteProject` (Missing Tool)
+### 33. `openl_delete_project` (Missing Tool)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: `DELETE /projects/{projectId}`
@@ -483,7 +542,7 @@
 
 ---
 
-### 31. `saveProject` (Missing Tool)
+### 34. `saveProject` (Missing Tool - RESOLVED)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: `POST /projects/{projectId}/save?comment={comment}`
@@ -500,7 +559,7 @@
 
 ---
 
-### 32. `openProject` / `closeProject` (Missing Tools)
+### 35. `openProject` / `closeProject` (Missing Tools - RESOLVED)
 
 **Status**: ❌ MISSING TOOLS  
 **OpenL API**: `PATCH /projects/{projectId}` with `status: "OPENED"` or `status: "CLOSED"`
@@ -516,7 +575,7 @@
 
 ---
 
-### 33. `healthCheck` (Missing Tool)
+### 36. `openl_health_check` (Missing Tool)
 
 **Status**: ❌ MISSING TOOL  
 **OpenL API**: Uses `GET /repos` as connectivity check
@@ -564,13 +623,16 @@
 | 24 | `openl_revert_version` | Version Control | 🔴 Disabled | `POST /projects/{projectId}/revert` (may not exist) | Revert project to previous Git commit |
 | 25 | `openl_get_file_history` | Version Control | 🔴 Disabled | Not found in API docs | Get Git commit history for specific file |
 | 26 | `openl_get_project_history` | Version Control | 🔴 Disabled | Not found in API docs | Get Git commit history for entire project |
-| 27 | `openl_run_project_tests` | Project | ✅ Complete | `POST /projects/{projectId}/tests/run` + `GET /tests/summary` | Run project tests (unified tool) |
-| 28 | `openl_execute_rule` | Rules | 🔴 Disabled | `POST /projects/{projectId}/rules/{ruleName}/execute` | Execute rule with input data |
-| 29 | `openl_validate_project` | Project | ❌ Missing | `GET /projects/{projectId}/validation` (may return 404) | Validate project for compilation errors |
-| 30 | `openl_get_project_errors` | Project | ❌ Missing | Uses `/projects/{projectId}/validation` internally | Get comprehensive project error analysis |
-| 31 | `openl_compare_versions` | Version Control | ❌ Missing | `GET /projects/{projectId}/versions/compare?base={hash}&target={hash}` | Compare two Git commit versions |
-| 32 | `openl_delete_project` | Project | ❌ Missing | `DELETE /projects/{projectId}` | Delete project (destructive) |
-| 33 | `openl_health_check` | System | ❌ Missing | Uses `GET /repos` as connectivity check | Check OpenL server connectivity |
+| 27 | `openl_start_project_tests` | Project | ✅ Complete | `POST /projects/{projectId}/tests/run` | Start project test execution |
+| 28 | `openl_get_test_results_summary` | Project | ✅ Complete | `GET /projects/{projectId}/tests/summary` | Get brief test execution summary |
+| 29 | `openl_get_test_results` | Project | ✅ Complete | `GET /projects/{projectId}/tests/summary` | Get full test execution results |
+| 30 | `openl_get_test_results_by_table` | Project | ✅ Complete | `GET /projects/{projectId}/tests/summary` + filtering | Get test results filtered by table |
+| 31 | `openl_execute_rule` | Rules | 🔴 Disabled | `POST /projects/{projectId}/rules/{ruleName}/execute` | Execute rule with input data |
+| 32 | `openl_validate_project` | Project | ❌ Missing | `GET /projects/{projectId}/validation` (may return 404) | Validate project for compilation errors |
+| 33 | `openl_get_project_errors` | Project | ❌ Missing | Uses `/projects/{projectId}/validation` internally | Get comprehensive project error analysis |
+| 34 | `openl_compare_versions` | Version Control | ❌ Missing | `GET /projects/{projectId}/versions/compare?base={hash}&target={hash}` | Compare two Git commit versions |
+| 35 | `openl_delete_project` | Project | ❌ Missing | `DELETE /projects/{projectId}` | Delete project (destructive) |
+| 36 | `openl_health_check` | System | ❌ Missing | Uses `GET /repos` as connectivity check | Check OpenL server connectivity |
 
 **Legend:**
 - ✅ **Complete**: Tool is fully implemented and working
@@ -587,7 +649,7 @@
 
 | Status | Count | Tools |
 |--------|-------|-------|
-| ✅ Complete | 21 | All repository, project, table, deployment, branch, and test tools (excluding `openl_list_deployments` which is partial) |
+| ✅ Complete | 24 | All repository, project, table, deployment, branch, and test tools (excluding `openl_list_deployments` which is partial). Includes 4 new test execution tools: `openl_start_project_tests`, `openl_get_test_results_summary`, `openl_get_test_results`, `openl_get_test_results_by_table` (replaced `openl_run_project_tests`) |
 | ⚠️ Partial | 1 | `openl_list_deployments` (missing `repository` filter parameter) |
 | 🔴 Disabled | 6 | `openl_upload_file`, `openl_download_file`, `openl_execute_rule`, `openl_revert_version`, `openl_get_file_history`, `openl_get_project_history` |
 | ❌ Missing | 5 | `openl_validate_project`, `openl_get_project_errors`, `openl_compare_versions`, `openl_delete_project`, `openl_health_check` |
@@ -625,7 +687,7 @@
 
 **LOW PRIORITY**:
 1. Add timeout parameters to long-running operations
-2. Add polling mechanism for async test execution (already implemented for `openl_run_project_tests`)
+2. Add polling mechanism for async test execution (not needed - use `openl_start_project_tests` + `openl_get_test_results` separately)
 
 ---
 

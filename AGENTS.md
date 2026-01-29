@@ -81,7 +81,7 @@ This MCP server enables AI agents to:
 - Deploy projects to production
 - Redeploy with new versions
 
-## Tools (22 Active, 6 Disabled, 28 Total Defined)
+## Tools (25 Active, 6 Disabled, 31 Total Defined)
 
 All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
@@ -91,7 +91,7 @@ All tools are prefixed with `openl_` and versioned (v1.0.0+).
 - `openl_list_repository_features` - Get repository capabilities
 - `openl_repository_project_revisions` - Get project revision history
 
-### Project Tools (11)
+### Project Tools (14)
 - `openl_list_projects` - List projects with filters
 - `openl_get_project` - Get project details
 - `openl_open_project` - Open project for editing (supports branch/revision switching)
@@ -102,7 +102,10 @@ All tools are prefixed with `openl_` and versioned (v1.0.0+).
 - `openl_restore_project_local_change` - Restore previous version
 - `openl_upload_file` - Upload Excel files
 - `openl_download_file` - Download Excel files
-- `openl_run_project_tests` - Execute project tests
+- `openl_start_project_tests` - Start project test execution
+- `openl_get_test_results_summary` - Get brief test execution summary
+- `openl_get_test_results` - Get full test execution results with pagination
+- `openl_get_test_results_by_table` - Get test results filtered by table ID
 
 ### Rules/Tables Tools (6)
 - `openl_list_tables` - List all tables in project

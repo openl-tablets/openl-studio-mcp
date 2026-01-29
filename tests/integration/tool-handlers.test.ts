@@ -8,7 +8,8 @@ import MockAdapter from "axios-mock-adapter";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { OpenLClient } from "../../src/client.js";
 import { executeTool, registerAllTools } from "../../src/tool-handlers.js";
-import type { OpenLConfig, ProjectViewModel, RepositoryInfo, SummaryTableView } from "../../src/types.js";
+import type { OpenLConfig, ProjectViewModel, RepositoryInfo, SummaryTableView, TestsExecutionSummary } from "../../src/types.js";
+import * as Types from "../../src/types.js";
 
 describe("Tool Handler Integration Tests", () => {
   let client: OpenLClient;
@@ -737,6 +738,543 @@ describe("Tool Handler Integration Tests", () => {
         // If error is thrown, that's what we expect
         expect(error).toBeDefined();
       }
+    });
+  });
+
+  describe("Test Execution Tools", () => {
+    const base64ProjectId = Buffer.from("design:project1").toString("base64");
+    const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+    beforeEach(() => {
+      // Mock project fetch for auto-open functionality
+      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status: "OPENED",
+        path: "project1",
+        modifiedBy: "admin",
+        modifiedAt: "2024-01-01T00:00:00Z",
+      });
+    });
+
+    describe("openl_start_project_tests", () => {
+      it("should execute openl_start_project_tests and store session headers", async () => {
+        // Mock /tests/run endpoint - returns 202 with session headers
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-123",
+          "set-cookie": ["JSESSIONID=abc123; Path=/"],
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        const result = await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        expect(result.content[0].text).toContain("started");
+        
+        // Verify that headers were stored by checking that subsequent calls work
+        // This is verified indirectly through get_test_results tests
+      });
+
+      it("should execute openl_start_project_tests with tableId", async () => {
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-456",
+          "set-cookie": ["JSESSIONID=def456; Path=/"],
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`, undefined, {
+          params: { tableId: "Test_calculatePremium_1234" },
+        }).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        const result = await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+          tableId: "Test_calculatePremium_1234",
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        expect(result.content[0].text).toContain("started");
+      });
+
+      it("should auto-open project if closed", async () => {
+        // Mock project as closed
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+          id: "design:project1:hash123",
+          name: "project1",
+          repository: "design",
+          status: "CLOSED",
+          path: "project1",
+          modifiedBy: "admin",
+          modifiedAt: "2024-01-01T00:00:00Z",
+        });
+
+        // Mock project open
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+          status: "OPENED",
+        }).reply(200);
+
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-789",
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        const result = await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        expect(result.content[0].text).toContain("automatically opened");
+      });
+
+      it("should propagate session headers from /tests/run response", async () => {
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-abc",
+          "x-custom-header": "custom-value",
+          "set-cookie": ["JSESSIONID=xyz789; Path=/"],
+        } as any;
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Verify headers are stored by making a get_test_results call
+        // Mock the /tests/summary endpoint and verify headers are sent
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+          // Verify that session headers are present in the request
+          expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-abc");
+          expect(config.headers).toHaveProperty("x-custom-header", "custom-value");
+          expect(config.headers).toHaveProperty("Cookie", "JSESSIONID=xyz789");
+          expect(config.headers).toHaveProperty("Accept", "application/json");
+
+          return [200, {
+            testCases: [],
+            executionTimeMs: 100,
+            numberOfTests: 0,
+            numberOfFailures: 0,
+          }];
+        });
+
+        await executeTool("openl_get_test_results_summary", {
+          projectId: "design-project1",
+        }, client);
+      });
+    });
+
+    describe("openl_get_test_results_summary", () => {
+      it("should execute openl_get_test_results_summary with stored headers", async () => {
+        // First, start test execution to store headers
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-summary",
+          "set-cookie": ["JSESSIONID=summary123; Path=/"],
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Now get test results summary
+        const mockSummary: Types.TestsExecutionSummary = {
+          testCases: [],
+          executionTimeMs: 250.5,
+          numberOfTests: 10,
+          numberOfFailures: 2,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+          // Verify headers are propagated
+          expect(config.headers).toHaveProperty("x-test-execution-id");
+          expect(config.headers).toHaveProperty("Accept", "application/json");
+          return [200, mockSummary];
+        });
+
+        const result = await executeTool("openl_get_test_results_summary", {
+          projectId: "design-project1",
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        const text = result.content[0].text;
+        expect(text).toContain("Test Results Summary");
+        expect(text).toContain("10"); // Total tests
+        expect(text).toContain("8"); // Passed (10 - 2)
+        expect(text).toContain("2"); // Failed
+      });
+
+      it("should error when no test session exists", async () => {
+        // Client checks for headers first and throws before API call
+        // But error gets wrapped by tool handler, so just check that error is thrown
+        await expect(
+          executeTool("openl_get_test_results_summary", {
+            projectId: "design-project1",
+          }, client)
+        ).rejects.toThrow();
+      });
+
+      it("should support failures parameter", async () => {
+        // Start test execution
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, { "x-test-execution-id": "test-session-failures" });
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Get summary with failures parameter
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+          params: { failures: 5 },
+        }).reply(200, {
+          testCases: [],
+          executionTimeMs: 100,
+          numberOfTests: 10,
+          numberOfFailures: 2,
+        });
+
+        const result = await executeTool("openl_get_test_results_summary", {
+          projectId: "design-project1",
+          failures: 5,
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+      });
+    });
+
+    describe("openl_get_test_results", () => {
+      it("should execute openl_get_test_results with stored headers", async () => {
+        // Start test execution
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-results",
+          "set-cookie": ["JSESSIONID=results456; Path=/"],
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Get full test results
+        const mockResults: Types.TestsExecutionSummary = {
+          testCases: [
+            {
+              name: "Test_calculatePremium",
+              tableId: "Test_calculatePremium_1234",
+              executionTimeMs: 50,
+              numberOfTests: 5,
+              numberOfFailures: 0,
+              testUnits: [],
+            },
+            {
+              name: "Test_calculateDiscount",
+              tableId: "Test_calculateDiscount_5678",
+              executionTimeMs: 30,
+              numberOfTests: 3,
+              numberOfFailures: 1,
+              testUnits: [],
+            },
+          ],
+          executionTimeMs: 80,
+          numberOfTests: 8,
+          numberOfFailures: 1,
+          pageNumber: 0,
+          pageSize: 50,
+          numberOfElements: 2,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+          // Verify headers are propagated
+          expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-results");
+          expect(config.headers).toHaveProperty("Cookie", "JSESSIONID=results456");
+          expect(config.headers).toHaveProperty("Accept", "application/json");
+          return [200, mockResults];
+        });
+
+        const result = await executeTool("openl_get_test_results", {
+          projectId: "design-project1",
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        const text = result.content[0].text;
+        expect(text).toContain("Test Results");
+        expect(text).toContain("Test_calculatePremium");
+        expect(text).toContain("Test_calculateDiscount");
+        expect(text).toContain("PASSED");
+        expect(text).toContain("FAILED");
+      });
+
+      it("should error when no test session exists", async () => {
+        // Client checks for headers first and throws before API call
+        // But error gets wrapped by tool handler, so just check that error is thrown
+        await expect(
+          executeTool("openl_get_test_results", {
+            projectId: "design-project1",
+          }, client)
+        ).rejects.toThrow();
+      });
+
+      it("should support pagination parameters", async () => {
+        // Start test execution
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, { "x-test-execution-id": "test-session-pagination" });
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Get results with pagination
+        const mockResults: Types.TestsExecutionSummary = {
+          testCases: [],
+          executionTimeMs: 100,
+          numberOfTests: 100,
+          numberOfFailures: 5,
+          pageNumber: 1,
+          pageSize: 50,
+          numberOfElements: 50,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+          params: { page: 1, size: 50 },
+        }).reply(200, mockResults);
+
+        const result = await executeTool("openl_get_test_results", {
+          projectId: "design-project1",
+          page: 1,
+          size: 50,
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        const text = result.content[0].text;
+        // Verify pagination metadata is included
+        // Pagination shows "Showing items 51-100" (offset 50 + 1 to offset 50 + limit 50)
+        expect(text).toContain("51"); // First item (offset 50 + 1)
+        expect(text).toContain("Pagination"); // Pagination section exists
+      });
+
+      it("should calculate offset correctly from pageNumber and pageSize", async () => {
+        // Start test execution
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, { "x-test-execution-id": "test-session-offset" });
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        const mockResults: Types.TestsExecutionSummary = {
+          testCases: [],
+          executionTimeMs: 100,
+          numberOfTests: 100,
+          numberOfFailures: 5,
+          pageNumber: 2,
+          pageSize: 25,
+          numberOfElements: 25,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+          params: { page: 2, size: 25 },
+        }).reply(200, mockResults);
+
+        const result = await executeTool("openl_get_test_results", {
+          projectId: "design-project1",
+          page: 2,
+          size: 25,
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        // Verify offset is calculated as pageNumber * pageSize = 2 * 25 = 50
+        // Pagination shows "Showing items 51-75" (offset+1 to offset+limit)
+        const text = result.content[0].text;
+        expect(text).toContain("51"); // First item should be 51 (offset 50 + 1)
+      });
+
+      it("should support failuresOnly parameter", async () => {
+        // Start test execution
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, { "x-test-execution-id": "test-session-failures-only" });
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+          params: { failuresOnly: true },
+        }).reply(200, {
+          testCases: [],
+          executionTimeMs: 100,
+          numberOfTests: 5,
+          numberOfFailures: 5,
+        });
+
+        const result = await executeTool("openl_get_test_results", {
+          projectId: "design-project1",
+          failuresOnly: true,
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+      });
+    });
+
+    describe("openl_get_test_results_by_table", () => {
+      it("should execute openl_get_test_results_by_table with stored headers", async () => {
+        // Start test execution
+        const sessionHeaders = {
+          "x-test-execution-id": "test-session-by-table",
+          "set-cookie": ["JSESSIONID=bytable789; Path=/"],
+        };
+
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, sessionHeaders);
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        // Get results - mock should return results for page 0, empty for page 1+
+        const allResults: Types.TestsExecutionSummary = {
+          testCases: [
+            {
+              name: "Test_calculatePremium",
+              tableId: "Test_calculatePremium_1234",
+              executionTimeMs: 50,
+              numberOfTests: 5,
+              numberOfFailures: 0,
+              testUnits: [],
+            },
+            {
+              name: "Test_calculateDiscount",
+              tableId: "Test_calculateDiscount_5678",
+              executionTimeMs: 30,
+              numberOfTests: 3,
+              numberOfFailures: 1,
+              testUnits: [],
+            },
+          ],
+          executionTimeMs: 80,
+          numberOfTests: 8,
+          numberOfFailures: 1,
+          pageNumber: 0,
+          pageSize: 50,
+          numberOfElements: 2,
+          totalPages: 1,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+          // Verify headers are propagated
+          expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-by-table");
+          expect(config.headers).toHaveProperty("Cookie", "JSESSIONID=bytable789");
+          expect(config.headers).toHaveProperty("Accept", "application/json");
+          
+          // Return empty results for pages > 0 to stop pagination
+          const page = config.params?.page ?? 0;
+          if (page > 0) {
+            return [200, {
+              testCases: [],
+              executionTimeMs: 80,
+              numberOfTests: 8,
+              numberOfFailures: 1,
+              pageNumber: page,
+              pageSize: 50,
+              numberOfElements: 0,
+              totalPages: 1,
+            }];
+          }
+          
+          return [200, allResults];
+        });
+
+        const result = await executeTool("openl_get_test_results_by_table", {
+          projectId: "design-project1",
+          tableId: "Test_calculatePremium_1234",
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+        const text = result.content[0].text;
+        // Should only contain results for the specified table
+        expect(text).toContain("Test_calculatePremium");
+        expect(text).not.toContain("Test_calculateDiscount");
+      });
+
+      it("should error when no test session exists", async () => {
+        // Client checks for headers first and throws before API call
+        // But error gets wrapped by tool handler, so just check that error is thrown
+        await expect(
+          executeTool("openl_get_test_results_by_table", {
+            projectId: "design-project1",
+            tableId: "Test_calculatePremium_1234",
+          }, client)
+        ).rejects.toThrow();
+      });
+
+      it("should error when tableId is missing", async () => {
+        await expect(
+          executeTool("openl_get_test_results_by_table", {
+            projectId: "design-project1",
+            // Missing tableId
+          }, client)
+        ).rejects.toThrow(/Missing required arguments.*tableId/);
+      });
+
+      it("should support pagination parameters", async () => {
+        // Start test execution
+        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+          status: "accepted",
+        }, { "x-test-execution-id": "test-session-by-table-pagination" });
+
+        await executeTool("openl_start_project_tests", {
+          projectId: "design-project1",
+        }, client);
+
+        const allResults: Types.TestsExecutionSummary = {
+          testCases: [
+            {
+              name: "Test_calculatePremium",
+              tableId: "Test_calculatePremium_1234",
+              executionTimeMs: 50,
+              numberOfTests: 5,
+              numberOfFailures: 0,
+              testUnits: [],
+            },
+          ],
+          executionTimeMs: 50,
+          numberOfTests: 5,
+          numberOfFailures: 0,
+          pageNumber: 0,
+          pageSize: 50,
+        };
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+          params: { page: 0, size: 50 },
+        }).reply(200, allResults);
+
+        const result = await executeTool("openl_get_test_results_by_table", {
+          projectId: "design-project1",
+          tableId: "Test_calculatePremium_1234",
+          page: 0,
+          size: 50,
+        }, client);
+
+        expect(result.content[0].type).toBe("text");
+      });
     });
   });
 });

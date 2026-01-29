@@ -66,4 +66,4 @@ IF >50 errors → Fix root cause first (may cascade fix others)
 - Validate in OpenL Studio UI → MUST be 0 errors
   (openl_validate_project temporarily disabled)
 - Run all tests in OpenL Studio UI → MUST pass
-  Use `openl_run_project_tests()` to run tests (unified tool)
+  Use `openl_start_project_tests()` then `openl_get_test_results()` to run tests

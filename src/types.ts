@@ -439,18 +439,22 @@ export interface TestsExecutionSummary {
   totalPages?: number;
 }
 
-/** Run project tests request */
-export interface RunProjectTestsRequest {
+/** Test execution start response */
+export interface TestExecutionStartResponse {
+  status: "started" | "accepted";
   projectId: string;
   tableId?: string;
   testRanges?: string;
-  query?: {
-    failuresOnly?: boolean;
-  };
-  pagination?: {
-    offset?: number;
-    limit?: number;
-  };
+  projectWasOpened?: boolean;
+  message: string;
+}
+
+/** Test results summary (without testCases array) */
+export interface TestResultsSummary {
+  executionTimeMs: number;
+  numberOfTests: number;
+  numberOfFailures: number;
+  numberOfPassed: number;
 }
 
 /** Project validation result */

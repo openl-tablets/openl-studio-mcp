@@ -15,9 +15,17 @@ arguments:
 **When tables modified, run targeted tests first** (1-5 tables → specific tableIds, 6+ → runAll). Before save/deploy, ALWAYS run all tests (no exceptions).
 
 **Test Execution Workflow:**
-1. Use `openl_run_project_tests()` to start test execution and retrieve results in one call
-   - Automatically uses all headers from test start response when fetching results
-   - Supports `waitForCompletion: true` (default) to wait for completion
+1. Use `openl_start_project_tests()` to start test execution
+   - Project will be automatically opened if closed
+   - Returns execution status and metadata
+2. Use `openl_get_test_results_summary()` for brief summary (without testCases)
+3. Use `openl_get_test_results()` for full results with pagination
+   - **IMPORTANT**: Pagination applies to test tables, not individual test cases
+   - Each page returns test results aggregated by table (e.g., one table may contain multiple tests)
+   - Example: Page 1 might show 5 tables with aggregated test counts (7 tests, 8 tests, etc.)
+   - **NOTE**: The 'unpaged' parameter may not work correctly on the backend - use pagination (page/offset/size) instead
+4. Use `openl_get_test_results_by_table()` for results filtered by table ID
+   - **NOTE**: The 'unpaged' parameter may not work correctly on the backend - use pagination if needed
 
 # Test Selection Logic
 
@@ -41,15 +49,17 @@ WHEN rules are modified, SELECT test scope:
 - Omit `tableId` to run all tests in the project
 
 **Test Execution Steps:**
-1. Run tests: `openl_run_project_tests(projectId, { tableId?, testRanges?, waitForCompletion: true, failuresOnly?: boolean })`
+1. Start tests: `openl_start_project_tests(projectId, { tableId?, testRanges? })`
+2. Get results: `openl_get_test_results(projectId)` or `openl_get_test_results_summary(projectId)`
 
 AFTER modification:
-1. Execute targeted tests first (with specific `tableId`)
-2. IF pass AND not saving → done
-3. IF saving → run all tests (omit `tableId`, no exceptions)
+1. Start targeted tests first (with specific `tableId`): `openl_start_project_tests(projectId, { tableId })`
+2. Get results: `openl_get_test_results(projectId)` or `openl_get_test_results_by_table(projectId, tableId)`
+3. IF pass AND not saving → done
+4. IF saving → start all tests (omit `tableId`, no exceptions): `openl_start_project_tests(projectId)`
 
 BEFORE openl_save_project():
-- `openl_run_project_tests(projectId, { waitForCompletion: true })` MUST pass
+- `openl_start_project_tests(projectId)` → `openl_get_test_results(projectId)` MUST pass
 - `Validate in OpenL Studio UI (openl_validate_project temporarily disabled)` MUST pass
 
 BEFORE openl_deploy_project():

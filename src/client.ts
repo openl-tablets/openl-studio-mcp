@@ -8,7 +8,7 @@
 import axios, { AxiosInstance } from "axios";
 import type * as Types from "./types.js";
 import { AuthenticationManager } from "./auth.js";
-import { DEFAULTS, PROJECT_ID_PATTERN, TEST_POLLING } from "./constants.js";
+import { DEFAULTS, PROJECT_ID_PATTERN } from "./constants.js";
 import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } from "./utils.js";
 
 /**
@@ -31,6 +31,7 @@ export class OpenLClient {
   private authManager: AuthenticationManager;
   private repositoriesCache: Types.Repository[] | null = null;
   private jsessionId: string | null = null; // Store JSESSIONID cookie for session management
+  private testExecutionHeaders: Map<string, Record<string, string>> = new Map(); // Store headers for test execution sessions
 
   /**
    * Create a new OpenL Studio API client
@@ -1268,203 +1269,412 @@ export class OpenLClient {
     );
   }
 
+  // =============================================================================
+  // Test Execution Session Management
+  // =============================================================================
+
   /**
-   * Run project tests - unified method that starts tests and retrieves results
-   *
+   * Store test execution headers for a project
+   * 
    * @param projectId - Project ID
-   * @param options - Test execution options (tableId, testRanges, query, pagination, waitForCompletion)
-   * @returns Test execution summary
+   * @param tableId - Optional table ID (for table-specific test sessions)
+   * @param headers - Headers from test start response
+   */
+  private storeTestExecutionHeaders(
+    projectId: string,
+    tableId: string | undefined,
+    headers: Record<string, string>
+  ): void {
+    const key = tableId ? `${projectId}:${tableId}` : projectId;
+    this.testExecutionHeaders.set(key, headers);
+  }
+
+  /**
+   * Get test execution headers for a project
+   * 
+   * @param projectId - Project ID
+   * @param tableId - Optional table ID
+   * @returns Headers if found, undefined otherwise
+   */
+  private getTestExecutionHeaders(
+    projectId: string,
+    tableId?: string
+  ): Record<string, string> | undefined {
+    const key = tableId ? `${projectId}:${tableId}` : projectId;
+    return this.testExecutionHeaders.get(key);
+  }
+
+  /**
+   * Clear test execution headers for a project
+   * 
+   * @param projectId - Project ID
+   * @param tableId - Optional table ID
+   */
+  private clearTestExecutionHeaders(projectId: string, tableId?: string): void {
+    const key = tableId ? `${projectId}:${tableId}` : projectId;
+    this.testExecutionHeaders.delete(key);
+  }
+
+  /**
+   * Extract headers from test start response
+   * 
+   * @param headers - Response headers from axios
+   * @returns Extracted headers ready for use in subsequent requests
+   */
+  private extractTestExecutionHeaders(headers: Record<string, unknown>): Record<string, string> {
+    const responseHeaders: Record<string, string> = {};
+    const excludeHeaders = [
+      'content-type',
+      'content-length',
+      'content-encoding',
+      'transfer-encoding',
+      'connection',
+      'server',
+      'date',
+      'etag',
+      'last-modified',
+      'cache-control',
+      'expires',
+      'vary',
+      'access-control-allow-origin',
+      'access-control-allow-methods',
+      'access-control-allow-headers',
+      'access-control-expose-headers',
+      'accept',
+    ];
+
+    const setCookieValues: string[] = [];
+
+    Object.keys(headers).forEach((key) => {
+      const lowerKey = key.toLowerCase();
+
+      if (lowerKey === 'set-cookie') {
+        const value = headers[key];
+        if (value !== undefined && value !== null) {
+          const cookies = Array.isArray(value) ? value : [String(value)];
+          cookies.forEach((cookie) => {
+            const nameValue = cookie.split(';')[0].trim();
+            if (nameValue) {
+              setCookieValues.push(nameValue);
+            }
+          });
+        }
+      } else if (!excludeHeaders.includes(lowerKey)) {
+        const value = headers[key];
+        if (value !== undefined && value !== null) {
+          responseHeaders[key] = Array.isArray(value) ? value.join(", ") : String(value);
+        }
+      }
+    });
+
+    if (setCookieValues.length > 0) {
+      responseHeaders['Cookie'] = setCookieValues.join('; ');
+    }
+
+    return responseHeaders;
+  }
+
+  // =============================================================================
+  // New Test Execution Methods
+  // =============================================================================
+
+  /**
+   * Start project tests execution
+   * 
+   * Ensures project is opened before starting tests. Automatically opens project if closed.
+   * 
+   * @param projectId - Project ID
+   * @param options - Test execution options
+   * @returns Test execution start response
    * @throws Error if test execution fails
    */
-  async runProjectTests(
+  async startProjectTests(
     projectId: string,
     options?: {
       tableId?: string;
       testRanges?: string;
-      query?: {
-        failuresOnly?: boolean;
-      };
-      pagination?: {
-        offset?: number;
-        limit?: number;
-      };
-      waitForCompletion?: boolean;
+      fromModule?: string; // Reserved for future use - not currently used
     }
-  ): Promise<Types.TestsExecutionSummary> {
+  ): Promise<Types.TestExecutionStartResponse> {
     const projectPath = this.buildProjectPath(projectId);
 
-    // Start test execution (returns 202 Accepted)
-    const params: Record<string, string | number | boolean> = {};
-    if (options?.tableId) params.fromModule = options.tableId;
-    if (options?.testRanges) params.testRanges = options.testRanges;
+    // Check if project is opened, open if needed
+    let projectWasOpened = false;
+    try {
+      const project = await this.getProject(projectId);
+      if (project.status !== "OPENED" && project.status !== "EDITING") {
+        await this.openProject(projectId);
+        projectWasOpened = true;
+      }
+    } catch (error) {
+      // If getProject fails, try to open project anyway
+      try {
+        await this.openProject(projectId);
+        projectWasOpened = true;
+      } catch (openError) {
+        throw new Error(
+          `Failed to open project: ${sanitizeError(openError)}. ` +
+          `Project must be opened before running tests.`
+        );
+      }
+    }
 
-    // Start tests and capture all response headers
+    // Clear old headers for this project/table before storing new ones
+    this.clearTestExecutionHeaders(projectId, options?.tableId);
+
+    // Build API parameters
+    const params: Record<string, string | number | boolean> = {};
+    if (options?.tableId) params.tableId = options.tableId;
+    if (options?.testRanges) params.testRanges = options.testRanges;
+    // fromModule is reserved for future use - not currently passed to API
+
+    // Start test execution
     const startResponse = await this.axiosInstance.post(
       `${projectPath}/tests/run`,
       undefined,
       { params }
     );
 
-    // Extract all headers from the start response
-    // Exclude standard response headers that shouldn't be forwarded to requests
-    const responseHeaders: Record<string, string> = {};
-    if (startResponse.headers) {
-      // Headers that should NOT be forwarded (standard HTTP response headers)
-      const excludeHeaders = [
-        'content-type',
-        'content-length',
-        'content-encoding',
-        'transfer-encoding',
-        'connection',
-        'server',
-        'date',
-        'etag',
-        'last-modified',
-        'cache-control',
-        'expires',
-        'vary',
-        'access-control-allow-origin',
-        'access-control-allow-methods',
-        'access-control-allow-headers',
-        'access-control-expose-headers',
-        'accept', // Exclude Accept from response headers - we set it explicitly
-      ];
-      
-      // Special handling for set-cookie: convert to Cookie header
-      const setCookieValues: string[] = [];
-      
-      Object.keys(startResponse.headers).forEach((key) => {
-        const lowerKey = key.toLowerCase();
-        
-        // Special case: set-cookie headers need to be converted to Cookie header
-        if (lowerKey === 'set-cookie') {
-          const value = startResponse.headers[key];
-          if (value !== undefined && value !== null) {
-            const cookies = Array.isArray(value) ? value : [String(value)];
-            cookies.forEach((cookie) => {
-              // Extract only the name=value portion (truncate at first semicolon)
-              const nameValue = cookie.split(';')[0].trim();
-              if (nameValue) {
-                setCookieValues.push(nameValue);
-              }
-            });
-          }
-        } else if (!excludeHeaders.includes(lowerKey)) {
-          // Forward all other non-excluded headers
-          const value = startResponse.headers[key];
-          if (value !== undefined && value !== null) {
-            responseHeaders[key] = Array.isArray(value) ? value.join(", ") : String(value);
-          }
-        }
-      });
-      
-      // Set Cookie header if we extracted any cookies
-      if (setCookieValues.length > 0) {
-        responseHeaders['Cookie'] = setCookieValues.join('; ');
-      }
-    }
+    // Extract and store headers
+    const responseHeaders = this.extractTestExecutionHeaders(startResponse.headers || {});
+    this.storeTestExecutionHeaders(projectId, options?.tableId, responseHeaders);
 
-    // Build summary query parameters
-    const summaryParams: Record<string, string | number | boolean> = {};
-    if (options?.query?.failuresOnly) summaryParams.failuresOnly = true;
-    if (options?.pagination?.offset !== undefined) {
-      summaryParams.page = Math.floor((options.pagination.offset || 0) / (options.pagination.limit || 50));
-    }
-    if (options?.pagination?.limit !== undefined) summaryParams.size = options.pagination.limit;
+    return {
+      status: "started",
+      projectId,
+      tableId: options?.tableId,
+      testRanges: options?.testRanges,
+      projectWasOpened,
+      message: `Test execution started${projectWasOpened ? " (project was automatically opened)" : ""}`,
+    };
+  }
 
-    // If waitForCompletion is false, just return current status
-    if (options?.waitForCompletion === false) {
-      const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
-        `${projectPath}/tests/summary`,
-        {
-          params: summaryParams,
-          headers: {
-            ...responseHeaders, // Use all headers from start response
-            "Accept": "application/json", // Explicitly set Accept header for test results (must be last to override)
-          },
-        }
+  /**
+   * Get test results summary (without testCases array)
+   * 
+   * @param projectId - Project ID
+   * @param options - Summary options
+   * @returns Test results summary
+   * @throws Error if headers not found or request fails
+   */
+  async getTestResultsSummary(
+    projectId: string,
+    options?: {
+      failures?: number;
+      unpaged?: boolean;
+    }
+  ): Promise<Types.TestResultsSummary> {
+    const projectPath = this.buildProjectPath(projectId);
+    const headers = this.getTestExecutionHeaders(projectId);
+
+    if (!headers) {
+      throw new Error(
+        `No test execution session found for project '${projectId}'. ` +
+        `Use openl_start_project_tests() to start test execution first.`
       );
-
-      return response.data;
     }
 
-    // Otherwise, poll for test completion with exponential backoff
-    const startTime = Date.now();
-    let interval: number = TEST_POLLING.INITIAL_INTERVAL;
-    let lastExecutionTime = 0;
-    let attempts = 0;
+    const params: Record<string, string | number | boolean> = {};
+    if (options?.failures !== undefined) params.failures = options.failures;
+    // unpaged parameter is not used - pagination is always used instead
 
-    while (attempts < TEST_POLLING.MAX_RETRIES) {
-      // Check timeout
-      if (Date.now() - startTime > TEST_POLLING.TIMEOUT) {
-        throw new Error(
-          `Test execution timed out after ${TEST_POLLING.TIMEOUT}ms. ` +
-          `Tests may still be running. Check status manually or increase timeout.`
-        );
+    const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
+      `${projectPath}/tests/summary`,
+      {
+        params,
+        headers: {
+          ...headers,
+          "Accept": "application/json",
+        },
       }
-
-      // Wait before polling (except first attempt)
-      if (attempts > 0) {
-        await new Promise(resolve => setTimeout(resolve, interval));
-        // Exponential backoff: increase interval up to MAX_INTERVAL
-        interval = Math.min(interval * 1.5, TEST_POLLING.MAX_INTERVAL);
-      }
-
-      try {
-        const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
-          `${projectPath}/tests/summary`,
-          {
-            params: summaryParams,
-            headers: {
-              ...responseHeaders, // Use all headers from start response
-              "Accept": "application/json", // Explicitly set Accept header for test results (must be last to override)
-            },
-          }
-        );
-        const summary = response.data;
-
-        // Check if execution is complete by comparing executionTimeMs
-        // If executionTimeMs has changed, tests are still running
-        // If it's stable (same as last check) and we have results, assume complete
-        if (summary.executionTimeMs > 0) {
-          if (summary.executionTimeMs === lastExecutionTime && summary.testCases.length > 0) {
-            // Execution time is stable and we have results - likely complete
-            return summary;
-          }
-
-          // Check if we have all expected test results
-          // If numberOfTests is set and matches testCases length, execution is complete
-          if (summary.numberOfTests !== undefined && summary.numberOfTests > 0) {
-            const completedTests = summary.testCases.length;
-            if (completedTests >= summary.numberOfTests) {
-              // All tests have completed
-              return summary;
-            }
-          }
-
-          lastExecutionTime = summary.executionTimeMs;
-        } else if (summary.testCases.length > 0) {
-          // We have results but no execution time - assume complete if we have test cases
-          return summary;
-        }
-
-        attempts++;
-      } catch (error) {
-        // If it's a 404 or other error, wait a bit and retry (tests might not be ready yet)
-        if (attempts < 3) {
-          attempts++;
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    // Max retries reached
-    throw new Error(
-      `Test execution did not complete within ${TEST_POLLING.MAX_RETRIES} polling attempts ` +
-      `(${Math.round((Date.now() - startTime) / 1000)}s). ` +
-      `Tests may still be running. Check status manually.`
     );
+
+    const summary = response.data;
+    const numberOfPassed = summary.numberOfTests - summary.numberOfFailures;
+
+    return {
+      executionTimeMs: summary.executionTimeMs,
+      numberOfTests: summary.numberOfTests,
+      numberOfFailures: summary.numberOfFailures,
+      numberOfPassed,
+    };
+  }
+
+  /**
+   * Get full test results with pagination
+   * 
+   * @param projectId - Project ID
+   * @param options - Result options including pagination
+   * @returns Full test execution summary with testCases
+   * @throws Error if headers not found or request fails
+   */
+  async getTestResults(
+    projectId: string,
+    options?: {
+      failuresOnly?: boolean;
+      failures?: number;
+      page?: number;
+      offset?: number;
+      size?: number;
+      limit?: number; // Alias for size
+      unpaged?: boolean;
+    }
+  ): Promise<Types.TestsExecutionSummary> {
+    const projectPath = this.buildProjectPath(projectId);
+    const headers = this.getTestExecutionHeaders(projectId);
+
+    if (!headers) {
+      throw new Error(
+        `No test execution session found for project '${projectId}'. ` +
+        `Use openl_start_project_tests() to start test execution first.`
+      );
+    }
+
+    const params: Record<string, string | number | boolean> = {};
+    if (options?.failuresOnly) params.failuresOnly = true;
+    if (options?.failures !== undefined) params.failures = options.failures;
+    if (options?.page !== undefined) params.page = options.page;
+    if (options?.offset !== undefined) params.offset = options.offset;
+    if (options?.size !== undefined) params.size = options.size;
+    else if (options?.limit !== undefined) params.size = options.limit; // Map limit to size
+    // unpaged parameter is not used - pagination is always used instead
+
+    const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
+      `${projectPath}/tests/summary`,
+      {
+        params,
+        headers: {
+          ...headers,
+          "Accept": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  }
+
+  /**
+   * Get test results filtered by table ID
+   * 
+   * @param projectId - Project ID
+   * @param tableId - Table ID to filter results
+   * @param options - Result options
+   * @returns Filtered test execution summary
+   * @throws Error if headers not found or request fails
+   */
+  async getTestResultsByTable(
+    projectId: string,
+    tableId: string,
+    options?: {
+      failuresOnly?: boolean;
+      failures?: number;
+      page?: number;
+      offset?: number;
+      size?: number;
+      limit?: number;
+      unpaged?: boolean;
+    }
+  ): Promise<Types.TestsExecutionSummary> {
+    // Collect all test results across pages, then filter by tableId.
+    // Pagination options from the caller are applied AFTER filtering, to avoid
+    // missing the requested table when it is not on the selected page.
+    const baseOptions = {
+      failuresOnly: options?.failuresOnly,
+      failures: options?.failures,
+      // Use caller's size/limit only as page size when iterating pages.
+      size: options?.size,
+      limit: options?.limit,
+    };
+    let pageIndex = 0;
+    let templateSummary: Types.TestsExecutionSummary | null = null;
+    const allMatchingTestCases: Types.TestCaseExecutionResult[] = [];
+
+    // Iterate pages until no more test cases are returned.
+    // We do not use caller's page/offset here to ensure we scan all tables.
+    const pageSize = baseOptions.size ?? baseOptions.limit ?? 50;
+    
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const pageResults = await this.getTestResults(projectId, {
+        ...baseOptions,
+        page: pageIndex,
+      });
+      if (!templateSummary) {
+        templateSummary = pageResults;
+      }
+      
+      // Stop if no test cases returned
+      if (!pageResults.testCases || pageResults.testCases.length === 0) {
+        break;
+      }
+      
+      const pageMatches = pageResults.testCases.filter(
+        (testCase) => testCase.tableId === tableId
+      );
+      allMatchingTestCases.push(...pageMatches);
+      
+      // Check if we've reached the end of pagination
+      // Use totalPages if available, otherwise check if current page has fewer items than pageSize
+      const hasMorePages = pageResults.totalPages !== undefined
+        ? pageIndex < pageResults.totalPages - 1
+        : (pageResults.numberOfElements !== undefined && pageResults.numberOfElements >= pageSize);
+      
+      if (!hasMorePages) {
+        break;
+      }
+      
+      pageIndex += 1;
+      
+      // Safety limit: prevent infinite loops (max 1000 pages)
+      if (pageIndex >= 1000) {
+        break;
+      }
+    }
+
+    if (!templateSummary) {
+      // No pages returned any results; construct an empty summary shape by
+      // calling getTestResults once (without pagination options).
+      templateSummary = await this.getTestResults(projectId, {
+        failuresOnly: options?.failuresOnly,
+        failures: options?.failures,
+      });
+    }
+
+    // Apply caller's pagination options within the filtered test cases.
+    let pagedTestCases = allMatchingTestCases;
+    const hasPaginationOptions =
+      options?.page !== undefined ||
+      options?.offset !== undefined ||
+      options?.size !== undefined ||
+      options?.limit !== undefined;
+
+    if (hasPaginationOptions && allMatchingTestCases.length > 0) {
+      const pageSize = options?.size ?? options?.limit;
+      let start = 0;
+      if (options?.offset !== undefined) {
+        start = options.offset;
+      } else if (options?.page !== undefined && pageSize !== undefined) {
+        start = options.page * pageSize;
+      }
+      const end = pageSize !== undefined ? start + pageSize : undefined;
+      pagedTestCases = allMatchingTestCases.slice(start, end);
+    }
+
+    const numberOfTests = pagedTestCases.reduce(
+      (sum, tc) => sum + tc.numberOfTests,
+      0
+    );
+    const numberOfFailures = pagedTestCases.reduce(
+      (sum, tc) => sum + tc.numberOfFailures,
+      0
+    );
+
+    return {
+      ...templateSummary,
+      testCases: pagedTestCases,
+      numberOfTests,
+      numberOfFailures,
+    };
   }
 
   // =============================================================================

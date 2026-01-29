@@ -338,14 +338,75 @@ export const restoreProjectLocalChangeSchema = z.object({
 // Test Execution Schemas
 // =============================================================================
 
-export const runProjectTestsSchema = z.object({
+export const startProjectTestsSchema = z.object({
   projectId: projectIdSchema,
   tableId: z.string().optional().describe("Table ID to run tests for a specific table. Table type can be test table or any other table. If not provided, tests for all test tables in the project will be run."),
   testRanges: z.string().optional().describe("Test ranges to run. Can be provided only if tableId is Test table. Example: '1-3,5' to run tests with numbers 1,2,3 and 5. If not provided, all tests in the test table will be run."),
-  failuresOnly: z.boolean().optional().describe("Show only failed tests (default: false)"),
-  waitForCompletion: z.boolean().optional().describe("Wait for test execution to complete before returning results. If false, returns current status immediately (default: true)"),
+  fromModule: z.string().optional().describe("Module name to run tests from (reserved for future use - not currently used)"),
   response_format: ResponseFormat.optional(),
-}).merge(PaginationParams).strict();
+}).strict();
+
+export const getTestResultsSummarySchema = z.object({
+  projectId: projectIdSchema,
+  failures: z.number().int().positive().optional().default(5).describe("Number of failed test units to include in the summary (default: 5, min: 1)"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination is always used instead"),
+  response_format: ResponseFormat.optional(),
+}).strict();
+
+export const getTestResultsSchema = z.object({
+  projectId: projectIdSchema,
+  failuresOnly: z.boolean().optional().describe("Show only failed tests (default: false)"),
+  failures: z.number().int().positive().optional().default(5).describe("Number of failed test units to include in the summary (default: 5, min: 1)"),
+  page: z.number().int().nonnegative().optional().describe("Page number (0-based). Mutually exclusive with offset"),
+  offset: z.number().int().nonnegative().optional().describe("Offset for pagination. Mutually exclusive with page"),
+  size: z.number().int().positive().optional().describe("Page size (number of results per page)"),
+  limit: z.number().int().positive().max(200).optional().describe("Page size (alias for size, maps to size parameter)"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination (page/offset/size) is always used instead. Mutually exclusive with page, offset, and size"),
+  response_format: ResponseFormat.optional(),
+}).strict().refine(
+  (data) => {
+    // Validate mutual exclusivity: page vs offset
+    if (data.page !== undefined && data.offset !== undefined) {
+      return false;
+    }
+    // Validate mutual exclusivity: unpaged vs page/offset/size
+    if (data.unpaged === true && (data.page !== undefined || data.offset !== undefined || data.size !== undefined || data.limit !== undefined)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, and size",
+  }
+);
+
+export const getTestResultsByTableSchema = z.object({
+  projectId: projectIdSchema,
+  tableId: tableIdSchema.describe("Table ID to filter test results for a specific table"),
+  failuresOnly: z.boolean().optional().describe("Show only failed tests (default: false)"),
+  failures: z.number().int().positive().optional().default(5).describe("Number of failed test units to include in the summary (default: 5, min: 1)"),
+  page: z.number().int().nonnegative().optional().describe("Page number (0-based). Mutually exclusive with offset"),
+  offset: z.number().int().nonnegative().optional().describe("Offset for pagination. Mutually exclusive with page"),
+  size: z.number().int().positive().optional().describe("Page size (number of results per page)"),
+  limit: z.number().int().positive().max(200).optional().describe("Page size (alias for size, maps to size parameter)"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination (page/offset/size) is always used instead. Mutually exclusive with page, offset, and size"),
+  response_format: ResponseFormat.optional(),
+}).strict().refine(
+  (data) => {
+    // Validate mutual exclusivity: page vs offset
+    if (data.page !== undefined && data.offset !== undefined) {
+      return false;
+    }
+    // Validate mutual exclusivity: unpaged vs page/offset/size
+    if (data.unpaged === true && (data.page !== undefined || data.offset !== undefined || data.size !== undefined || data.limit !== undefined)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, and size",
+  }
+);
 
 // =============================================================================
 // Redeploy Schema

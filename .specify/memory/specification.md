@@ -216,7 +216,7 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 
 **Requirement**: MCP server provides 28 tools, of which 22 are currently active and 6 are temporarily disabled.
 
-**Active Tools (22)**:
+**Active Tools (25)**:
 
 **Repository Tools (4)**:
 - `openl_list_repositories` - List all design repositories
@@ -224,7 +224,7 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 - `openl_list_repository_features` - Get repository features
 - `openl_repository_project_revisions` - Get project revision history
 
-**Project Tools (9)**:
+**Project Tools (12)**:
 - `openl_list_projects` - List projects with optional filters (supports pagination)
 - `openl_get_project` - Get comprehensive project details
 - `openl_open_project` - Open project for editing
@@ -233,7 +233,10 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 - `openl_create_project_branch` - Create new branch
 - `openl_list_project_local_changes` - List local change history
 - `openl_restore_project_local_change` - Restore previous local version
-- `openl_run_project_tests` - Run project tests
+- `openl_start_project_tests` - Start project test execution
+- `openl_get_test_results_summary` - Get brief test execution summary
+- `openl_get_test_results` - Get full test execution results with pagination
+- `openl_get_test_results_by_table` - Get test results filtered by table ID
 
 **Rules Tools (5)**:
 - `openl_list_tables` - List tables/rules with filters (supports pagination)
@@ -581,7 +584,7 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 
 The MCP server is considered successful when:
 
-1. ✅ All 22 active tools execute successfully (6 tools temporarily disabled)
+1. ✅ All 25 active tools execute successfully (6 tools temporarily disabled)
 2. ✅ All active tools support response_format parameter
 3. ✅ All list operations support pagination
 4. ✅ Character limits enforced on all responses
