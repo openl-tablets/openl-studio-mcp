@@ -71,19 +71,3 @@ export const RESPONSE_LIMITS = {
   TRUNCATION_MESSAGE: "Response truncated due to size. Use limit/offset parameters or narrower filters to retrieve full data.",
 } as const;
 
-/**
- * Test execution polling configuration
- */
-export const TEST_POLLING = {
-  /** Initial polling interval in milliseconds */
-  INITIAL_INTERVAL: 1000,
-
-  /** Maximum polling interval in milliseconds (with exponential backoff) */
-  MAX_INTERVAL: 5000,
-
-  /** Maximum number of polling attempts */
-  MAX_RETRIES: 60,
-
-  /** Total timeout in milliseconds (60 seconds) */
-  TIMEOUT: 60000,
-} as const;

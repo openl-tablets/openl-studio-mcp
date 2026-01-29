@@ -6,6 +6,7 @@
 
 import { RESPONSE_LIMITS } from "./constants.js";
 import { safeStringify } from "./utils.js";
+import * as Types from "./types.js";
 
 /**
  * Pagination metadata
@@ -183,6 +184,9 @@ export function toMarkdown<T>(
       break;
     case "test_results":
       parts.push(formatTestResults(data as any));
+      break;
+    case "test_results_summary":
+      parts.push(formatTestResultsSummary(data as any));
       break;
     default:
       // Generic object/array formatting
@@ -519,9 +523,35 @@ function formatHistory(commits: any[]): string {
 }
 
 /**
+ * Format test results summary (without testCases) as markdown
+ */
+function formatTestResultsSummary(summary: Types.TestResultsSummary): string {
+  if (!summary || typeof summary !== "object") {
+    return "No test results summary found.";
+  }
+
+  const totalTests = summary.numberOfTests || 0;
+  const totalFailures = summary.numberOfFailures || 0;
+  const numberOfPassed = summary.numberOfPassed || (totalTests - totalFailures);
+  const executionTime = typeof summary.executionTimeMs === 'number' && isFinite(summary.executionTimeMs)
+    ? summary.executionTimeMs
+    : 0;
+
+  const lines = ["# Test Results Summary", ""];
+  lines.push("## Summary");
+  lines.push(`- **Total Tests**: ${totalTests}`);
+  lines.push(`- **Passed**: ${numberOfPassed}`);
+  lines.push(`- **Failed**: ${totalFailures}`);
+  lines.push(`- **Execution Time**: ${executionTime.toFixed(2)} ms`);
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+/**
  * Format test results as markdown table
  */
-function formatTestResults(summary: any): string {
+function formatTestResults(summary: Types.TestsExecutionSummary & { totalTestsInAllTables?: number }): string {
   if (!summary || typeof summary !== "object") {
     return "No test results found.";
   }
@@ -529,7 +559,9 @@ function formatTestResults(summary: any): string {
   const testCases = summary.testCases || [];
   const totalTests = summary.numberOfTests || 0;
   const totalFailures = summary.numberOfFailures || 0;
-  const executionTime = summary.executionTimeMs || 0;
+  const executionTime = typeof summary.executionTimeMs === 'number' && isFinite(summary.executionTimeMs)
+    ? summary.executionTimeMs
+    : 0;
 
   const lines = ["# Test Results", ""];
 
@@ -577,7 +609,9 @@ function formatTestResults(summary: any): string {
       
       const passed = totalTestsForCase - numberOfFailures;
       const status = numberOfFailures === 0 ? "✅ PASSED" : "❌ FAILED";
-      const execTime = (testCase.executionTimeMs || 0).toFixed(2);
+      const execTime = (typeof testCase.executionTimeMs === 'number' && isFinite(testCase.executionTimeMs)
+        ? testCase.executionTimeMs
+        : 0).toFixed(2);
 
       lines.push(`| ${name} | ${totalTestsForCase} | ${passed} | ${numberOfFailures} | ${status} | ${execTime} |`);
     }

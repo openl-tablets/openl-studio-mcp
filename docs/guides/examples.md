@@ -590,19 +590,37 @@ Run all tests for project 'design-insurance-rules' and show me the results
 ```
 
 **What happens:**
-1. MCP server calls `openl_run_project_tests` to start test execution and retrieve results
-2. Tool automatically uses all headers from test start response when fetching results
+1. MCP server calls `openl_start_project_tests` to start test execution
+2. Project is automatically opened if closed
+3. MCP server calls `openl_get_test_results` to retrieve full results
 
 **Example Workflow:**
 ```text
-# Unified tool - starts tests and gets results in one call
-openl_run_project_tests(
+# Step 1: Start test execution
+openl_start_project_tests(
   projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
-  tableId: "calculatePremium_1234",  # Optional: test specific table
-  waitForCompletion: true,  # Wait for completion (default)
-  failuresOnly: false  # Optional: show only failures
+  tableId: "calculatePremium_1234"  # Optional: test specific table
+)
+
+# Step 2: Get full results
+openl_get_test_results(
+  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
+  failuresOnly: false,  # Optional: show only failures
+  page: 0,              # Optional: pagination (pagination applies to test tables, not individual test cases)
+  size: 10              # Optional: page size
+)
+
+# Or get brief summary
+openl_get_test_results_summary(
+  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6..."
 )
 ```
+
+**Note on Pagination:**
+- Pagination applies to test tables (not individual test cases)
+- Each page returns test results aggregated by table
+- Example: Page 1 might show 5 tables, where each table contains multiple tests (e.g., "TestTable1" with 7 tests, "TestTable2" with 8 tests)
+- ⚠️ **Important**: The 'unpaged' parameter may not work correctly on the backend - use pagination (page/offset/size) instead
 
 **Example Response:**
 ```json
@@ -642,28 +660,40 @@ Run tests for the calculatePremium table in project 'design-insurance-rules'
 
 **Example:**
 ```text
-openl_run_project_tests(
+# Start tests for specific table
+openl_start_project_tests(
+  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
+  tableId: "calculatePremium_1234"
+)
+
+# Get results filtered by table
+openl_get_test_results_by_table(
   projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
   tableId: "calculatePremium_1234"
 )
 ```
 
-### Check Test Status Without Waiting
+### Get Brief Test Summary
 
 **Prompt to Claude:**
 ```text
-Check current test status for project 'design-insurance-rules' without waiting
+Show me a brief summary of test results for project 'design-insurance-rules'
 ```
 
 **What happens:**
-- Uses `waitForCompletion: false` to get current status immediately
-- Useful for checking progress of long-running tests
+- Gets aggregated statistics without detailed test cases
+- Faster for quick status checks
 
 **Example:**
 ```text
-openl_run_project_tests(
-  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
-  waitForCompletion: false  # Return immediately
+# Start tests first
+openl_start_project_tests(
+  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6..."
+)
+
+# Get brief summary
+openl_get_test_results_summary(
+  projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6..."
 )
 ```
 
@@ -680,11 +710,15 @@ Run tests 1-3 and 5 for the Test_calculatePremium table
 
 **Example:**
 ```text
-openl_run_project_tests(
+# Start tests with specific ranges
+openl_start_project_tests(
   projectId: "ZGVzaWduOTpJbnN1cmFuY2UgUnVsZXM6...",
   tableId: "Test_calculatePremium_1234",
   testRanges: "1-3,5"
 )
+
+# Get results
+openl_get_test_results(projectId)
 ```
 
 ## Advanced Usage

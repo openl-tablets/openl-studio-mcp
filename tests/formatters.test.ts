@@ -380,6 +380,100 @@ describe("formatters", () => {
     });
   });
 
+  describe("test_results_summary formatting", () => {
+    it("should format test results summary as markdown", () => {
+      const summary = {
+        executionTimeMs: 250.5,
+        numberOfTests: 10,
+        numberOfFailures: 2,
+        numberOfPassed: 8,
+      };
+
+      const result = formatResponse(summary, "markdown", { dataType: "test_results_summary" });
+
+      expect(result).toContain("# Test Results Summary");
+      expect(result).toContain("## Summary");
+      expect(result).toContain("**Total Tests**: 10");
+      expect(result).toContain("**Passed**: 8");
+      expect(result).toContain("**Failed**: 2");
+      expect(result).toContain("**Execution Time**: 250.50 ms");
+    });
+
+    it("should handle test results summary with zero values", () => {
+      const summary = {
+        executionTimeMs: 0,
+        numberOfTests: 0,
+        numberOfFailures: 0,
+        numberOfPassed: 0,
+      };
+
+      const result = formatResponse(summary, "markdown", { dataType: "test_results_summary" });
+
+      expect(result).toContain("# Test Results Summary");
+      expect(result).toContain("**Total Tests**: 0");
+      expect(result).toContain("**Passed**: 0");
+      expect(result).toContain("**Failed**: 0");
+      expect(result).toContain("**Execution Time**: 0.00 ms");
+    });
+
+    it("should calculate numberOfPassed when not provided", () => {
+      const summary = {
+        executionTimeMs: 100,
+        numberOfTests: 5,
+        numberOfFailures: 1,
+        // numberOfPassed not provided, should be calculated as numberOfTests - numberOfFailures
+      };
+
+      const result = formatResponse(summary, "markdown", { dataType: "test_results_summary" });
+
+      expect(result).toContain("**Total Tests**: 5");
+      expect(result).toContain("**Passed**: 4"); // 5 - 1 = 4
+      expect(result).toContain("**Failed**: 1");
+    });
+
+    it("should handle invalid executionTimeMs gracefully", () => {
+      const summary = {
+        executionTimeMs: null as any,
+        numberOfTests: 10,
+        numberOfFailures: 2,
+        numberOfPassed: 8,
+      };
+
+      const result = formatResponse(summary, "markdown", { dataType: "test_results_summary" });
+
+      expect(result).toContain("# Test Results Summary");
+      expect(result).toContain("**Execution Time**: 0.00 ms"); // Should default to 0
+    });
+
+    it("should handle invalid executionTimeMs as string", () => {
+      const summary = {
+        executionTimeMs: "invalid" as any,
+        numberOfTests: 10,
+        numberOfFailures: 2,
+        numberOfPassed: 8,
+      };
+
+      const result = formatResponse(summary, "markdown", { dataType: "test_results_summary" });
+
+      expect(result).toContain("# Test Results Summary");
+      expect(result).toContain("**Execution Time**: 0.00 ms"); // Should default to 0
+    });
+
+    it("should format test results summary in JSON format", () => {
+      const summary = {
+        executionTimeMs: 150.25,
+        numberOfTests: 20,
+        numberOfFailures: 3,
+        numberOfPassed: 17,
+      };
+
+      const result = formatResponse(summary, "json", { dataType: "test_results_summary" });
+
+      const parsed = JSON.parse(result);
+      expect(parsed.data).toEqual(summary);
+    });
+  });
+
   describe("edge cases", () => {
     it("should handle circular references in JSON", () => {
       const circular: any = { a: 1 };

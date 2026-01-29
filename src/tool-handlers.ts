@@ -19,7 +19,7 @@ import * as schemas from "./schemas.js";
 import { formatResponse, paginateResults } from "./formatters.js";
 import { validateResponseFormat, validatePagination } from "./validators.js";
 import { logger } from "./logger.js";
-import { isAxiosError, sanitizeError, extractApiErrorInfo } from "./utils.js";
+import { isAxiosError, sanitizeError, extractApiErrorInfo, sanitizeJson } from "./utils.js";
 import type * as Types from "./types.js";
 
 /**
@@ -106,7 +106,7 @@ export async function executeTool(
   try {
     return await tool.handler(args, client);
   } catch (error: unknown) {
-    throw handleToolError(error, name);
+    throw handleToolError(error, name, args);
   }
 }
 
@@ -1587,12 +1587,12 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
   // =============================================================================
 
   registerTool({
-    name: "openl_run_project_tests",
-    title: "openl Run Project Tests",
+    name: "openl_start_project_tests",
+    title: "openl Start Project Tests",
     version: "1.0.0",
     description:
-      "Run project tests - unified tool that starts test execution and retrieves results. Automatically uses all headers from the test start response when fetching results. Supports options to target specific tables, test ranges, filtering failures, pagination, and waiting for completion.",
-    inputSchema: schemas.z.toJSONSchema(schemas.runProjectTestsSchema) as Record<string, unknown>,
+      "Start project test execution. The project will be automatically opened if closed. Returns execution status and metadata. Test results can be retrieved using openl_get_test_results_summary, openl_get_test_results, or openl_get_test_results_by_table.",
+    inputSchema: schemas.z.toJSONSchema(schemas.startProjectTestsSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,
       idempotentHint: true,
@@ -1602,10 +1602,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         projectId: string;
         tableId?: string;
         testRanges?: string;
-        failuresOnly?: boolean;
-        limit?: number;
-        offset?: number;
-        waitForCompletion?: boolean;
+        fromModule?: string;
         response_format?: "json" | "markdown";
       };
 
@@ -1618,73 +1615,167 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      const summary = await client.runProjectTests(typedArgs.projectId, {
+      const result = await client.startProjectTests(typedArgs.projectId, {
         tableId: typedArgs.tableId,
         testRanges: typedArgs.testRanges,
-        query: typedArgs.failuresOnly ? { failuresOnly: true } : undefined,
-        pagination: typedArgs.limit || typedArgs.offset
-          ? {
-              limit: typedArgs.limit,
-              offset: typedArgs.offset,
-            }
-          : undefined,
-        waitForCompletion: typedArgs.waitForCompletion !== false, // Default to true
+        fromModule: typedArgs.fromModule, // Reserved for future use
       });
 
-      // Calculate total tests in all test tables if tableId is not specified
-      let totalTestsInAllTables: number | undefined;
-      if (!typedArgs.tableId) {
-        try {
-          const allTables = await client.listTables(typedArgs.projectId, {
-            kind: ["Test"],
-          });
-          
-          // Get row count for each test table (parallel execution)
-          const tableCounts = await Promise.all(
-            allTables.map(async (table) => {
-              try {
-                const tableDetails = await client.getTable(typedArgs.projectId, table.id);
-                // Test tables can have different structures - check for rows, rules, or other data arrays
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const tableData = tableDetails as any;
-                if (tableData.rows && Array.isArray(tableData.rows)) {
-                  return tableData.rows.length;
-                } else if (tableData.rules && Array.isArray(tableData.rules)) {
-                  return tableData.rules.length;
-                } else if (tableData.steps && Array.isArray(tableData.steps)) {
-                  return tableData.steps.length;
-                }
-                return 0;
-              } catch (error) {
-                // If we can't get table details, skip it
-                return 0;
-              }
-            })
-          );
-          const totalCount = tableCounts.reduce((sum, count) => sum + count, 0);
-          totalTestsInAllTables = totalCount;
-        } catch (error) {
-          // If we can't get test tables list, fall back to API's numberOfTests
-        }
+      const formattedResult = formatResponse(result, format);
+
+      return {
+        content: [{ type: "text", text: formattedResult }],
+      };
+    },
+  });
+
+  registerTool({
+    name: "openl_get_test_results_summary",
+    title: "openl Get Test Results Summary",
+    version: "1.0.0",
+    description:
+      "Get brief test execution summary without detailed test cases. Returns aggregated statistics (execution time, total tests, passed, failed) without the testCases array. Use openl_start_project_tests() first to start test execution.",
+    inputSchema: schemas.z.toJSONSchema(schemas.getTestResultsSummarySchema) as Record<string, unknown>,
+    annotations: {
+      openWorldHint: true,
+    },
+    handler: async (args, client): Promise<ToolResponse> => {
+      const typedArgs = args as {
+        projectId: string;
+        failures?: number;
+        unpaged?: boolean;
+        response_format?: "json" | "markdown";
+      };
+
+      if (!typedArgs || !typedArgs.projectId) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()"
+        );
       }
 
-      // Add totalTestsInAllTables to summary if calculated
-      const enhancedSummary = totalTestsInAllTables !== undefined
-        ? { ...summary, totalTestsInAllTables }
-        : summary;
+      const format = validateResponseFormat(typedArgs.response_format);
 
-      const formattedResult = formatResponse(enhancedSummary, format, {
+      const summary = await client.getTestResultsSummary(typedArgs.projectId, {
+        failures: typedArgs.failures,
+        // unpaged is not used - pagination is always used instead
+      });
+
+      const formattedResult = formatResponse(summary, format, {
+        dataType: "test_results_summary",
+      });
+
+      return {
+        content: [{ type: "text", text: formattedResult }],
+      };
+    },
+  });
+
+  registerTool({
+    name: "openl_get_test_results",
+    title: "openl Get Test Results",
+    version: "1.0.0",
+    description:
+      "Get full test execution results with pagination support. Returns complete test execution summary including testCases array grouped by table. IMPORTANT: Pagination applies to test tables (not individual test cases). Each page returns test results aggregated by table (e.g., 'TestTable1' with 7 tests, 'TestTable2' with 8 tests). Supports filtering failures and pagination (page/offset/size). Use openl_start_project_tests() first to start test execution.",
+    inputSchema: schemas.z.toJSONSchema(schemas.getTestResultsSchema) as Record<string, unknown>,
+    annotations: {
+      openWorldHint: true,
+    },
+    handler: async (args, client): Promise<ToolResponse> => {
+      const typedArgs = args as {
+        projectId: string;
+        failuresOnly?: boolean;
+        failures?: number;
+        page?: number;
+        offset?: number;
+        size?: number;
+        limit?: number;
+        unpaged?: boolean;
+        response_format?: "json" | "markdown";
+      };
+
+      if (!typedArgs || !typedArgs.projectId) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()"
+        );
+      }
+
+      const format = validateResponseFormat(typedArgs.response_format);
+
+      const results = await client.getTestResults(typedArgs.projectId, {
+        failuresOnly: typedArgs.failuresOnly,
+        failures: typedArgs.failures,
+        page: typedArgs.page,
+        offset: typedArgs.offset,
+        size: typedArgs.size,
+        limit: typedArgs.limit,
+        // unpaged is not used - pagination is always used instead
+      });
+
+      const pageSize = results.pageSize || typedArgs.size || typedArgs.limit || 50;
+      const formattedResult = formatResponse(results, format, {
         pagination: {
-          // numberOfElements is the page size (elements per page), not total count
-          // numberOfTests is the total number of tests (all tests)
-          // numberOfFailures is the number of failed tests
-          limit: summary.numberOfElements || summary.pageSize || typedArgs.limit || 50,
-          offset: (summary.pageNumber || 0) * (summary.numberOfElements || summary.pageSize || 50),
-          // Use numberOfTests as total (all tests), not totalElements or numberOfElements
-          total: summary.numberOfTests,
+          limit: pageSize,
+          offset: (results.pageNumber || 0) * pageSize,
+          total: results.numberOfTests,
         },
         dataType: "test_results",
-        skipTruncation: true, // Always return full test results without truncation
+        skipTruncation: true,
+      });
+
+      return {
+        content: [{ type: "text", text: formattedResult }],
+      };
+    },
+  });
+
+  registerTool({
+    name: "openl_get_test_results_by_table",
+    title: "openl Get Test Results By Table",
+    version: "1.0.0",
+    description:
+      "Get test execution results filtered by specific table ID. Returns filtered test execution summary with only test cases for the specified table. Supports pagination (page/offset/size) for efficient data retrieval. Use openl_start_project_tests() first to start test execution.",
+    inputSchema: schemas.z.toJSONSchema(schemas.getTestResultsByTableSchema) as Record<string, unknown>,
+    annotations: {
+      openWorldHint: true,
+    },
+    handler: async (args, client): Promise<ToolResponse> => {
+      const typedArgs = args as {
+        projectId: string;
+        tableId: string;
+        failuresOnly?: boolean;
+        failures?: number;
+        page?: number;
+        offset?: number;
+        size?: number;
+        limit?: number;
+        unpaged?: boolean;
+        response_format?: "json" | "markdown";
+      };
+
+      if (!typedArgs || !typedArgs.projectId || !typedArgs.tableId) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          "Missing required arguments: projectId, tableId. To find valid project IDs, use: openl_list_projects(). To find valid table IDs, use: openl_list_tables()"
+        );
+      }
+
+      const format = validateResponseFormat(typedArgs.response_format);
+
+      const results = await client.getTestResultsByTable(typedArgs.projectId, typedArgs.tableId, {
+        failuresOnly: typedArgs.failuresOnly,
+        failures: typedArgs.failures,
+        page: typedArgs.page,
+        offset: typedArgs.offset,
+        size: typedArgs.size,
+        limit: typedArgs.limit,
+        // unpaged is not used - pagination is always used instead
+      });
+
+      const formattedResult = formatResponse(results, format, {
+        dataType: "test_results",
+        skipTruncation: true,
       });
 
       return {
@@ -1750,15 +1841,18 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
  *
  * @param error - Error to handle
  * @param toolName - Name of the tool that failed
+ * @param toolArgs - Tool arguments that were passed (will be sanitized)
  * @returns McpError with enhanced context
  */
-function handleToolError(error: unknown, toolName: string): McpError {
+function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): McpError {
   // Enhanced error handling with context
   if (isAxiosError(error)) {
     const status = error.response?.status;
     const responseData = error.response?.data;
     const endpoint = error.config?.url;
     const method = error.config?.method ? error.config.method.toUpperCase() : undefined;
+    const requestParams = error.config?.params; // Query parameters for GET requests
+    const requestData = error.config?.data; // Request body for POST/PUT requests
 
     // Extract structured error information from API response
     const apiErrorInfo = extractApiErrorInfo(responseData, status);
@@ -1775,6 +1869,31 @@ function handleToolError(error: unknown, toolName: string): McpError {
       method,
       tool: toolName,
     };
+
+    // Add tool arguments (sanitized to prevent sensitive data exposure)
+    if (toolArgs !== undefined) {
+      errorDetails.toolArgs = sanitizeJson(toolArgs);
+    }
+
+    // Add request parameters (query params for GET requests)
+    if (requestParams !== undefined && Object.keys(requestParams).length > 0) {
+      errorDetails.requestParams = sanitizeJson(requestParams);
+    }
+
+    // Add request data (body for POST/PUT requests, sanitized)
+    if (requestData !== undefined) {
+      // Try to parse JSON if it's a string
+      let parsedData = requestData;
+      if (typeof requestData === "string") {
+        try {
+          parsedData = JSON.parse(requestData);
+        } catch {
+          // If parsing fails, use original string (will be sanitized as string)
+          parsedData = requestData;
+        }
+      }
+      errorDetails.requestData = sanitizeJson(parsedData);
+    }
 
     // Add structured error information to details
     if (apiErrorInfo.code) {
@@ -1849,11 +1968,21 @@ function handleToolError(error: unknown, toolName: string): McpError {
 
   // Wrap other errors with sanitization
   const sanitizedMessage = sanitizeError(error);
-  logger.error(`Tool error: ${toolName}`, { error: sanitizedMessage });
+  const errorDetails: Record<string, unknown> = {
+    tool: toolName,
+    error: sanitizedMessage,
+  };
+
+  // Add tool arguments (sanitized to prevent sensitive data exposure)
+  if (toolArgs !== undefined) {
+    errorDetails.toolArgs = sanitizeJson(toolArgs);
+  }
+
+  logger.error(`Tool error: ${toolName}`, errorDetails);
 
   throw new McpError(
     ErrorCode.InternalError,
     `Error executing ${toolName}: ${sanitizedMessage}`,
-    { tool: toolName }
+    errorDetails
   );
 }

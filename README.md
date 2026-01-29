@@ -62,13 +62,13 @@ See [prompts/create_rule.md](./prompts/create_rule.md) for detailed table type g
 
 ## Tools
 
-The MCP server provides 20 active tools for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
+The MCP server provides 25 active tools for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
 **Categories:**
-- **Repository Management** (5 tools) - List repositories, branches, features
-- **Project Management** (7 tools) - List, open, save, branch projects
-- **Rules & Tables** (5 tools) - List, get, update, append, create tables
-- **Deployment** (3 tools) - List, deploy, redeploy projects
+- **Repository Management** (4 tools) - List repositories, branches, features
+- **Project Management** (12 active + 2 disabled = 14 total) - List, open, save, branch projects, test execution
+- **Rules & Tables** (5 active + 1 disabled = 6 total) - List, get, update, append, create tables
+- **Deployment** (4 tools) - List, deploy, redeploy projects
 
 6 additional tools are temporarily disabled pending implementation fixes.
 

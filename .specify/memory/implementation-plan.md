@@ -15,7 +15,7 @@ The OpenL Studio MCP Server underwent a **major architectural refactoring** in N
 - ✅ **Response Formatting**: Unified JSON/Markdown formatting with pagination support
 - ✅ **Structured Logging**: stderr-only logging with credential sanitization
 - ✅ **MCP Annotations**: First-class support for readOnlyHint, idempotentHint, destructiveHint, openWorldHint
-- ✅ **Tool Prefix**: All 28 tools now use `openl_` prefix for namespacing (22 active, 6 disabled)
+- ✅ **Tool Prefix**: All 31 tools now use `openl_` prefix for namespacing (25 active, 6 disabled)
 - ✅ **Character Limits**: Automatic truncation at 25,000 characters
 - ✅ **Pagination**: Built-in pagination (limit: 50, max: 200) for all list operations
 
