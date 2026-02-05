@@ -291,7 +291,7 @@ constants.ts        Low
 ### Dependencies ✓
 
 **Production dependencies**:
-- `@modelcontextprotocol/sdk`: Latest stable (v1.25.3)
+- `@modelcontextprotocol/sdk`: Latest stable (v1.26.0)
 - `axios`: HTTP client
 - `cors`: CORS middleware
 - `express`: HTTP server framework
@@ -317,7 +317,7 @@ All dependencies actively maintained and secure:
 
 ### SDK Version ✓
 
-- **Latest stable**: v1.25.3
+- **Latest stable**: v1.26.0
 - **All features**: Using latest protocol features
 - **Type support**: Full TypeScript support
 - **Protocol compliance**: MCP 2025 specification
@@ -331,7 +331,7 @@ All dependencies actively maintained and secure:
 
 ### Tool Metadata ✓
 
-**MCP SDK Annotations** (v1.25.3 supported):
+**MCP SDK Annotations** (v1.26.0 supported):
 - **annotations**: Standard MCP annotations including:
   - `readOnlyHint`: Indicates read-only operations
   - `destructiveHint`: Marks potentially destructive operations

@@ -362,7 +362,7 @@ Always use placeholders:
 
 - **Language**: TypeScript (ES2020+)
 - **Runtime**: Node.js 24+
-- **MCP SDK**: @modelcontextprotocol/sdk v1.25.1
+- **MCP SDK**: @modelcontextprotocol/sdk v1.26.0
 - **HTTP Client**: axios
 - **Validation**: Zod
 - **Testing**: Jest
@@ -427,7 +427,7 @@ services:
 ## Version
 
 **Current Version**: 1.0.0  
-**MCP SDK**: 1.25.1  
+**MCP SDK**: 1.26.0  
 **Node.js**: 24+  
 **OpenL Studio**: 6.0.0+
 
