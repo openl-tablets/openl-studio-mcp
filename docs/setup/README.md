@@ -5,6 +5,7 @@ Guides for setting up and configuring the OpenL Studio MCP Server for different 
 ## Available Guides
 
 - **[MCP Connection Guide](mcp-connection-guide.md)** - Complete guide for connecting Cursor and Claude Desktop to MCP server (Remote and Docker)
+- **[VS Code / Copilot MCP Setup](vscode-copilot-mcp.md)** - Connect OpenL Studio MCP to VS Code and GitHub Copilot Chat using Docker and an env file
 - **[Docker Setup](docker.md)** - Running MCP server in Docker (technical details)
 
 ## Quick Links
@@ -22,6 +23,9 @@ Guides for setting up and configuring the OpenL Studio MCP Server for different 
 ### For Claude Desktop
 - **Remote MCP Server**: See [MCP Connection Guide - Scenario 3](mcp-connection-guide.md#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
 - **Docker MCP Server**: See [MCP Connection Guide - Scenario 4](mcp-connection-guide.md#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+
+### For VS Code / GitHub Copilot
+- **Docker + env file**: See [VS Code Copilot MCP Setup](vscode-copilot-mcp.md) (stdio via Docker, credentials in `--env-file`)
 
 ## Related Documentation
 
