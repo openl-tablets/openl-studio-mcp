@@ -8,7 +8,7 @@
 import axios, { AxiosInstance } from "axios";
 import type * as Types from "./types.js";
 import { AuthenticationManager } from "./auth.js";
-import { DEFAULTS, PROJECT_ID_PATTERN } from "./constants.js";
+import { DEFAULTS, ERROR_LOCAL_REPOSITORY, HEADERS, PROJECT_ID_PATTERN, REPOSITORY_LOCAL } from "./constants.js";
 import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } from "./utils.js";
 
 /**
@@ -57,9 +57,29 @@ export class OpenLClient {
     // Setup authentication
     this.authManager = new AuthenticationManager(config);
     this.authManager.setupInterceptors(this.axiosInstance);
-    
+
+    // Setup Client Document ID for request tracking (audit/debug)
+    this.setupClientDocumentIdInterceptor();
+
     // Setup cookie management: extract JSESSIONID from responses and add to requests
     this.setupCookieInterceptors();
+  }
+
+  /**
+   * Add Client-Document-Id header from OPENL_CLIENT_DOCUMENT_ID when set.
+   * Used for request tracking in audit and debugging.
+   */
+  private setupClientDocumentIdInterceptor(): void {
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        const clientDocumentId = process.env.OPENL_CLIENT_DOCUMENT_ID;
+        if (clientDocumentId && config.headers) {
+          config.headers[HEADERS.CLIENT_DOCUMENT_ID] = clientDocumentId;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
   }
 
   /**
@@ -533,6 +553,29 @@ export class OpenLClient {
   }
 
   /**
+   * Throws if the project is in a local repository (repository === "local").
+   * Local repositories are not connected to a remote Git; status change (open/save/close) is not supported by the API.
+   */
+  private async ensureNotLocalRepository(projectId: string): Promise<void> {
+    const project = await this.getProject(projectId);
+    if (project.repository === REPOSITORY_LOCAL) {
+      throw new Error(ERROR_LOCAL_REPOSITORY);
+    }
+  }
+
+  /**
+   * Fetches the project and throws if it is in a local repository.
+   * Use when you need the project data and the "not local" check in one GET.
+   */
+  private async getProjectAndEnsureNotLocal(projectId: string): Promise<Types.ComprehensiveProject> {
+    const project = await this.getProject(projectId);
+    if (project.repository === REPOSITORY_LOCAL) {
+      throw new Error(ERROR_LOCAL_REPOSITORY);
+    }
+    return project;
+  }
+
+  /**
    * Delete a project
    *
    * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
@@ -557,6 +600,7 @@ export class OpenLClient {
     projectId: string,
     options?: { branch?: string; revision?: string; comment?: string; selectedBranches?: string[] }
   ): Promise<boolean> {
+    await this.ensureNotLocalRepository(projectId);
     const projectPath = this.buildProjectPath(projectId);
     const updateModel: Types.ProjectStatusUpdateModel = {
       status: "OPENED",
@@ -577,6 +621,7 @@ export class OpenLClient {
    * @returns Success status (204 No Content on success)
    */
   async closeProject(projectId: string, comment?: string): Promise<boolean> {
+    await this.ensureNotLocalRepository(projectId);
     const projectPath = this.buildProjectPath(projectId);
     const updateModel: Types.ProjectStatusUpdateModel = {
       status: "CLOSED",
@@ -590,19 +635,18 @@ export class OpenLClient {
   /**
    * Update project status with safety checks for unsaved changes
    *
-   * Unified method to handle all project status transitions (open, close, save, etc.)
-   * Prevents accidental data loss by requiring explicit confirmation when closing
-   * projects with unsaved changes.
+   * Only OPENED and CLOSED can be set; other statuses (LOCAL, ARCHIVED, VIEWING_VERSION, EDITING) are set automatically by the backend.
+   * Prevents accidental data loss by requiring explicit confirmation when closing projects with unsaved changes.
    *
    * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
-   * @param request - Status update request with optional fields
+   * @param request - Status update request; status may be OPENED or CLOSED only
    * @returns Success status (204 No Content on success)
    * @throws Error if trying to close EDITING project without save or explicit discard
    */
   async updateProjectStatus(
     projectId: string,
     request: {
-      status?: "LOCAL" | "ARCHIVED" | "OPENED" | "VIEWING_VERSION" | "EDITING" | "CLOSED";
+      status?: "OPENED" | "CLOSED";
       comment?: string;
       discardChanges?: boolean;
       branch?: string;
@@ -614,9 +658,7 @@ export class OpenLClient {
 
     // SAFETY CHECK: Prevent closing with unsaved changes without explicit confirmation
     if (request.status === "CLOSED") {
-      // Fetch current project state to check for unsaved changes
-      const currentProject = await this.getProject(projectId);
-
+      const currentProject = await this.getProjectAndEnsureNotLocal(projectId);
       if (currentProject.status === "EDITING") {
         // Project has unsaved changes
         if (!request.comment && !request.discardChanges) {
@@ -628,6 +670,8 @@ export class OpenLClient {
           );
         }
       }
+    } else {
+      await this.ensureNotLocalRepository(projectId);
     }
 
     // Build the API request (discardChanges is MCP-only, not sent to API)
@@ -658,17 +702,36 @@ export class OpenLClient {
   }
 
   /**
-   * Save project changes, creating a new version in the repository
-   * This method validates the project before saving
+   * Save project changes, creating a new revision in the repository
+   *
+   * Works only when project status is EDITING. Requires comment; the server creates a new
+   * revision with that comment and transitions the project to OPENED (or CLOSED if closeAfterSave).
+   * Uses PATCH /projects/{projectId} with body { comment } or { comment, status: "CLOSED" }.
+   *
+   * This method validates the project before saving (if validation endpoint is available).
    *
    * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
-   * @param comment - Optional comment describing the changes
-   * @returns Save result with validation status
+   * @param comment - Comment for the new revision (required when project is EDITING; used as commit message)
+   * @param options - Optional. closeAfterSave: if true, send status CLOSED so project is saved and closed in one request.
+   * @returns Save result; if project is not EDITING, returns success with message "nothing to save" (no API call).
+   * @throws Error if comment is missing or empty when project is EDITING
    */
   async saveProject(
     projectId: string,
-    comment?: string
+    comment: string,
+    options?: { closeAfterSave?: boolean }
   ): Promise<Types.SaveProjectResult> {
+    const project = await this.getProjectAndEnsureNotLocal(projectId);
+    if (project.status !== "EDITING") {
+      return {
+        success: true,
+        message: "There are no changes in the project; nothing to save.",
+      };
+    }
+    if (!comment.trim()) {
+      throw new Error("comment is required for save; it is used as the revision (commit) message.");
+    }
+
     const projectPath = this.buildProjectPath(projectId);
 
     // First validate the project (if validation endpoint is available)
@@ -693,26 +756,19 @@ export class OpenLClient {
       }
     }
 
-    // Save the project
-    const response = await this.axiosInstance.post(
-      `${projectPath}/save`,
-      { comment }
-    );
+    // Save via PATCH /projects/{projectId} (Update project status API).
+    // When project is EDITING and comment is present, the server creates a new revision and sets status to OPENED (or CLOSED if requested).
+    const body: { comment: string; status?: "CLOSED" } = { comment: comment.trim() };
+    if (options?.closeAfterSave) {
+      body.status = "CLOSED";
+    }
+    await this.axiosInstance.patch(projectPath, body);
 
-    // Extract commit information from response (FileData structure)
-    const fileData = response.data;
-    const commitHash = fileData.version || fileData.commitHash;
+    const message = comment.trim();
 
     return {
       success: true,
-      commitHash,
-      version: commitHash,  // Same as commitHash for backward compatibility
-      author: fileData.author ? {
-        name: fileData.author.name || "unknown",
-        email: fileData.author.email || ""
-      } : undefined,
-      timestamp: fileData.modifiedAt || new Date().toISOString(),
-      message: `Project saved successfully at commit ${(commitHash && commitHash.substring(0, 8)) || "unknown"}`,
+      message,
     };
   }
 

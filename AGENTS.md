@@ -185,7 +185,6 @@ OPENL_PERSONAL_ACCESS_TOKEN=your-token
 - `OPENL_PERSONAL_ACCESS_TOKEN` (PAT)
 
 **Optional:**
-- `OPENL_CLIENT_DOCUMENT_ID` - Client identifier for request tracking
 - `OPENL_TIMEOUT` - Request timeout in milliseconds (default: 30000)
 
 ### Transport Modes
@@ -213,7 +212,7 @@ OPENL_PERSONAL_ACCESS_TOKEN=your-token
 
 ### Security
 - Credentials never logged
-- Request tracking via Client Document ID
+- Request tracking via Client Document ID (OPENL_CLIENT_DOCUMENT_ID) for audit and debugging
 
 ## Security Best Practices for AI Agents
 

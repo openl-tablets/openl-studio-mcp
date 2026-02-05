@@ -94,7 +94,7 @@
 **Status**: ✅ Complete  
 **OpenL API**: 
 - `openl_open_project`: `PATCH /projects/{projectId}` with `status: "OPENED"`
-- `openl_save_project`: `POST /projects/{projectId}/save` with validation
+- `openl_save_project`: `PATCH /projects/{projectId}` with `{ comment }` (Update project status API; when project is modified and comment present, server saves and commits; no separate `/save` endpoint)
 - `openl_close_project`: `PATCH /projects/{projectId}` with `status: "CLOSED"`
 
 **Extra/Missed Inputs**:
@@ -105,7 +105,7 @@
 **Recommendations**:
 - ✅ Implemented: Tools provide clear separation of concerns
 - ✅ Implemented: Safety checks prevent accidental data loss
-- ✅ Implemented: Proper endpoint usage (`/save` for saving with validation)
+- ✅ Implemented: Save via PATCH with comment (backend has no separate save endpoint)
 
 ---
 
@@ -604,7 +604,7 @@
 | 5 | `openl_list_projects` | Project | ✅ Complete | `GET /projects?repository={repo}&status={status}&tags.{key}={value}` | List projects with filters (repository, status, tags) |
 | 6 | `openl_get_project` | Project | ✅ Complete | `GET /projects/{projectId}` | Get comprehensive project information |
 | 7 | `openl_open_project` | Project | ✅ Complete | `PATCH /projects/{projectId}` with `status: "OPENED"` | Open project for editing (supports branch/revision) |
-| 8 | `openl_save_project` | Project | ✅ Complete | `POST /projects/{projectId}/save` | Save project changes to Git with validation |
+| 8 | `openl_save_project` | Project | ✅ Complete | `PATCH /projects/{projectId}` with `{ comment }` | Save project changes to Git (validation optional) |
 | 9 | `openl_close_project` | Project | ✅ Complete | `PATCH /projects/{projectId}` with `status: "CLOSED"` | Close project (with save/discard safety checks) |
 | 10 | `openl_create_project_branch` | Project | ✅ Complete | `POST /projects/{projectId}/branches` | Create new branch from revision |
 | 11 | `openl_list_project_local_changes` | Project | ✅ Complete | `GET /history/project` (session-based) | List local change history (requires project open) |

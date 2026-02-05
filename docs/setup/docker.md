@@ -132,7 +132,6 @@ MCP Server uses the following environment variables:
 | `OPENL_BASE_URL` | OpenL Studio API URL | `http://studio:8080/rest` |
 | `OPENL_USERNAME` | Username | `admin` |
 | `OPENL_PASSWORD` | Password | `admin` |
-| `OPENL_CLIENT_DOCUMENT_ID` | Client ID for tracking | `docker-compose-1` |
 | `NODE_ENV` | Environment mode | `production` |
 
 ## Access via Nginx Proxy

@@ -452,21 +452,24 @@ describe("Tool Handler Integration Tests", () => {
       const base64ProjectId = Buffer.from("design:project1").toString("base64");
       const encodedBase64Id = encodeURIComponent(base64ProjectId);
 
-      // Mock validation endpoint (may return 404, which is handled)
-      mockAxios.onPost(`/projects/${encodedBase64Id}/validate`).reply(404);
-
-      // Mock save endpoint
-      mockAxios.onPost(`/projects/${encodedBase64Id}/save`, {
-        comment: "Test commit",
-      }).reply(200, {
-        version: "abc123def456",
-        commitHash: "abc123def456",
-        author: {
-          name: "admin",
-          email: "admin@example.com",
-        },
+      // save_project requires project status EDITING and comment
+      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status: "EDITING",
+        path: "project1",
+        modifiedBy: "admin",
         modifiedAt: "2024-01-01T00:00:00Z",
       });
+
+      // Mock validation endpoint (404 = validation unavailable, proceed with save)
+      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
+
+      // Save is done via PATCH /projects/{projectId} with { comment } (204 No Content)
+      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+        comment: "Test commit",
+      }).reply(204);
 
       const result = await executeTool("openl_save_project", {
         projectId: "design-project1",
@@ -474,7 +477,42 @@ describe("Tool Handler Integration Tests", () => {
       }, client);
 
       expect(result.content[0].type).toBe("text");
-      expect(result.content[0].text).toContain("saved");
+      expect(result.content[0].text).toContain("success");
+      expect(result.content[0].text).toContain("Test commit");
+    });
+
+    it("should execute openl_save_project with closeAfterSave sends comment and status CLOSED in one PATCH", async () => {
+      const base64ProjectId = Buffer.from("design:project1").toString("base64");
+      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status: "EDITING",
+        path: "project1",
+        modifiedBy: "admin",
+        modifiedAt: "2024-01-01T00:00:00Z",
+      });
+
+      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
+
+      let patchBody: { comment?: string; status?: string } = {};
+      mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        patchBody = config.data ? JSON.parse(config.data) : {};
+        return [204];
+      });
+
+      const result = await executeTool("openl_save_project", {
+        projectId: "design-project1",
+        comment: "Save and close",
+        closeAfterSave: true,
+      }, client);
+
+      expect(result.content[0].type).toBe("text");
+      expect(result.content[0].text).toContain("success");
+      expect(result.content[0].text).toContain("Save and close");
+      expect(patchBody).toEqual({ comment: "Save and close", status: "CLOSED" });
     });
 
     it("should execute openl_close_project without unsaved changes", async () => {
@@ -520,26 +558,16 @@ describe("Tool Handler Integration Tests", () => {
         modifiedAt: "2024-01-01T00:00:00Z",
       });
 
-      // Mock validation endpoint
-      mockAxios.onPost(`/projects/${encodedBase64Id}/validate`).reply(404);
+      // Mock validation endpoint (404 = validation unavailable, proceed with save)
+      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
 
-      // Mock save endpoint
-      mockAxios.onPost(`/projects/${encodedBase64Id}/save`, {
-        comment: "Save before close",
-      }).reply(200, {
-        version: "abc123def456",
-        commitHash: "abc123def456",
-        author: {
-          name: "admin",
-          email: "admin@example.com",
-        },
-        modifiedAt: "2024-01-01T00:00:00Z",
+      // saveProject uses PATCH with { comment }; closeProject uses PATCH with { status: "CLOSED" }
+      mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        const data = config.data ? JSON.parse(config.data) : {};
+        if (data.status === "CLOSED") return [204];
+        if (data.comment === "Save before close") return [204];
+        return [404];
       });
-
-      // Mock close
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
-        status: "CLOSED",
-      }).reply(200);
 
       const result = await executeTool("openl_close_project", {
         projectId: "design-project1",
@@ -575,10 +603,37 @@ describe("Tool Handler Integration Tests", () => {
       const result = await executeTool("openl_close_project", {
         projectId: "design-project1",
         discardChanges: true,
+        confirmDiscard: true,
       }, client);
 
       expect(result.content[0].type).toBe("text");
       expect(result.content[0].text).toContain("discarded");
+    });
+
+    it("should require confirmDiscard when closing EDITING with discardChanges", async () => {
+      const base64ProjectId = Buffer.from("design:project1").toString("base64");
+      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status: "EDITING",
+        path: "project1",
+        modifiedBy: "admin",
+        modifiedAt: "2024-01-01T00:00:00Z",
+      });
+
+      const result = await executeTool("openl_close_project", {
+        projectId: "design-project1",
+        discardChanges: true,
+        // no confirmDiscard
+      }, client);
+
+      expect(result.content[0].type).toBe("text");
+      expect(result.content[0].text).toContain("confirmationRequired");
+      expect(result.content[0].text).toContain("confirmDiscard");
+      expect(result.content[0].text).toContain("unsaved changes");
     });
 
     it("should error when closing project with unsaved changes without saveChanges or discardChanges", async () => {

@@ -98,7 +98,6 @@ OPENL_PASSWORD=admin
 OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
 
 # Optional
-OPENL_CLIENT_DOCUMENT_ID=mcp-server-1
 OPENL_TIMEOUT=60000
 ```
 

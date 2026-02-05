@@ -408,7 +408,7 @@ CA
 1. openl_get_table(tableId=existingTable) → Get reference structure
 2. openl_create_project_table(moduleName=..., table={...}) → Create with full structure
 3. openl_validate_project() → Check for compilation errors
-4. openl_save_project() → Persist changes
+4. openl_save_project(comment="...") → Persist (only when status EDITING; comment required; new revision, project → OPENED)
 ```
 
 ### Updating Datatype/Vocabulary
@@ -418,7 +418,7 @@ CA
 2. openl_update_table(tableId=..., view={...}) → Add fields/values
 3. openl_validate_project() → Check for errors
 4. IF errors → Fix references in rules
-5. openl_save_project() → Persist changes
+5. openl_save_project(comment="...") → Persist (only when status EDITING; comment required)
 ```
 
 ## Common Mistakes
@@ -482,4 +482,4 @@ OpenL validates:
 | Add Value | `openl_append_table(tableId=..., appendData={tableType:"Vocabulary", values:[newValue]})` | Use append for simple additions |
 | Inherit | `openl_create_project_table(moduleName=..., table={tableType:"Datatype", returnType:parentType})` | Parent in returnType |
 | Validate | `openl_validate_project()` | After any change |
-| Save | `openl_save_project()` | Persist changes |
+| Save | `openl_save_project(comment="...")` | Only when EDITING; comment required |

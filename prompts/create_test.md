@@ -317,7 +317,7 @@ openl_get_test_results(projectId)
 → Should show all tests passing
 ```
 
-7. Save project:
+7. Save project (only when status is EDITING; comment required; creates new revision, project → OPENED):
 ```text
 openl_save_project(projectId, comment: "Added tests for calculatePremium")
 ```

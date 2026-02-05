@@ -341,6 +341,25 @@ describe("OpenLClient", () => {
           branch: "development",
         });
       });
+
+      it("should throw when project is in local repository", async () => {
+        const base64ProjectId = Buffer.from("local:myproject").toString("base64");
+        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+          id: "local:myproject:hash",
+          name: "myproject",
+          repository: "local",
+          status: "CLOSED",
+          path: "myproject",
+          modifiedBy: "admin",
+          modifiedAt: "2024-01-01T00:00:00Z",
+        });
+
+        await expect(
+          client.updateProjectStatus("local-myproject", { status: "OPENED" })
+        ).rejects.toThrow(/local repository.*not connected to a remote Git/i);
+      });
     });
   });
 

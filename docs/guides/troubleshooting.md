@@ -45,8 +45,6 @@ cd <path-to-project>
 export OPENL_BASE_URL="http://localhost:8080/rest"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
-export OPENL_CLIENT_DOCUMENT_ID="debug-1"
-
 # Run the server
 node dist/index.js
 ```
@@ -132,8 +130,6 @@ cd <path-to-project>
 export OPENL_BASE_URL="http://localhost:8080/rest"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
-export OPENL_CLIENT_DOCUMENT_ID="test-1"
-
 # Run the server
 node dist/index.js
 ```
@@ -306,8 +302,7 @@ Instead of connecting to remote MCP server via SSE, run the MCP server locally a
       ],
       "env": {
         "OPENL_BASE_URL": "https://<your-openl-server>/studio/rest",
-        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
-        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-remote"
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
   }

@@ -11,8 +11,6 @@ export interface OpenLConfig {
   password?: string;
   // Personal Access Token Authentication
   personalAccessToken?: string;
-  // Client Document ID (for request tracking)
-  clientDocumentId?: string;
   // Request timeout in milliseconds
   timeout?: number;
 }
@@ -328,10 +326,10 @@ export interface ProjectUpdateRequest {
   comment?: string;
 }
 
-/** Project status update model */
+/** Project status update model (request body for PATCH /projects/{id}) */
 export interface ProjectStatusUpdateModel {
-  /** Status field - optional since you can update just comment to save without status change */
-  status?: "LOCAL" | "ARCHIVED" | "OPENED" | "VIEWING_VERSION" | "EDITING" | "CLOSED";
+  /** Only OPENED and CLOSED can be set by the client; LOCAL, ARCHIVED, VIEWING_VERSION, EDITING are set automatically by the backend */
+  status?: "OPENED" | "CLOSED";
   /** Additional fields may be supported by the API */
   branch?: string;
   revision?: string;
@@ -519,17 +517,11 @@ export interface TableFilters {
   limit?: number;
 }
 
-/** Save project result */
+/** Save project result. API returns 204 No Content and does not provide commit hash, version, author, or timestamp. */
 export interface SaveProjectResult {
   success: boolean;
-  commitHash?: string;       // Git commit hash (e.g., "7a3f2b1c...")
-  version?: string;          // Same as commitHash
-  author?: {
-    name: string;
-    email: string;
-  };
-  timestamp?: string;        // ISO timestamp
-  message?: string;
+  message: string;
+  /** Present when success is false and validation failed before save */
   validationErrors?: ValidationError[];
 }
 

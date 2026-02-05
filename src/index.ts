@@ -9,7 +9,7 @@
  * Features:
  * - Multiple authentication methods (Basic Auth, Personal Access Token)
  * - Type-safe input validation with Zod
- * - Request tracking with Client Document ID
+ * - Request tracking with Client Document ID (OPENL_CLIENT_DOCUMENT_ID) for audit and debugging
  * - Comprehensive error handling
  *
  * @see https://github.com/openl-tablets/openl-studio-mcp
@@ -378,7 +378,6 @@ export function loadConfigFromQuery(query: Record<string, string | undefined>): 
     username: query.OPENL_USERNAME,
     password: query.OPENL_PASSWORD,
     personalAccessToken: query.OPENL_PERSONAL_ACCESS_TOKEN,
-    clientDocumentId: query.OPENL_CLIENT_DOCUMENT_ID,
     timeout,
   };
 
@@ -434,7 +433,6 @@ export async function loadConfigFromEnv(): Promise<Types.OpenLConfig> {
     username: process.env.OPENL_USERNAME,
     password: process.env.OPENL_PASSWORD,
     personalAccessToken: process.env.OPENL_PERSONAL_ACCESS_TOKEN,
-    clientDocumentId: process.env.OPENL_CLIENT_DOCUMENT_ID,
     timeout,
   };
 
