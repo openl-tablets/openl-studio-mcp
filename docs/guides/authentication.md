@@ -7,7 +7,6 @@ This guide covers the authentication methods supported by the OpenL Studio MCP S
 - [Setup](#setup)
 - [Basic Authentication](#basic-authentication)
 - [Personal Access Token Authentication](#personal-access-token-authentication)
-- [Client Document ID](#client-document-id)
 - [Security Best Practices](#security-best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -44,8 +43,7 @@ Configure authentication in the MCP client configuration file:
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
         "OPENL_BASE_URL": "http://localhost:8080/rest",
-        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
-        "OPENL_CLIENT_DOCUMENT_ID": "cursor-ide-1"
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
   }
@@ -61,8 +59,7 @@ Configure authentication in the MCP client configuration file:
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
         "OPENL_BASE_URL": "http://localhost:8080/rest",
-        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
-        "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-1"
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
   }
@@ -197,8 +194,7 @@ OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
         "OPENL_BASE_URL": "https://openl.example.com/rest",
-        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>",
-        "OPENL_CLIENT_DOCUMENT_ID": "cursor-mcp-1"
+        "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
   }
@@ -231,47 +227,6 @@ OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
 - **Usage**: Use `Authorization: Token <token>` header format
 
 **Important**: The full token value is shown only once when created. Store it securely - it cannot be retrieved later.
-
-## Client Document ID
-
-The Client Document ID is a tracking identifier included in all API requests.
-
-### Purpose
-
-- **Request Correlation**: Track requests across systems
-- **Debugging**: Identify requests from specific MCP instances
-- **Auditing**: Trace actions back to source
-- **Load Balancing**: Identify client instances
-
-### Configuration
-
-**Environment Variable:**
-```bash
-OPENL_CLIENT_DOCUMENT_ID=mcp-server-instance-1
-```
-
-**Claude Desktop Config:**
-```json
-{
-  "env": {
-    "OPENL_CLIENT_DOCUMENT_ID": "claude-desktop-user123"
-  }
-}
-```
-
-### Best Practices
-
-- Use a unique ID per MCP server instance
-- Include environment indicator: `mcp-prod-1`, `mcp-dev-1`
-- Keep IDs short and descriptive
-- Don't include sensitive information
-
-### Header Format
-
-The client document ID is sent as:
-```
-X-Client-Document-ID: mcp-server-instance-1
-```
 
 ## Security Best Practices
 
@@ -355,9 +310,8 @@ Error: unable to verify the first certificate
 
 ### Common
 ```bash
-OPENL_BASE_URL          # OpenL Studio API base URL
-OPENL_CLIENT_DOCUMENT_ID # Client tracking identifier
-OPENL_TIMEOUT           # Request timeout in milliseconds
+OPENL_BASE_URL    # OpenL Studio API base URL
+OPENL_TIMEOUT     # Request timeout in milliseconds
 ```
 
 ### Basic Auth
@@ -378,7 +332,6 @@ OPENL_PERSONAL_ACCESS_TOKEN  # Personal Access Token (format: openl_pat_<publicI
 export OPENL_BASE_URL=http://localhost:8080/rest
 export OPENL_USERNAME=admin
 export OPENL_PASSWORD=admin
-export OPENL_CLIENT_DOCUMENT_ID=dev-laptop
 npm start
 ```
 
@@ -386,7 +339,6 @@ npm start
 ```bash
 export OPENL_BASE_URL=https://openl-prod.example.com/rest
 export OPENL_PERSONAL_ACCESS_TOKEN=$(vault read -field=token secret/openl/prod/pat)
-export OPENL_CLIENT_DOCUMENT_ID=mcp-prod-instance-1
 export OPENL_TIMEOUT=60000
 npm start
 ```

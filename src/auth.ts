@@ -150,11 +150,6 @@ export class AuthenticationManager {
       config.headers = {} as any;
     }
 
-    // Add Client Document ID if configured
-    if (this.config.clientDocumentId) {
-      config.headers[HEADERS.CLIENT_DOCUMENT_ID] = this.config.clientDocumentId;
-    }
-
     // Check if auth headers are already set (to avoid duplicate logging)
     const authHeaderAlreadySet = config.headers[HEADERS.AUTHORIZATION];
 
@@ -174,9 +169,9 @@ export class AuthenticationManager {
       // Log only once per unique config (to avoid duplicate logging)
       if (shouldLogAuth) {
         loggedAuthConfigs.add(authConfigKey);
-        // Simplified logging - only essential info
+        // Simplified logging - only essential info; explicitly state we use "Token" (not Bearer) for OpenL API
         const isValidFormat = pat.startsWith('openl_pat_');
-        console.error(`[Auth] 🔐 PAT Authentication (${isValidFormat ? 'valid format' : '⚠️  invalid format'})`);
+        console.error(`[Auth] 🔐 PAT Authentication (${isValidFormat ? 'valid format' : '⚠️  invalid format'}) | Header: Authorization: Token <PAT>`);
         if (!isValidFormat) {
           console.error(`[Auth]   ⚠️  WARNING: PAT should start with 'openl_pat_'`);
         }

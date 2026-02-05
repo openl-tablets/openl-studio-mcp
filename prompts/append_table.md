@@ -228,7 +228,7 @@ Each field in the `fields` array must include:
 2. Determine fields → Define new fields with types
 3. Call openl_append_table → Add fields to table
 4. Verify changes → Use openl_get_table() to confirm
-5. Save project → Persist changes with openl_save_project()
+5. Save project → openl_save_project(comment="...") — works only when project status is EDITING; comment required; creates new revision, project → OPENED
 ```
 
 ### Complete Example
@@ -410,7 +410,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 | Add required field | `openl_append_table(fields=[{name, type, required: true}])` |
 | Add with default | `openl_append_table(fields=[{name, type, defaultValue}])` |
 | Verify append | `openl_get_table(tableId)` |
-| Save changes | `openl_save_project(comment="...")` |
+| Save changes | `openl_save_project(comment="...")` — only when status EDITING; comment required |
 
 ## Performance Notes
 

@@ -59,6 +59,7 @@ AFTER modification:
 4. IF saving → start all tests (omit `tableId`, no exceptions): `openl_start_project_tests(projectId)`
 
 BEFORE openl_save_project():
+- openl_save_project works only when project status is EDITING; comment is required; after save, new revision is created and project → OPENED
 - `openl_start_project_tests(projectId)` → `openl_get_test_results(projectId)` MUST pass
 - `Validate in OpenL Studio UI (openl_validate_project temporarily disabled)` MUST pass
 

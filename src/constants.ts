@@ -11,6 +11,18 @@ export const DEFAULTS = {
 } as const;
 
 /**
+ * Repository identifier for local (non-remote) repositories.
+ * Projects in repository "local" are stored only on the server; status change (open/save/close) is not supported by the API.
+ */
+export const REPOSITORY_LOCAL = "local";
+
+/** Error message when an operation is attempted on a project in a local repository */
+export const ERROR_LOCAL_REPOSITORY =
+  "Project is in a local repository (repository: 'local'). " +
+  "Local repositories are not connected to a remote Git; changing project status (open, save, close) is not supported. " +
+  "Use projects from a design repository connected to a remote Git.";
+
+/**
  * API endpoint paths relative to base URL
  */
 export const API_ENDPOINTS = {
@@ -28,8 +40,8 @@ export const HEADERS = {
   /** Authorization header */
   AUTHORIZATION: "Authorization",
 
-  /** Client Document ID header for request tracking */
-  CLIENT_DOCUMENT_ID: "X-Client-Document-Id",
+  /** Client Document ID for request tracking (audit/debug). Set via OPENL_CLIENT_DOCUMENT_ID env. */
+  CLIENT_DOCUMENT_ID: "Client-Document-Id",
 } as const;
 
 /**

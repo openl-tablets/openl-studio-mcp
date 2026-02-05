@@ -73,7 +73,6 @@ async function initializeDefaultClient(): Promise<void> {
     // Auth will come from query params or headers per session
     const config: Types.OpenLConfig = {
       baseUrl,
-      clientDocumentId: process.env.OPENL_CLIENT_DOCUMENT_ID,
     };
 
     // Only create client if we have at least base URL
@@ -112,7 +111,6 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
         username: query.OPENL_USERNAME,
         password: query.OPENL_PASSWORD,
         personalAccessToken: query.OPENL_PERSONAL_ACCESS_TOKEN,
-        clientDocumentId: query.OPENL_CLIENT_DOCUMENT_ID,
         timeout: query.OPENL_TIMEOUT ? parseInt(query.OPENL_TIMEOUT, 10) : undefined,
       };
 

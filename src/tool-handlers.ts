@@ -459,7 +459,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl Save Project",
     version: "1.0.0",
     description:
-      "Save project changes to Git repository. Validates the project before saving and returns commit information. Use this to persist changes made to tables, rules, or project configuration.",
+      "Save project changes to Git. Works only when project status is EDITING (after opening and making changes). Requires comment (used as revision/commit message). Creates a new revision and transitions project to OPENED. Optional closeAfterSave: true saves and closes in one request. Use after update_table, append_table, or other edits. Does not work for repository 'local'. Validates project before saving if validation endpoint is available.",
     inputSchema: schemas.z.toJSONSchema(schemas.saveProjectSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,
@@ -467,17 +467,23 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     handler: async (args, client): Promise<ToolResponse> => {
       const typedArgs = args as {
         projectId: string;
-        comment?: string;
+        comment: string;
+        closeAfterSave?: boolean;
         response_format?: "json" | "markdown";
       };
 
       if (!typedArgs || !typedArgs.projectId) {
         throw new McpError(ErrorCode.InvalidParams, "Missing required argument: projectId. To find valid project IDs, use: openl_list_projects()");
       }
+      if (!typedArgs.comment?.trim()) {
+        throw new McpError(ErrorCode.InvalidParams, "comment is required for save; it is used as the revision (commit) message.");
+      }
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      const result = await client.saveProject(typedArgs.projectId, typedArgs.comment);
+      const result = await client.saveProject(typedArgs.projectId, typedArgs.comment, {
+        closeAfterSave: typedArgs.closeAfterSave,
+      });
 
       const formattedResult = formatResponse(result, format);
 
@@ -492,7 +498,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl Close Project",
     version: "1.0.0",
     description:
-      "Close a project. If the project has unsaved changes, you must either save them (saveChanges: true with comment) or explicitly discard them (discardChanges: true). Prevents accidental data loss.",
+      "Close a project. If the project has unsaved changes (status EDITING), you must either save (saveChanges: true with comment) or discard (discardChanges: true). When discarding, ask the user for confirmation and then call again with confirmDiscard: true. Prevents accidental data loss.",
     inputSchema: schemas.z.toJSONSchema(schemas.closeProjectSchema) as Record<string, unknown>,
     annotations: {
       destructiveHint: true, // Can discard changes if requested
@@ -504,6 +510,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         saveChanges?: boolean;
         comment?: string;
         discardChanges?: boolean;
+        confirmDiscard?: boolean;
         response_format?: "json" | "markdown";
       };
 
@@ -536,7 +543,13 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
               "comment is required when saveChanges is true. Provide a commit message describing the changes."
             );
           }
-          await client.saveProject(typedArgs.projectId, typedArgs.comment);
+          const saveResult = await client.saveProject(typedArgs.projectId, typedArgs.comment);
+          if (!saveResult.success) {
+            const formattedResult = formatResponse(saveResult, format);
+            return {
+              content: [{ type: "text", text: formattedResult }],
+            };
+          }
           await client.closeProject(typedArgs.projectId);
           const result = {
             success: true,
@@ -547,11 +560,23 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
             content: [{ type: "text", text: formattedResult }],
           };
         } else if (typedArgs.discardChanges === true) {
-          // Explicitly discard changes
-          await client.closeProject(typedArgs.projectId);
+          // Only proceed when confirmDiscard is explicitly true (false or undefined require confirmation)
+          if (typedArgs.confirmDiscard === true) {
+            await client.closeProject(typedArgs.projectId);
+            const result = {
+              success: true,
+              message: "Project closed (unsaved changes discarded)",
+            };
+            const formattedResult = formatResponse(result, format);
+            return {
+              content: [{ type: "text", text: formattedResult }],
+            };
+          }
+          // confirmDiscard not set to true: require explicit user confirmation
           const result = {
-            success: true,
-            message: "Project closed (unsaved changes discarded)",
+            success: false,
+            confirmationRequired: true,
+            message: "The project has unsaved changes. Closing without saving will discard all changes permanently. Ask the user: 'Do you really want to close without saving? All unsaved changes will be lost.' If the user confirms, call openl_close_project again with the same projectId, discardChanges: true, and confirmDiscard: true (confirmDiscard must be set to true explicitly, not just provided).",
           };
           const formattedResult = formatResponse(result, format);
           return {
@@ -562,8 +587,8 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
           throw new McpError(
             ErrorCode.InvalidParams,
             "Project has unsaved changes. You must either:\n" +
-            "1. Set saveChanges: true (with comment) to save changes before closing\n" +
-            "2. Set discardChanges: true to explicitly discard unsaved changes (destructive operation)"
+            "1. Set saveChanges: true (with comment) to save and close\n" +
+            "2. Set discardChanges: true to close without saving (then ask user to confirm and call again with confirmDiscard: true)"
           );
         }
       } else {
@@ -1853,6 +1878,7 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
     const method = error.config?.method ? error.config.method.toUpperCase() : undefined;
     const requestParams = error.config?.params; // Query parameters for GET requests
     const requestData = error.config?.data; // Request body for POST/PUT requests
+    const axiosCode = error.code; // e.g. ECONNREFUSED, ETIMEDOUT, ENOTFOUND (network errors when no response)
 
     // Extract structured error information from API response
     const apiErrorInfo = extractApiErrorInfo(responseData, status);
@@ -1861,7 +1887,8 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
     // 1. API error message (if available)
     // 2. Field errors (for 400)
     // 3. Generic errors array (for 400)
-    // 4. Fallback to sanitized axios error message
+    // 4. For network errors (no response): use code + message so we don't get just "Error"
+    // 5. Fallback to sanitized axios error message
     let errorMessage = "";
     const errorDetails: Record<string, unknown> = {
       status,
@@ -1869,6 +1896,9 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
       method,
       tool: toolName,
     };
+    if (axiosCode) {
+      errorDetails.code = axiosCode;
+    }
 
     // Add tool arguments (sanitized to prevent sensitive data exposure)
     if (toolArgs !== undefined) {
@@ -1927,7 +1957,9 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
 
     // Fallback to sanitized axios error message if no API message
     if (!errorMessage) {
-      errorMessage = sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      // For network errors (axiosCode set, no response), always include code so the cause is visible
+      errorMessage = axiosCode ? `${axiosCode}: ${sanitized}` : sanitized;
     }
 
     // Build final error message
@@ -1940,7 +1972,14 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
       finalMessage += ` [${method} ${endpoint}]`;
     }
 
-    logger.error(`Tool error: ${toolName}`, errorDetails);
+    // Log one-line summary first (status or network code + message) so it's visible at a glance in VS Code/Copilot output
+    const summary =
+      status != null
+        ? `${toolName} (${status}) ${errorMessage}`
+        : axiosCode
+          ? `${toolName} [${axiosCode}] ${errorMessage}`
+          : `${toolName} ${errorMessage}`;
+    logger.error(`Tool error: ${summary}`, errorDetails);
 
     // Use appropriate error code based on status
     let errorCode = ErrorCode.InternalError;
@@ -1978,7 +2017,7 @@ function handleToolError(error: unknown, toolName: string, toolArgs?: unknown): 
     errorDetails.toolArgs = sanitizeJson(toolArgs);
   }
 
-  logger.error(`Tool error: ${toolName}`, errorDetails);
+  logger.error(`Tool error: ${toolName} ${sanitizedMessage}`, errorDetails);
 
   throw new McpError(
     ErrorCode.InternalError,

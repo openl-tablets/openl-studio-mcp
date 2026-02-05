@@ -84,7 +84,8 @@ export const closeProjectSchema = z.object({
   projectId: projectIdSchema,
   saveChanges: z.boolean().optional().describe("If true, save changes before closing (requires comment). If false or omitted and project has unsaved changes, will error unless discardChanges is true."),
   comment: commentSchema.describe("Git commit comment. Required if saveChanges is true. Optional if saveChanges is false or omitted."),
-  discardChanges: z.boolean().optional().describe("If true, explicitly discard unsaved changes and close project. Use with caution - this is a destructive operation."),
+  discardChanges: z.boolean().optional().describe("If true, close without saving (unsaved changes will be lost). When project is EDITING, you must also set confirmDiscard: true to confirm."),
+  confirmDiscard: z.boolean().optional().describe("When closing with discardChanges: true and project has unsaved changes, must be set to true (explicitly) to confirm. Omitted or false will return a confirmation prompt. Ask the user first, then call again with confirmDiscard: true."),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -191,7 +192,8 @@ export const testProjectSchema = z.object({
 
 export const saveProjectSchema = z.object({
   projectId: projectIdSchema,
-  comment: commentSchema.describe("Git commit comment describing the changes (e.g., 'Updated CA premium rates', 'Fixed calculation bug')"),
+  comment: z.string().min(1).describe("Required. Comment for the new revision (commit message). Save only works when project status is EDITING; after save a new revision is created and project transitions to OPENED."),
+  closeAfterSave: z.boolean().optional().describe("Optional. If true, close the project after saving (sends status CLOSED with comment in one request). Use when user asks to 'save and close'."),
   response_format: ResponseFormat.optional(),
 }).strict();
 

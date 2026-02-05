@@ -120,7 +120,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_projects",
     description:
-      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
+      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. Projects with repository 'local' are local-only (not connected to remote Git); open/save/close and other status-changing tools do not work for them. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -140,7 +140,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_open_project",
-    description: "Open a project for editing. Supports opening on specific branches or viewing specific Git revisions. Use this before making changes to project tables or rules. For branch switching, specify the branch parameter. For viewing a historical version, specify the revision parameter.",
+    description: "Open a project for editing. Supports opening on specific branches or viewing specific Git revisions. Use this before making changes to project tables or rules. For branch switching, specify the branch parameter. For viewing a historical version, specify the revision parameter. Does not work for projects with repository 'local' (local-only, not connected to remote Git).",
     inputSchema: schemas.z.toJSONSchema(schemas.openProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -151,7 +151,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_save_project",
-    description: "Save project changes to Git repository. Validates the project before saving and returns commit information. Use this to persist changes made to tables, rules, or project configuration. The project must be open (status: OPENED or EDITING) before saving.",
+    description: "Save project changes to Git. Works only when project status is EDITING (after opening and making changes). Requires comment (used as revision/commit message). Creates a new revision and transitions project to OPENED. Optional closeAfterSave: true saves and closes in one request (sends status CLOSED). Use after update_table, append_table, or other edits. Does not work for repository 'local'. Validates project before saving if validation endpoint is available.",
     inputSchema: schemas.z.toJSONSchema(schemas.saveProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -162,7 +162,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_close_project",
-    description: "Close a project. If the project has unsaved changes (status: EDITING), you must either save them (saveChanges: true with comment) or explicitly discard them (discardChanges: true). Prevents accidental data loss. Use saveChanges: true to save and close in one operation, or discardChanges: true to close without saving (destructive operation).",
+    description: "Close a project. If the project has unsaved changes (status EDITING), either save (saveChanges: true with comment) or discard (discardChanges: true). When discarding, ask the user for confirmation first, then call again with confirmDiscard: true. Does not work for repository 'local'.",
     inputSchema: schemas.z.toJSONSchema(schemas.closeProjectSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
