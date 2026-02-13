@@ -6,7 +6,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import MockAdapter from "axios-mock-adapter";
 import { OpenLClient } from "../src/client.js";
-import type { OpenLConfig, RepositoryInfo, ProjectViewModel, SummaryTableView } from "../src/types.js";
+import type { OpenLConfig, RepositoryInfo, ProjectViewModel, SummaryTableView, TestsExecutionSummary, TestCaseExecutionResult } from "../src/types.js";
+import type * as Types from "../src/types.js";
 
 describe("OpenLClient", () => {
   let client: OpenLClient;
@@ -1143,6 +1144,206 @@ describe("OpenLClient", () => {
 
       // Should not throw during request, axios handles parsing
       await client.listRepositories();
+    });
+  });
+
+  describe("Test Execution Session", () => {
+    // Helper: the encoded project path for "design-project1"
+    const base64ProjectId = Buffer.from("design:project1").toString("base64");
+    const encodedBase64Id = encodeURIComponent(base64ProjectId);
+    const projectPath = `/projects/${encodedBase64Id}`;
+
+    // Minimal project stub returned by getProject (needed by startProjectTests)
+    const mockOpenProject = {
+      id: "design:project1:hash123",
+      name: "project1",
+      repository: "design",
+      status: "OPENED",
+      path: "project1",
+      modifiedBy: "admin",
+      modifiedAt: "2024-01-01T00:00:00Z",
+    };
+
+    // Minimal test execution summary returned by /tests/summary
+    const mockSummary: Partial<Types.TestsExecutionSummary> = {
+      executionTimeMs: 42,
+      numberOfTests: 5,
+      numberOfFailures: 1,
+      testCases: [
+        {
+          name: "TestTable",
+          tableId: "test_table_abc",
+          executionTimeMs: 10,
+          numberOfTests: 3,
+          numberOfFailures: 0,
+          testUnits: [],
+        },
+        {
+          name: "OtherTest",
+          tableId: "other_table_xyz",
+          executionTimeMs: 32,
+          numberOfTests: 2,
+          numberOfFailures: 1,
+          testUnits: [],
+        },
+      ],
+      pageNumber: 0,
+      pageSize: 50,
+      numberOfElements: 2,
+      totalPages: 1,
+    };
+
+    /**
+     * Start a test session via startProjectTests and return the response.
+     * Registers the necessary mocks for getProject and /tests/run.
+     */
+    const startSession = async (tableId?: string) => {
+      // getProject mock — project is already OPENED
+      mockAxios.onGet(projectPath).reply(200, mockOpenProject);
+
+      // /tests/run mock — reply with a Set-Cookie header so the client stores it
+      mockAxios.onPost(`${projectPath}/tests/run`).reply(
+        200,
+        { status: "ok" },
+        { "Set-Cookie": "JSESSIONID=test-session-123; Path=/" }
+      );
+
+      return client.startProjectTests("design-project1", tableId ? { tableId } : undefined);
+    };
+
+    it("should start tests with tableId and pass tableId as query param", async () => {
+      mockAxios.onGet(projectPath).reply(200, mockOpenProject);
+
+      mockAxios.onPost(`${projectPath}/tests/run`).reply((config) => {
+        expect(config.params).toBeDefined();
+        expect(config.params.tableId).toBe("my_table_42");
+        return [200, { status: "ok" }, { "Set-Cookie": "JSESSIONID=sess1; Path=/" }];
+      });
+
+      const result = await client.startProjectTests("design-project1", { tableId: "my_table_42" });
+      expect(result.status).toBe("started");
+      expect(result.tableId).toBe("my_table_42");
+    });
+
+    it("should reuse stored headers in getTestResultsSummary after starting with tableId", async () => {
+      await startSession("specific_table_99");
+
+      // Now getTestResultsSummary should find the stored headers
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        // The stored Cookie header should be forwarded
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=test-session-123");
+        return [200, mockSummary];
+      });
+
+      const summary = await client.getTestResultsSummary("design-project1");
+      expect(summary.numberOfTests).toBe(5);
+      expect(summary.numberOfFailures).toBe(1);
+      expect(summary.numberOfPassed).toBe(4);
+    });
+
+    it("should reuse stored headers in getTestResults after starting with tableId", async () => {
+      await startSession("specific_table_99");
+
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=test-session-123");
+        return [200, mockSummary];
+      });
+
+      const results = await client.getTestResults("design-project1");
+      expect(results.testCases).toHaveLength(2);
+    });
+
+    it("should reuse stored headers in getTestResultsByTable after starting with tableId", async () => {
+      await startSession("test_table_abc");
+
+      // getTestResultsByTable iterates pages via getTestResults
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=test-session-123");
+        return [200, mockSummary];
+      });
+
+      const results = await client.getTestResultsByTable("design-project1", "test_table_abc");
+      // Only the matching testCase should be returned
+      expect(results.testCases).toHaveLength(1);
+      expect(results.testCases[0].tableId).toBe("test_table_abc");
+    });
+
+    it("should overwrite previous session when starting new tests for the same project", async () => {
+      // --- First session ---
+      mockAxios.onGet(projectPath).reply(200, mockOpenProject);
+      mockAxios.onPost(`${projectPath}/tests/run`).replyOnce(
+        200,
+        { status: "ok" },
+        { "Set-Cookie": "JSESSIONID=session-AAA; Path=/" }
+      );
+      await client.startProjectTests("design-project1", { tableId: "table_a" });
+
+      // --- Second session (overwrites first) ---
+      mockAxios.onPost(`${projectPath}/tests/run`).replyOnce(
+        200,
+        { status: "ok" },
+        { "Set-Cookie": "JSESSIONID=session-BBB; Path=/" }
+      );
+      await client.startProjectTests("design-project1", { tableId: "table_b" });
+
+      // getTestResultsSummary should use the SECOND session's cookie
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=session-BBB");
+        return [200, mockSummary];
+      });
+
+      const summary = await client.getTestResultsSummary("design-project1");
+      expect(summary.numberOfTests).toBe(5);
+    });
+
+    it("should throw when getTestResultsSummary is called without starting tests", async () => {
+      await expect(
+        client.getTestResultsSummary("design-project1")
+      ).rejects.toThrow(/No test execution session found/);
+    });
+
+    it("should throw when getTestResults is called without starting tests", async () => {
+      await expect(
+        client.getTestResults("design-project1")
+      ).rejects.toThrow(/No test execution session found/);
+    });
+
+    it("should start tests without tableId and still allow retrieving results", async () => {
+      await startSession(); // no tableId
+
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=test-session-123");
+        return [200, mockSummary];
+      });
+
+      const summary = await client.getTestResultsSummary("design-project1");
+      expect(summary.numberOfTests).toBe(5);
+    });
+
+    it("should auto-open closed project before starting tests", async () => {
+      const closedProject = { ...mockOpenProject, status: "CLOSED" };
+      mockAxios.onGet(projectPath).reply(200, closedProject);
+
+      // openProject calls ensureNotLocalRepository → getProject, then PATCH
+      mockAxios.onPatch(projectPath).reply(204);
+
+      mockAxios.onPost(`${projectPath}/tests/run`).reply(
+        200,
+        { status: "ok" },
+        { "Set-Cookie": "JSESSIONID=opened-session; Path=/" }
+      );
+
+      const result = await client.startProjectTests("design-project1");
+      expect(result.projectWasOpened).toBe(true);
+
+      // Session should still be usable
+      mockAxios.onGet(`${projectPath}/tests/summary`).reply((config) => {
+        expect(config.headers?.["Cookie"]).toBe("JSESSIONID=opened-session");
+        return [200, mockSummary];
+      });
+
+      const summary = await client.getTestResultsSummary("design-project1");
+      expect(summary.numberOfTests).toBe(5);
     });
   });
 

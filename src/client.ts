@@ -1367,45 +1367,38 @@ export class OpenLClient {
   // =============================================================================
 
   /**
-   * Store test execution headers for a project
+   * Store test execution headers for a project.
+   * Always keyed by projectId only — a project can have only one active test session.
    * 
    * @param projectId - Project ID
-   * @param tableId - Optional table ID (for table-specific test sessions)
    * @param headers - Headers from test start response
    */
   private storeTestExecutionHeaders(
     projectId: string,
-    tableId: string | undefined,
     headers: Record<string, string>
   ): void {
-    const key = tableId ? `${projectId}:${tableId}` : projectId;
-    this.testExecutionHeaders.set(key, headers);
+    this.testExecutionHeaders.set(projectId, headers);
   }
 
   /**
    * Get test execution headers for a project
    * 
    * @param projectId - Project ID
-   * @param tableId - Optional table ID
    * @returns Headers if found, undefined otherwise
    */
   private getTestExecutionHeaders(
-    projectId: string,
-    tableId?: string
+    projectId: string
   ): Record<string, string> | undefined {
-    const key = tableId ? `${projectId}:${tableId}` : projectId;
-    return this.testExecutionHeaders.get(key);
+    return this.testExecutionHeaders.get(projectId);
   }
 
   /**
    * Clear test execution headers for a project
    * 
    * @param projectId - Project ID
-   * @param tableId - Optional table ID
    */
-  private clearTestExecutionHeaders(projectId: string, tableId?: string): void {
-    const key = tableId ? `${projectId}:${tableId}` : projectId;
-    this.testExecutionHeaders.delete(key);
+  private clearTestExecutionHeaders(projectId: string): void {
+    this.testExecutionHeaders.delete(projectId);
   }
 
   /**
@@ -1512,8 +1505,8 @@ export class OpenLClient {
       }
     }
 
-    // Clear old headers for this project/table before storing new ones
-    this.clearTestExecutionHeaders(projectId, options?.tableId);
+    // Clear old headers for this project before storing new ones
+    this.clearTestExecutionHeaders(projectId);
 
     // Build API parameters
     const params: Record<string, string | number | boolean> = {};
@@ -1530,7 +1523,7 @@ export class OpenLClient {
 
     // Extract and store headers
     const responseHeaders = this.extractTestExecutionHeaders(startResponse.headers || {});
-    this.storeTestExecutionHeaders(projectId, options?.tableId, responseHeaders);
+    this.storeTestExecutionHeaders(projectId, responseHeaders);
 
     return {
       status: "started",
