@@ -588,9 +588,12 @@ export class OpenLClient {
   }
 
   /**
-   * Open a project for viewing/editing
+   * Open a project for viewing/editing.
    *
-   * Updates project status to OPENED using PATCH /projects/{projectId}
+   * Sends PATCH /projects/{projectId} with status "OPENED".
+   * Use this only for projects that are not yet opened (status CLOSED, etc.).
+   * For switching branches on an already opened project, use {@link switchBranch} instead
+   * to avoid a 409 Conflict error.
    *
    * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
    * @param options - Optional branch, revision, and comment
@@ -602,12 +605,46 @@ export class OpenLClient {
   ): Promise<boolean> {
     await this.ensureNotLocalRepository(projectId);
     const projectPath = this.buildProjectPath(projectId);
+
     const updateModel: Types.ProjectStatusUpdateModel = {
       status: "OPENED",
       ...options,
     };
 
     await this.axiosInstance.patch(projectPath, updateModel);
+    return true;
+  }
+
+  /**
+   * Switch branch on an already opened project.
+   *
+   * Sends PATCH /projects/{projectId} with only the branch field (no status).
+   * This avoids the 409 Conflict error that occurs when sending status "OPENED"
+   * for a project that is already opened or being edited.
+   *
+   * The OpenL Studio backend validator (canOpen) rejects re-opening an already
+   * opened project. However, a PATCH with just {"branch": "..."} is accepted
+   * and returns 204.
+   *
+   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param branch - Target branch name to switch to
+   * @param selectedBranches - Optional list of branches to select for multi-branch projects
+   * @returns Success status (204 No Content on success)
+   */
+  async switchBranch(
+    projectId: string,
+    branch: string,
+    selectedBranches?: string[]
+  ): Promise<boolean> {
+    await this.ensureNotLocalRepository(projectId);
+    const projectPath = this.buildProjectPath(projectId);
+
+    const switchModel: Types.ProjectStatusUpdateModel = {
+      branch,
+      selectedBranches,
+    };
+
+    await this.axiosInstance.patch(projectPath, switchModel);
     return true;
   }
 

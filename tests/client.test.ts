@@ -361,6 +361,174 @@ describe("OpenLClient", () => {
         ).rejects.toThrow(/local repository.*not connected to a remote Git/i);
       });
     });
+
+    describe("openProject", () => {
+      const base64ProjectId = Buffer.from("design:project1").toString("base64");
+      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+      const mockDesignProject = (status: string) => ({
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status,
+        path: "project1",
+        modifiedBy: "admin",
+        modifiedAt: "2024-01-01T00:00:00Z",
+      });
+
+      it("should open a project with status OPENED", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBe("OPENED");
+          return [204];
+        });
+
+        const result = await client.openProject("design-project1");
+        expect(result).toBe(true);
+        expect(mockAxios.history.patch.length).toBe(1);
+      });
+
+      it("should open a project on a specific branch", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBe("OPENED");
+          expect(data.branch).toBe("development");
+          return [204];
+        });
+
+        const result = await client.openProject("design-project1", { branch: "development" });
+        expect(result).toBe(true);
+      });
+
+      it("should always send status OPENED regardless of current project status", async () => {
+        // Even if the project is already OPENED, openProject always sends status
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBe("OPENED");
+          return [204];
+        });
+
+        const result = await client.openProject("design-project1");
+        expect(result).toBe(true);
+      });
+
+      it("should open a project at a specific revision", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBe("OPENED");
+          expect(data.revision).toBe("abc123");
+          return [204];
+        });
+
+        const result = await client.openProject("design-project1", { revision: "abc123" });
+        expect(result).toBe(true);
+      });
+
+      it("should throw when project is in local repository", async () => {
+        const localBase64Id = Buffer.from("local:myproject").toString("base64");
+        const encodedLocalId = encodeURIComponent(localBase64Id);
+
+        mockAxios.onGet(`/projects/${encodedLocalId}`).reply(200, {
+          id: "local:myproject:hash",
+          name: "myproject",
+          repository: "local",
+          status: "CLOSED",
+          path: "myproject",
+          modifiedBy: "admin",
+          modifiedAt: "2024-01-01T00:00:00Z",
+        });
+
+        await expect(
+          client.openProject("local-myproject")
+        ).rejects.toThrow(/local repository.*not connected to a remote Git/i);
+      });
+    });
+
+    describe("switchBranch", () => {
+      const base64ProjectId = Buffer.from("design:project1").toString("base64");
+      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+
+      const mockDesignProject = (status: string) => ({
+        id: "design:project1:hash123",
+        name: "project1",
+        repository: "design",
+        status,
+        path: "project1",
+        modifiedBy: "admin",
+        modifiedAt: "2024-01-01T00:00:00Z",
+      });
+
+      it("should send PATCH with only branch (no status)", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBeUndefined();
+          expect(data.branch).toBe("feature/new-rules");
+          return [204];
+        });
+
+        const result = await client.switchBranch("design-project1", "feature/new-rules");
+        expect(result).toBe(true);
+        expect(mockAxios.history.patch.length).toBe(1);
+      });
+
+      it("should include selectedBranches when provided", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.status).toBeUndefined();
+          expect(data.branch).toBe("main");
+          expect(data.selectedBranches).toEqual(["main", "development"]);
+          return [204];
+        });
+
+        const result = await client.switchBranch("design-project1", "main", ["main", "development"]);
+        expect(result).toBe(true);
+      });
+
+      it("should not include selectedBranches when not provided", async () => {
+        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+
+        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+          const data = JSON.parse(config.data);
+          expect(data.branch).toBe("development");
+          expect(data.selectedBranches).toBeUndefined();
+          return [204];
+        });
+
+        const result = await client.switchBranch("design-project1", "development");
+        expect(result).toBe(true);
+      });
+
+      it("should throw when project is in local repository", async () => {
+        const localBase64Id = Buffer.from("local:myproject").toString("base64");
+        const encodedLocalId = encodeURIComponent(localBase64Id);
+
+        mockAxios.onGet(`/projects/${encodedLocalId}`).reply(200, {
+          id: "local:myproject:hash",
+          name: "myproject",
+          repository: "local",
+          status: "OPENED",
+          path: "myproject",
+          modifiedBy: "admin",
+          modifiedAt: "2024-01-01T00:00:00Z",
+        });
+
+        await expect(
+          client.switchBranch("local-myproject", "main")
+        ).rejects.toThrow(/local repository.*not connected to a remote Git/i);
+      });
+    });
   });
 
   describe("Table Management", () => {

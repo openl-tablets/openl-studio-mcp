@@ -147,6 +147,43 @@ describeIntegration('OpenL Studio 6.0.0 Live Integration Tests', () => {
       console.log(`✅ Opened project: ${testProjectId}`);
     });
 
+    test('switchBranch should switch branch on already opened project without 409', async () => {
+      // Get current project state
+      const project = await client.getProject(testProjectId);
+      const originalBranch = project.branch;
+
+      // Find available branches
+      const branches = await client.listBranches(project.repository);
+
+      if (branches.length < 2) {
+        console.log(`⚠️  Only one branch available, skipping switchBranch test`);
+        return;
+      }
+
+      // Pick a different branch
+      const targetBranch = branches.find(b => b !== originalBranch) || branches[0];
+
+      // Switch branch on the already opened project (should NOT get 409)
+      const switchResult = await client.switchBranch(testProjectId, targetBranch);
+      expect(switchResult).toBe(true);
+
+      // Verify branch changed
+      const updatedProject = await client.getProject(testProjectId);
+      expect(updatedProject.branch).toBe(targetBranch);
+      expect(updatedProject.status).toBe('OPENED');
+
+      console.log(`✅ Switched branch: ${originalBranch} → ${targetBranch} (project stayed OPENED)`);
+
+      // Switch back to original branch
+      const switchBackResult = await client.switchBranch(testProjectId, originalBranch);
+      expect(switchBackResult).toBe(true);
+
+      const restoredProject = await client.getProject(testProjectId);
+      expect(restoredProject.branch).toBe(originalBranch);
+
+      console.log(`✅ Switched back: ${targetBranch} → ${originalBranch}`);
+    });
+
     test('validate_project endpoint does not exist (expected 404)', async () => {
       // Note: The /validation endpoint doesn't exist in the REST API
       try {
