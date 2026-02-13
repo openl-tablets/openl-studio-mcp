@@ -435,15 +435,45 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const format = validateResponseFormat(typedArgs.response_format);
 
-      await client.openProject(typedArgs.projectId, {
-        branch: typedArgs.branch,
-        revision: typedArgs.revision,
-        selectedBranches: typedArgs.selectedBranches,
-      });
+      let action: "opened" | "switched_branch" = "opened";
+
+      // If branch is specified, check whether the project is already opened.
+      // If so, use switchBranch (PATCH without status) to avoid 409 Conflict.
+      if (typedArgs.branch) {
+        try {
+          const project = await client.getProject(typedArgs.projectId);
+          if (project.status === "OPENED" || project.status === "EDITING") {
+            await client.switchBranch(typedArgs.projectId, typedArgs.branch, typedArgs.selectedBranches);
+            action = "switched_branch";
+          } else {
+            await client.openProject(typedArgs.projectId, {
+              branch: typedArgs.branch,
+              revision: typedArgs.revision,
+              selectedBranches: typedArgs.selectedBranches,
+            });
+          }
+        } catch {
+          // If getProject fails, fall through to the default open logic
+          await client.openProject(typedArgs.projectId, {
+            branch: typedArgs.branch,
+            revision: typedArgs.revision,
+            selectedBranches: typedArgs.selectedBranches,
+          });
+        }
+      } else {
+        await client.openProject(typedArgs.projectId, {
+          revision: typedArgs.revision,
+          selectedBranches: typedArgs.selectedBranches,
+        });
+      }
+
+      const message = action === "switched_branch"
+        ? `Branch switched to '${typedArgs.branch}' successfully`
+        : `Project opened successfully${typedArgs.branch ? ` on branch '${typedArgs.branch}'` : ""}${typedArgs.revision ? ` at revision '${typedArgs.revision}'` : ""}`;
 
       const result = {
         success: true,
-        message: `Project opened successfully${typedArgs.branch ? ` on branch '${typedArgs.branch}'` : ""}${typedArgs.revision ? ` at revision '${typedArgs.revision}'` : ""}`,
+        message,
       };
 
       const formattedResult = formatResponse(result, format);
