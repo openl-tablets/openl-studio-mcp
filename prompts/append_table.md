@@ -225,15 +225,19 @@ Each field in the `fields` array must include:
 
 ```text
 1. Identify table → Use openl_list_tables() to find tableId
-2. Determine fields → Define new fields with types
-3. Call openl_append_table → Add fields to table
-4. Verify changes → Use openl_get_table() to confirm
-5. Save project → openl_save_project(comment="...") — works only when project status is EDITING; comment required; creates new revision, project → OPENED
+2. Ensure project is in EDITING state → Use openl_open_project() if not already opened
+3. Determine fields → Define new fields with types
+4. Call openl_append_table → Add fields to table
+5. Verify changes → Use openl_get_table() to confirm
+6. Save project → openl_save_project(comment="...") — requires project status EDITING; comment required; creates new revision and transitions project from EDITING → OPENED
 ```
 
 ### Complete Example
 
 ```bash
+# Step 0: Open project for editing (if not already opened)
+openl_open_project(projectId="design-insurance-rules")
+
 # Step 1: List tables to find the one to append to
 openl_list_tables(projectId="design-insurance-rules", tableType="Datatype")
 
@@ -257,7 +261,7 @@ openl_append_table(
 # Step 3: Verify the append
 openl_get_table(projectId="design-insurance-rules", tableId="Customer_1234")
 
-# Step 4: Save changes
+# Step 4: Save changes (transitions from EDITING to OPENED)
 openl_save_project(
   projectId="design-insurance-rules",
   comment="Added loyalty tier to Customer datatype"
@@ -350,6 +354,12 @@ openl_append_table(
 
 ### Common Errors
 
+**Project Not in EDITING State**
+```text
+Error: Cannot append - project must be in EDITING state
+Fix: Call openl_open_project(projectId) first to open the project
+```
+
 **Invalid Field Name**
 ```text
 Error: Field name must be valid Java identifier
@@ -410,7 +420,7 @@ Fix: Use openl_append_table only for Datatype and Data tables
 | Add required field | `openl_append_table(fields=[{name, type, required: true}])` |
 | Add with default | `openl_append_table(fields=[{name, type, defaultValue}])` |
 | Verify append | `openl_get_table(tableId)` |
-| Save changes | `openl_save_project(comment="...")` — only when status EDITING; comment required |
+| Save changes | `openl_save_project(comment="...")` — requires status EDITING; comment required; transitions to OPENED |
 
 ## Performance Notes
 

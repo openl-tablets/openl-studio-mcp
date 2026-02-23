@@ -2,6 +2,8 @@
 
 Documentation for developers contributing to the OpenL Studio MCP Server.
 
+**Community standards:** See [Code of Conduct](../../CODE_OF_CONDUCT.md) for expected behavior.
+
 ## Available Guides
 
 - **[Contributing Guide](contributing.md)** - How to contribute to the project

@@ -81,9 +81,11 @@ This MCP server enables AI agents to:
 - Deploy projects to production
 - Redeploy with new versions
 
-## Tools (25 Active, 6 Disabled, 31 Total Defined)
+## Tools (27 Active, 4 Disabled, 31 Total Defined)
 
 All tools are prefixed with `openl_` and versioned (v1.0.0+).
+
+**Disabled tools:** `validate_project`, `get_project_errors`, `test_project`, `compare_versions` (pending client.ts support).
 
 ### Repository Tools (4)
 - `openl_list_repositories` - List all design repositories
