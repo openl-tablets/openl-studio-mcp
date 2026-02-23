@@ -425,7 +425,6 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         projectId: string;
         branch?: string;
         revision?: string;
-        selectedBranches?: string[];
         response_format?: "json" | "markdown";
       };
 
@@ -443,13 +442,12 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         try {
           const project = await client.getProject(typedArgs.projectId);
           if (project.status === "OPENED" || project.status === "EDITING") {
-            await client.switchBranch(typedArgs.projectId, typedArgs.branch, typedArgs.selectedBranches);
+            await client.switchBranch(typedArgs.projectId, typedArgs.branch);
             action = "switched_branch";
           } else {
             await client.openProject(typedArgs.projectId, {
               branch: typedArgs.branch,
               revision: typedArgs.revision,
-              selectedBranches: typedArgs.selectedBranches,
             });
           }
         } catch {
@@ -457,13 +455,11 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
           await client.openProject(typedArgs.projectId, {
             branch: typedArgs.branch,
             revision: typedArgs.revision,
-            selectedBranches: typedArgs.selectedBranches,
           });
         }
       } else {
         await client.openProject(typedArgs.projectId, {
           revision: typedArgs.revision,
-          selectedBranches: typedArgs.selectedBranches,
         });
       }
 

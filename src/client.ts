@@ -601,7 +601,7 @@ export class OpenLClient {
    */
   async openProject(
     projectId: string,
-    options?: { branch?: string; revision?: string; comment?: string; selectedBranches?: string[] }
+    options?: { branch?: string; revision?: string; comment?: string }
   ): Promise<boolean> {
     await this.ensureNotLocalRepository(projectId);
     const projectPath = this.buildProjectPath(projectId);
@@ -628,20 +628,17 @@ export class OpenLClient {
    *
    * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
    * @param branch - Target branch name to switch to
-   * @param selectedBranches - Optional list of branches to select for multi-branch projects
    * @returns Success status (204 No Content on success)
    */
   async switchBranch(
     projectId: string,
-    branch: string,
-    selectedBranches?: string[]
+    branch: string
   ): Promise<boolean> {
     await this.ensureNotLocalRepository(projectId);
     const projectPath = this.buildProjectPath(projectId);
 
     const switchModel: Types.ProjectStatusUpdateModel = {
       branch,
-      selectedBranches,
     };
 
     await this.axiosInstance.patch(projectPath, switchModel);
@@ -688,7 +685,6 @@ export class OpenLClient {
       discardChanges?: boolean;
       branch?: string;
       revision?: string;
-      selectedBranches?: string[];
     }
   ): Promise<{ success: boolean; message: string }> {
     const projectPath = this.buildProjectPath(projectId);
@@ -717,7 +713,6 @@ export class OpenLClient {
       comment: request.comment,
       branch: request.branch,
       revision: request.revision,
-      selectedBranches: request.selectedBranches,
     };
 
     // Call the OpenL Studio API
@@ -1492,7 +1487,7 @@ export class OpenLClient {
         await this.openProject(projectId);
         projectWasOpened = true;
       }
-    } catch (error) {
+    } catch {
       // If getProject fails, try to open project anyway
       try {
         await this.openProject(projectId);

@@ -76,7 +76,6 @@ export const openProjectSchema = z.object({
   projectId: projectIdSchema,
   branch: branchNameSchema.optional().describe("Open project on a specific Git branch (e.g., 'main', 'development', 'feature/new-rules')"),
   revision: z.string().optional().describe("Open project at a specific Git revision/commit hash for read-only viewing"),
-  selectedBranches: z.array(z.string()).optional().describe("List of branches to select for multi-branch projects"),
   response_format: ResponseFormat.optional(),
 }).strict();
 

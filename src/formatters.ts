@@ -100,20 +100,32 @@ export function formatResponse<T>(
   const charLimit = (options && options.characterLimit) || RESPONSE_LIMITS.MAX_CHARACTERS;
   if (formattedString.length > charLimit) {
     if (format === "json") {
-      // For JSON format, return a valid JSON wrapper object
-      // Parse the JSON string back to object, truncate the data, and wrap it
       try {
         const parsedResponse = JSON.parse(formattedString) as PaginatedResponse<T>;
-        // Create truncated wrapper with valid JSON structure
+        if (Array.isArray(parsedResponse.data) && parsedResponse.data.length > 0) {
+          const ratio = charLimit / formattedString.length;
+          let itemCount = Math.max(1, Math.floor(parsedResponse.data.length * ratio * 0.9));
+          let result: string;
+          do {
+            const truncatedWrapper = {
+              data: parsedResponse.data.slice(0, itemCount),
+              ...(parsedResponse.pagination ? { pagination: parsedResponse.pagination } : {}),
+              truncated: true,
+              truncation_message: RESPONSE_LIMITS.TRUNCATION_MESSAGE,
+            };
+            result = safeStringify(truncatedWrapper, 2);
+            if (result.length <= charLimit) break;
+            itemCount = Math.max(1, Math.floor(itemCount * 0.8));
+          } while (itemCount > 1);
+          return result;
+        }
         const truncatedWrapper: PaginatedResponse<T> = {
           ...parsedResponse,
           truncated: true,
           truncation_message: RESPONSE_LIMITS.TRUNCATION_MESSAGE,
         };
-        // Re-serialize to ensure valid JSON
         return safeStringify(truncatedWrapper, 2);
       } catch {
-        // If parsing fails, return a simple valid JSON object
         return safeStringify({
           truncated: true,
           truncation_message: RESPONSE_LIMITS.TRUNCATION_MESSAGE,

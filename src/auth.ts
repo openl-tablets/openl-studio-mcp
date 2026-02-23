@@ -6,7 +6,6 @@
  * - Personal Access Token (PAT)
  */
 
-import { createHash } from "node:crypto";
 import { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import type * as Types from "./types.js";
 import { HEADERS } from "./constants.js";
@@ -22,32 +21,6 @@ const DEBUG_AUTH = process.env.DEBUG_AUTH === "true" || process.env.DEBUG === "t
  * Key: hash of config (baseUrl + auth method)
  */
 const loggedAuthConfigs = new Set<string>();
-
-/**
- * Safely log auth header information without exposing tokens
- * @param authHeader - Full auth header value
- * @returns Safe representation of auth header (scheme only or redacted)
- */
-function safeAuthHeaderLog(authHeader: string | undefined): string {
-  if (!authHeader || authHeader === "none") {
-    return "none";
-  }
-
-  // Extract scheme (Bearer, Basic, etc.)
-  const schemeMatch = authHeader.match(/^(\w+)\s+/);
-  if (schemeMatch) {
-    const scheme = schemeMatch[1];
-    if (DEBUG_AUTH) {
-      // In debug mode, log a hash fingerprint instead of actual token
-      const hash = createHash("sha256").update(authHeader).digest("hex").substring(0, 8);
-      return `${scheme} [${hash}...]`;
-    }
-    return `${scheme} [redacted]`;
-  }
-
-  // If no scheme found, return redacted
-  return "[redacted]";
-}
 
 /**
  * Authentication manager for OpenL Studio API
