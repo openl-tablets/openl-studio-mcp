@@ -482,35 +482,6 @@ describe("OpenLClient", () => {
         expect(mockAxios.history.patch.length).toBe(1);
       });
 
-      it("should include selectedBranches when provided", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
-
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
-          const data = JSON.parse(config.data);
-          expect(data.status).toBeUndefined();
-          expect(data.branch).toBe("main");
-          expect(data.selectedBranches).toEqual(["main", "development"]);
-          return [204];
-        });
-
-        const result = await client.switchBranch("design-project1", "main", ["main", "development"]);
-        expect(result).toBe(true);
-      });
-
-      it("should not include selectedBranches when not provided", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
-
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
-          const data = JSON.parse(config.data);
-          expect(data.branch).toBe("development");
-          expect(data.selectedBranches).toBeUndefined();
-          return [204];
-        });
-
-        const result = await client.switchBranch("design-project1", "development");
-        expect(result).toBe(true);
-      });
-
       it("should throw when project is in local repository", async () => {
         const localBase64Id = Buffer.from("local:myproject").toString("base64");
         const encodedLocalId = encodeURIComponent(localBase64Id);

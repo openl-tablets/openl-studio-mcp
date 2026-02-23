@@ -334,7 +334,6 @@ export interface ProjectStatusUpdateModel {
   branch?: string;
   revision?: string;
   comment?: string;
-  selectedBranches?: string[];
 }
 
 // =============================================================================

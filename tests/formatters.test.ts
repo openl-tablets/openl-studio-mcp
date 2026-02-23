@@ -348,7 +348,7 @@ describe("formatters", () => {
 
       // Signature should be truncated
       expect(result).toContain("...");
-      expect(result.length).toBeLessThan(longSignature.length * 2);
+      expect(result).not.toContain(longSignature);
     });
 
     it("should format properties correctly", () => {

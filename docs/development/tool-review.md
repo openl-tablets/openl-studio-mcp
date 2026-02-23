@@ -98,7 +98,7 @@
 - `openl_close_project`: `PATCH /projects/{projectId}` with `status: "CLOSED"`
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `branch`, `revision`, `selectedBranches` (in `openl_open_project`)
+- ✅ Covered: `branch`, `revision` (in `openl_open_project`)
 - ✅ Covered: `comment` (in `openl_save_project` and `openl_close_project`)
 - ✅ Covered: `saveChanges`, `discardChanges` (in `openl_close_project` for safety)
 
