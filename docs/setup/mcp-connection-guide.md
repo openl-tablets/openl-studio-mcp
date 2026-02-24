@@ -598,8 +598,12 @@ This method connects VS Code Copilot to a remote MCP server. VS Code uses HTTP-b
 ### Step 5.1: Prerequisites
 
 Ensure you have:
-- **VS Code** installed (version with Copilot support)
+- **VS Code 1.108.1** or later installed (version with Copilot support)
 - **GitHub Copilot** extension installed and activated
+- **Copilot Agent Mode enabled** - MCP servers only work in Agent mode
+  - Open Command Palette (`Cmd/Ctrl + Shift + P`)
+  - Search for: `GitHub Copilot: Enable Agent Mode`
+  - Or check settings: `github.copilot.chat.agentMode` should be `true`
 - **Personal Access Token** created in OpenL Studio
 
 ### Step 5.2: Configuration
@@ -692,6 +696,8 @@ Ensure you have:
 
 This method connects VS Code Copilot to an MCP server running in a Docker container.
 
+**Prerequisites:** See [Scenario 5, Step 5.1](#step-51-prerequisites) - ensure VS Code Copilot is in **Agent mode** (required for MCP support).
+
 ### Step 6.1: Verifying Docker Container Availability
 
 Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-container-availability).
@@ -767,7 +773,7 @@ Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-con
   "github.copilot.chat.mcp.servers": {
     "openl-mcp-server-docker": {
       "type": "http",
-      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=admin&OPENL_PASSWORD=admin"
+      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=<your-username>&OPENL_PASSWORD=<your-password>"
     }
   }
 }
@@ -833,7 +839,13 @@ After configuring any of the scenarios, perform verification:
 
 ### In VS Code
 
-1. **Check MCP server status:**
+1. **Verify Agent mode is enabled:**
+   - Open Command Palette (`Cmd/Ctrl + Shift + P`)
+   - Search for: `GitHub Copilot: Show Settings`
+   - Ensure **Agent Mode** is enabled
+   - Or check in settings.json: `"github.copilot.chat.agentMode": true`
+
+2. **Check MCP server status:**
    - Open VS Code settings (`Cmd/Ctrl + ,`)
    - Search for: `github.copilot.chat.mcp.servers`
    - Verify your server configuration is present
@@ -841,7 +853,7 @@ After configuring any of the scenarios, perform verification:
      - View → Output
      - Select "GitHub Copilot Chat" from dropdown
 
-2. **Test in Copilot Chat:**
+3. **Test in Copilot Chat:**
    - Open Copilot Chat panel (usually on the left sidebar)
    - Or use `Cmd/Ctrl + Shift + I` to open chat
    - Enter request:
@@ -1219,7 +1231,7 @@ After configuring any of the scenarios, perform verification:
   "github.copilot.chat.mcp.servers": {
     "openl-mcp-server-docker": {
       "type": "http",
-      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=admin&OPENL_PASSWORD=admin"
+      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=<your-username>&OPENL_PASSWORD=<your-password>"
     }
   }
 }

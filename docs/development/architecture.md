@@ -35,7 +35,7 @@
 - **Where:** Standalone repository (separate from OpenL Studio project)
 - **Role:** 
   - Converts Claude commands to API requests to OpenL
-  - Provides 18 tools for working with OpenL
+  - Provides 25 tools for working with OpenL
   - Manages authentication
 
 ### 3. OpenL Studio

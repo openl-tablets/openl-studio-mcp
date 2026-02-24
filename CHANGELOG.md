@@ -12,16 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial public release of OpenL Studio MCP Server
-- 27 production-ready MCP tools organized into 5 categories: Repository Management (4), Project Management (14), Rules & Tables Management (6), Version Control (3), Deployment (4)
+- 25 production-ready MCP tools organized into 4 categories: Repository Management (4), Project Management (13), Rules & Tables Management (5), Deployment (3)
 - Support for multiple transport modes: stdio, HTTP SSE, and streamablehttp
 - Support for multiple AI clients: Claude Desktop, Cursor IDE, and VS Code Copilot
-- Authentication via Basic Auth (with HTTPS requirement for production) and Personal Access Token (PAT)
+- Supported authentication: Basic Auth and Personal Access Token (PAT)
 - Four response formats: json, markdown, markdown_concise, markdown_detailed
 - 14 AI guidance prompts for complex workflows (table creation, testing, deployment, version control)
-- 8 MCP resources for read-only access to OpenL data via URI patterns
+- 4 MCP resources for read-only access to OpenL data via URI patterns
 - Docker support with official image and Docker Compose examples
 - Comprehensive documentation: 19+ guides organized into Getting Started, Setup, Usage, and Development sections
-- Type-safe implementation with Zod v4.3.5 schemas and TypeScript 5.7.2 strict mode
+- Type-safe implementation with Zod schemas and TypeScript strict mode
 - Automatic credential redaction in logs and error messages
 - Request tracking via Client Document ID (OPENL_CLIENT_DOCUMENT_ID) for audit trails
 - Comprehensive test suite with 11 test files covering unit, integration, and E2E testing
@@ -39,11 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Compatibility
 
 - Node.js: ≥24.0.0 (tested on Node.js 24)
-- OpenL Studio: 6.0.0+ (tested with OpenL Tablets 5.26.x and 6.x)
+- OpenL Studio: 6.0.0+ (tested with OpenL Tablets 6.x)
 - MCP SDK: @modelcontextprotocol/sdk v1.26.0
 - TypeScript: 5.7.2
 - Supported transports: stdio, HTTP SSE, streamablehttp
-- Supported authentication: Basic Auth (requires HTTPS in production), Personal Access Token (PAT)
+- Supported authentication: Basic Auth and Personal Access Token (PAT)
 
 [Unreleased]: https://github.com/openl-tablets/openl-studio-mcp/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/openl-tablets/openl-studio-mcp/releases/tag/v1.0.0
