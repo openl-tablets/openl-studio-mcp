@@ -1709,7 +1709,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
 
       const summary = await client.getTestResultsSummary(typedArgs.projectId, {
         failures: typedArgs.failures,
-        // unpaged is not used - pagination is always used instead
+        unpaged: typedArgs.unpaged,
       });
 
       const formattedResult = formatResponse(summary, format, {
@@ -1761,7 +1761,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         offset: typedArgs.offset,
         size: typedArgs.size,
         limit: typedArgs.limit,
-        // unpaged is not used - pagination is always used instead
+        unpaged: typedArgs.unpaged,
       });
 
       const pageSize = results.pageSize || typedArgs.size || typedArgs.limit || 50;
@@ -1821,7 +1821,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         offset: typedArgs.offset,
         size: typedArgs.size,
         limit: typedArgs.limit,
-        // unpaged is not used - pagination is always used instead
+        unpaged: typedArgs.unpaged,
       });
 
       const formattedResult = formatResponse(results, format, {

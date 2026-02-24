@@ -42,7 +42,6 @@ USER mcp
 # Environment variables (can be overridden)
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV OPENL_BASE_URL=http://studio:8080/rest
 
 # Expose HTTP port
 EXPOSE 3000

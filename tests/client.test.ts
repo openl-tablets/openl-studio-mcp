@@ -15,7 +15,7 @@ describe("OpenLClient", () => {
 
   beforeEach(() => {
     const config: OpenLConfig = {
-      baseUrl: "http://localhost:8080/rest",
+      baseUrl: "http://localhost:8080",
       username: "admin",
       password: "admin",
     };
@@ -30,12 +30,12 @@ describe("OpenLClient", () => {
   });
 
   describe("Constructor and Configuration", () => {
-    it("should create client with basic config", () => {
+    it("should keep /rest when already present in baseUrl", () => {
       const config: OpenLConfig = {
         baseUrl: "http://localhost:8080/rest",
       };
       const testClient = new OpenLClient(config);
-      expect(testClient.getBaseUrl()).toBe("http://localhost:8080/rest");
+      expect(testClient.getBaseUrl()).toMatch(/\/rest$/);
     });
 
     it("should set auth method when using basic auth", () => {
@@ -46,6 +46,14 @@ describe("OpenLClient", () => {
       };
       const testClient = new OpenLClient(config);
       expect(testClient.getAuthMethod()).toContain("Basic");
+    });
+
+    it("should auto-append /rest when missing in baseUrl", () => {
+      const config: OpenLConfig = {
+        baseUrl: "http://localhost:8080",
+      };
+      const testClient = new OpenLClient(config);
+      expect(testClient.getBaseUrl()).toMatch(/\/rest$/);
     });
 
 
@@ -1212,6 +1220,15 @@ describe("OpenLClient", () => {
       expect(summary.numberOfPassed).toBe(4);
     });
 
+    it("should pass unpaged=true in getTestResultsSummary", async () => {
+      await startSession("specific_table_99");
+
+      mockAxios.onGet(`${projectPath}/tests/summary`, { params: { unpaged: true } }).reply(200, mockSummary);
+
+      const summary = await client.getTestResultsSummary("design-project1", { unpaged: true });
+      expect(summary.numberOfTests).toBe(5);
+    });
+
     it("should reuse stored headers in getTestResults after starting with tableId", async () => {
       await startSession("specific_table_99");
 
@@ -1221,6 +1238,15 @@ describe("OpenLClient", () => {
       });
 
       const results = await client.getTestResults("design-project1");
+      expect(results.testCases).toHaveLength(2);
+    });
+
+    it("should pass unpaged=true in getTestResults", async () => {
+      await startSession("specific_table_99");
+
+      mockAxios.onGet(`${projectPath}/tests/summary`, { params: { unpaged: true } }).reply(200, mockSummary);
+
+      const results = await client.getTestResults("design-project1", { unpaged: true });
       expect(results.testCases).toHaveLength(2);
     });
 

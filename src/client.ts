@@ -9,7 +9,12 @@ import axios, { AxiosInstance } from "axios";
 import type * as Types from "./types.js";
 import { AuthenticationManager } from "./auth.js";
 import { DEFAULTS, ERROR_LOCAL_REPOSITORY, HEADERS, PROJECT_ID_PATTERN, REPOSITORY_LOCAL } from "./constants.js";
-import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } from "./utils.js";
+import {
+  validateTimeout,
+  sanitizeError,
+  parseProjectId as parseProjectIdUtil,
+  normalizeOpenLBaseUrl,
+} from "./utils.js";
 
 /**
  * Client for OpenL Studio REST API
@@ -17,7 +22,7 @@ import { validateTimeout, sanitizeError, parseProjectId as parseProjectIdUtil } 
  * Usage:
  * ```typescript
  * const client = new OpenLClient({
- *   baseUrl: "http://localhost:8080/rest",
+ *   baseUrl: "http://localhost:8080",
  *   username: "admin",
  *   password: "admin"
  * });
@@ -39,7 +44,7 @@ export class OpenLClient {
    * @param config - Client configuration including base URL and authentication
    */
   constructor(config: Types.OpenLConfig) {
-    this.baseUrl = config.baseUrl;
+    this.baseUrl = normalizeOpenLBaseUrl(config.baseUrl);
 
     // Validate and set timeout
     const timeout = validateTimeout(config.timeout, DEFAULTS.TIMEOUT);
@@ -1557,7 +1562,7 @@ export class OpenLClient {
 
     const params: Record<string, string | number | boolean> = {};
     if (options?.failures !== undefined) params.failures = options.failures;
-    // unpaged parameter is not used - pagination is always used instead
+    if (options?.unpaged) params.unpaged = true;
 
     const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
       `${projectPath}/tests/summary`,
@@ -1618,7 +1623,7 @@ export class OpenLClient {
     if (options?.offset !== undefined) params.offset = options.offset;
     if (options?.size !== undefined) params.size = options.size;
     else if (options?.limit !== undefined) params.size = options.limit; // Map limit to size
-    // unpaged parameter is not used - pagination is always used instead
+    if (options?.unpaged) params.unpaged = true;
 
     const response = await this.axiosInstance.get<Types.TestsExecutionSummary>(
       `${projectPath}/tests/summary`,
@@ -1656,6 +1661,32 @@ export class OpenLClient {
       unpaged?: boolean;
     }
   ): Promise<Types.TestsExecutionSummary> {
+    if (options?.unpaged) {
+      const unpagedResults = await this.getTestResults(projectId, {
+        failuresOnly: options.failuresOnly,
+        failures: options.failures,
+        unpaged: true,
+      });
+      const filteredTestCases = (unpagedResults.testCases || []).filter(
+        (testCase) => testCase.tableId === tableId
+      );
+      const numberOfTests = filteredTestCases.reduce(
+        (sum, tc) => sum + tc.numberOfTests,
+        0
+      );
+      const numberOfFailures = filteredTestCases.reduce(
+        (sum, tc) => sum + tc.numberOfFailures,
+        0
+      );
+
+      return {
+        ...unpagedResults,
+        testCases: filteredTestCases,
+        numberOfTests,
+        numberOfFailures,
+      };
+    }
+
     // Collect all test results across pages, then filter by tableId.
     // Pagination options from the caller are applied AFTER filtering, to avoid
     // missing the requested table when it is not on the selected page.

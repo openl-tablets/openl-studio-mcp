@@ -124,7 +124,7 @@ The Docker configuration should only include the base URL:
 mcp-server:
   environment:
     PORT: 3000
-    OPENL_BASE_URL: http://studio:8080/rest
+    OPENL_BASE_URL: http://studio:8080
     NODE_ENV: production
     # Authentication is NOT set here!
 ```
@@ -200,7 +200,7 @@ For complete setup instructions, see [MCP Connection Guide](../setup/mcp-connect
 
 ```bash
 cd $PROJECT_ROOT
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
 ./check-health.sh
@@ -258,7 +258,7 @@ export OPENL_PASSWORD="admin"
 **Solution:**
 1. Check credentials in configuration
 2. Try logging into OpenL via browser with the same credentials
-3. Check URL - should end with `/rest`
+3. Check URL - it should point to the OpenL server base URL (for example, `http://localhost:8080`)
 
 ### Issue: Docker containers don't start
 
@@ -292,7 +292,7 @@ docker compose up
 
 # Terminal 2: Check (optional)
 cd $PROJECT_ROOT
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
 ./check-health.sh

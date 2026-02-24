@@ -48,6 +48,15 @@ let defaultClient: OpenLClient | null = null;
 
 // Store clients by session ID (for per-session configuration)
 const clientsBySession: Record<string, OpenLClient> = {};
+const NO_DEFAULT_CLIENT_ERROR =
+  "No OpenL client available. Configure OPENL_BASE_URL in server environment variables or Docker configuration.";
+
+function getDefaultClientOrThrow(): OpenLClient {
+  if (!defaultClient) {
+    throw new Error(NO_DEFAULT_CLIENT_ERROR);
+  }
+  return defaultClient;
+}
 
 // Initialize default OpenL client (async - will be awaited before server starts)
 // NOTE: Authentication credentials should NOT be set in Docker/environment variables.
@@ -95,15 +104,13 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
   }
 
   // Base URL must come from server configuration
-  if (!defaultClient) {
-    throw new Error('No OpenL client available. Configure OPENL_BASE_URL in server environment variables or Docker configuration.');
-  }
+  const baseClient = getDefaultClientOrThrow();
 
   // If authentication is provided via query params/headers, create a new client with same base URL but different auth
   if (query && (query.OPENL_PERSONAL_ACCESS_TOKEN || query.OPENL_USERNAME)) {
     try {
       // Get base URL from default client (server configuration)
-      const baseUrl = defaultClient.getBaseUrl();
+      const baseUrl = baseClient.getBaseUrl();
       
       // Build config with server's base URL and client's authentication
       const config: Types.OpenLConfig = {
@@ -125,7 +132,7 @@ function getClientForSession(sessionId: string, query?: Record<string, string | 
   }
 
   // Use default client (with server-configured base URL and auth)
-  return defaultClient;
+  return baseClient;
 }
 
 // Initialize MCP Server for SSE transport
@@ -149,7 +156,7 @@ async function initializeMCPServer(): Promise<void> {
 
     // Register all tools with a function that gets the client dynamically
     // We'll use a wrapper that gets the client from the session
-    registerAllTools(mcpServer, defaultClient || new OpenLClient({ baseUrl: 'http://localhost:8080/rest' }));
+    registerAllTools(mcpServer, getDefaultClientOrThrow());
 
   // Setup MCP handlers (similar to index.ts)
   mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -165,7 +172,7 @@ async function initializeMCPServer(): Promise<void> {
   mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Get client from request context (session ID stored in transport)
     // For now, use default client - we'll update this to use session-specific clients
-    const client = defaultClient || new OpenLClient({ baseUrl: 'http://localhost:8080/rest' });
+    const client = getDefaultClientOrThrow();
     const result = await executeTool(request.params.name, request.params.arguments, client);
     return result as any;
   });
@@ -201,7 +208,7 @@ async function initializeMCPServer(): Promise<void> {
 
   // Handle resource reads
   mcpServer.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    const client = defaultClient || new OpenLClient({ baseUrl: 'http://localhost:8080/rest' });
+    const client = getDefaultClientOrThrow();
     return handleResourceRead(request.params.uri, client);
   });
 

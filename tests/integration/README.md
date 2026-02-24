@@ -10,9 +10,9 @@ Create `.env.test` file in `mcp-server/` directory:
 
 ```bash
 # OpenL Studio Connection
-OPENL_BASE_URL=http://localhost:8080/rest
-OPENL_USERNAME=admin
-OPENL_PASSWORD=admin
+OPENL_BASE_URL=http://localhost:8080
+OPENL_USERNAME=<your-username>
+OPENL_PASSWORD=<your-password>
 
 # Test Control
 SKIP_LIVE_TESTS=false
@@ -24,7 +24,7 @@ Make sure your OpenL Studio 6.0.0 instance is running and accessible:
 
 ```bash
 curl http://localhost:8080/rest/repos \
-  -u admin:admin
+  -u <your-username>:<your-password>
 ```
 
 ### 3. Run Integration Tests
@@ -66,12 +66,12 @@ Tests are organized by priority and functionality:
 Successful test run:
 ```
 OpenL Studio 6.0.0 Live Integration Tests
-  🔌 Connecting to OpenL Studio at: http://localhost:8080/rest
+  🔌 Connecting to OpenL Studio at: http://localhost:8080
 
   0. Health Check
     ✓ should connect to OpenL instance (250ms)
       ✅ Connected to OpenL Studio
-         Base URL: http://localhost:8080/rest
+         Base URL: http://localhost:8080
          Auth: basic
 
   1. Repository Management (P1)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The OpenL Studio MCP Server is a Model Context Protocol (MCP) server that provides AI coding agents with seamless access to the OpenL Studio Business Rules Management System (BRMS). It acts as a bridge between AI assistants (like Claude Desktop, Cursor IDE) and the OpenL Studio REST API, enabling natural language interaction with business rules management.
+The OpenL Studio MCP Server is a Model Context Protocol (MCP) server that provides AI coding agents with seamless access to the OpenL Studio Business Rules Management System (BRMS). It acts as a bridge between AI assistants (like Claude Desktop, Cursor IDE) and the OpenL Studio API, enabling natural language interaction with business rules management.
 
 ## Purpose
 
@@ -28,7 +28,7 @@ This MCP server enables AI agents to:
 │  MCP Server     │  ← This Agent (Node.js/TypeScript)
 │  (openl-mcp)    │
 └────────┬────────┘
-         │ HTTP REST API
+         │ HTTP API
          │ (JSON, Basic Auth / PAT)
          ▼
 ┌─────────────────┐
@@ -180,7 +180,7 @@ OPENL_PERSONAL_ACCESS_TOKEN=your-token
 ### Environment Variables
 
 **Required:**
-- `OPENL_BASE_URL` - OpenL REST API base URL (e.g., `http://localhost:8080/rest`)
+- `OPENL_BASE_URL` - OpenL API base URL (e.g., `http://localhost:8080`)
 
 **Authentication (one required):**
 - `OPENL_USERNAME` + `OPENL_PASSWORD` (Basic Auth)
@@ -256,7 +256,7 @@ if (!token) {
 Always use placeholders:
 ```json
 {
-  "OPENL_BASE_URL": "http://localhost:8080/rest",
+  "OPENL_BASE_URL": "http://localhost:8080",
   "OPENL_PERSONAL_ACCESS_TOKEN": "<your-token>",
   "OPENL_USERNAME": "<your-username>",
   "OPENL_PASSWORD": "<your-password>"
@@ -411,7 +411,7 @@ npm run watch
 ### Docker
 ```bash
 docker build -t openl-mcp-server .
-docker run -e OPENL_BASE_URL=http://openl:8080/rest \
+docker run -e OPENL_BASE_URL=http://openl:8080 \
            -e OPENL_USERNAME=admin \
            -e OPENL_PASSWORD=admin \
            openl-mcp-server
@@ -423,7 +423,7 @@ services:
   mcp-server:
     image: ghcr.io/openl-tablets/openl-studio-mcp:x
     environment:
-      OPENL_BASE_URL: https://openl.example.com/studio/rest
+      OPENL_BASE_URL: https://openl.example.com/studio
 ```
 
 ## Version
