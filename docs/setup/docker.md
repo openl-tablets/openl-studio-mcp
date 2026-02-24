@@ -10,7 +10,7 @@ MCP Server can now run as a standalone HTTP application on Express, allowing it 
 ┌─────────────────┐
 │   HTTP Client   │  ← External requests
 └────────┬────────┘
-         │ HTTP REST API
+         │ HTTP API
          │
          ▼
 ┌─────────────────┐
@@ -23,7 +23,7 @@ MCP Server can now run as a standalone HTTP application on Express, allowing it 
 │  MCP Tools      │  ← Call OpenL tools
 │  (tool-handlers)│
 └────────┬────────┘
-         │ HTTP REST API
+         │ HTTP API
          │
          ▼
 ┌─────────────────┐
@@ -129,7 +129,7 @@ MCP Server uses the following environment variables:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | HTTP server port | `3000` |
-| `OPENL_BASE_URL` | OpenL Studio API URL | `http://studio:8080/rest` |
+| `OPENL_BASE_URL` | OpenL Studio API URL | `http://studio:8080` |
 | `OPENL_USERNAME` | Username | `admin` |
 | `OPENL_PASSWORD` | Password | `admin` |
 | `NODE_ENV` | Environment mode | `production` |
@@ -163,7 +163,7 @@ npm install
 npm run build
 
 # Start HTTP server
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
 npm run start:http
@@ -236,7 +236,7 @@ docker compose logs -f --tail=100 mcp-server
 
 Ensure that:
 - OpenL Studio is running (`docker compose ps studio`)
-- `OPENL_BASE_URL` points to the correct address (`http://studio:8080/rest`)
+- `OPENL_BASE_URL` points to the correct address (`http://studio:8080`)
 - Credentials are correct (`OPENL_USERNAME`, `OPENL_PASSWORD`)
 
 ### Port 3000 is Occupied

@@ -19,7 +19,7 @@ services:
       # - "<your-openl-host>:host-gateway"
     environment:
       PORT: 3000
-      OPENL_BASE_URL: ${OPENL_BASE_URL:-http://host.docker.internal:8080/rest}
+      OPENL_BASE_URL: ${OPENL_BASE_URL:?OPENL_BASE_URL is required}
       NODE_ENV: ${NODE_ENV:-production}
     deploy:
       resources:

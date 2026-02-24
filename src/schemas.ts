@@ -350,7 +350,7 @@ export const startProjectTestsSchema = z.object({
 export const getTestResultsSummarySchema = z.object({
   projectId: projectIdSchema,
   failures: z.number().int().positive().optional().default(5).describe("Number of failed test units to include in the summary (default: 5, min: 1)"),
-  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination is always used instead"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination"),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -362,7 +362,7 @@ export const getTestResultsSchema = z.object({
   offset: z.number().int().nonnegative().optional().describe("Offset for pagination. Mutually exclusive with page"),
   size: z.number().int().positive().optional().describe("Page size (number of results per page)"),
   limit: z.number().int().positive().max(200).optional().describe("Page size (alias for size, maps to size parameter)"),
-  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination (page/offset/size) is always used instead. Mutually exclusive with page, offset, and size"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. Mutually exclusive with page, offset, size, and limit"),
   response_format: ResponseFormat.optional(),
 }).strict().refine(
   (data) => {
@@ -370,14 +370,14 @@ export const getTestResultsSchema = z.object({
     if (data.page !== undefined && data.offset !== undefined) {
       return false;
     }
-    // Validate mutual exclusivity: unpaged vs page/offset/size
+    // Validate mutual exclusivity: unpaged vs page/offset/size/limit
     if (data.unpaged === true && (data.page !== undefined || data.offset !== undefined || data.size !== undefined || data.limit !== undefined)) {
       return false;
     }
     return true;
   },
   {
-    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, and size",
+    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, size, and limit",
   }
 );
 
@@ -390,7 +390,7 @@ export const getTestResultsByTableSchema = z.object({
   offset: z.number().int().nonnegative().optional().describe("Offset for pagination. Mutually exclusive with page"),
   size: z.number().int().positive().optional().describe("Page size (number of results per page)"),
   limit: z.number().int().positive().max(200).optional().describe("Page size (alias for size, maps to size parameter)"),
-  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. NOTE: Currently not used - pagination (page/offset/size) is always used instead. Mutually exclusive with page, offset, and size"),
+  unpaged: z.boolean().optional().default(false).describe("Return all results without pagination. Mutually exclusive with page, offset, size, and limit"),
   response_format: ResponseFormat.optional(),
 }).strict().refine(
   (data) => {
@@ -398,14 +398,14 @@ export const getTestResultsByTableSchema = z.object({
     if (data.page !== undefined && data.offset !== undefined) {
       return false;
     }
-    // Validate mutual exclusivity: unpaged vs page/offset/size
+    // Validate mutual exclusivity: unpaged vs page/offset/size/limit
     if (data.unpaged === true && (data.page !== undefined || data.offset !== undefined || data.size !== undefined || data.limit !== undefined)) {
       return false;
     }
     return true;
   },
   {
-    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, and size",
+    message: "Invalid pagination parameters: page and offset are mutually exclusive; unpaged is mutually exclusive with page, offset, size, and limit",
   }
 );
 

@@ -2,7 +2,7 @@
 
 **Date**: 2025-01-27  
 **Version**: 1.0.0  
-**Purpose**: Review MCP tools against OpenL Studio REST API to identify missing inputs, extra parameters, and recommendations
+**Purpose**: Review MCP tools against OpenL Studio API to identify missing inputs, extra parameters, and recommendations
 
 ---
 

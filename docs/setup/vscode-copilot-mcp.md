@@ -43,11 +43,11 @@ mkdir -p ~/.mcp
 Create or edit `~/.mcp/.env` (or `/Users/<your-username>/.mcp/.env`):
 
 ```bash
-# OpenL Studio REST API base URL (required)
+# OpenL Studio API base URL (required)
 # MCP runs in Docker, so to reach OpenL on the same machine use host.docker.internal (macOS/Windows):
-OPENL_BASE_URL=http://host.docker.internal:8080/rest
-# For remote server, use: https://your-openl-server.example.com/rest
-# (If you run MCP on the host, not in Docker, use http://localhost:8080/rest for local OpenL.)
+OPENL_BASE_URL=http://host.docker.internal:8080
+# For remote server, use: https://your-openl-server.example.com
+# (If you run MCP on the host, not in Docker, use http://localhost:8080 for local OpenL.)
 
 # Personal Access Token from OpenL Studio (required for this setup)
 OPENL_PERSONAL_ACCESS_TOKEN=openl_pat_xxxxxxxxxxxx.yyyyyyyyyyyyyyyy
@@ -61,7 +61,7 @@ New-Item -ItemType Directory -Force -Path $env:USERPROFILE\.mcp
 
 Then create or edit `%USERPROFILE%\.mcp\.env` with the same two lines (use your real base URL and PAT).
 
-- MCP runs in Docker, so to reach OpenL Studio on the same machine (host or in another container with port 8080 published) use `http://host.docker.internal:8080/rest` (macOS/Windows; on Linux you may need `--add-host=host.docker.internal:host-gateway`). For a remote server use your base URL (e.g. `https://your-openl-server.example.com/rest`).
+- MCP runs in Docker, so to reach OpenL Studio on the same machine (host or in another container with port 8080 published) use `http://host.docker.internal:8080` (macOS/Windows; on Linux you may need `--add-host=host.docker.internal:host-gateway`). For a remote server use your base URL (e.g. `https://your-openl-server.example.com`).
 - Replace the token value with your actual PAT.
 - Restrict file permissions so only you can read it, e.g. `chmod 600 ~/.mcp/.env` on macOS/Linux.
 
@@ -217,7 +217,7 @@ Copilot will call the OpenL MCP tools; confirm tool use when prompted.
 
 | Variable                       | Required | Description |
 |--------------------------------|----------|-------------|
-| `OPENL_BASE_URL`               | Yes      | OpenL Studio REST API base URL (e.g. `https://openl.example.com/rest`). |
+| `OPENL_BASE_URL`               | Yes      | OpenL Studio API base URL (e.g. `https://openl.example.com`). |
 | `OPENL_PERSONAL_ACCESS_TOKEN`  | Yes      | PAT from OpenL Studio (format `openl_pat_<id>.<secret>`). |
 
 Optional (can be in the same file): `OPENL_TIMEOUT`. See [Authentication Guide](../guides/authentication.md).
@@ -241,12 +241,12 @@ If you see `[ERROR] Tool error: openl_list_repositories` or similar in the MCP s
 2. **If you see (401) or Unauthorized:**
    - Confirm `OPENL_PERSONAL_ACCESS_TOKEN` in your env file is the full PAT (starts with `openl_pat_`) with no extra spaces or line breaks.
    - Verify the token has not expired and was not revoked in OpenL Studio (User Settings → Personal Access Tokens).
-   - Ensure `OPENL_BASE_URL` in the env file is the REST base URL (e.g. `https://host/rest`), not the UI URL.
+   - Ensure `OPENL_BASE_URL` in the env file is the base URL (e.g. `https://host`), not the UI URL.
 
 3. **If you see ECONNREFUSED, timeout, or network error:**
    - When using Docker, the container cannot use `localhost` to reach OpenL Studio on your machine. In your env file set:
-     - **macOS / Windows:** `OPENL_BASE_URL=http://host.docker.internal:8080/rest` (use the correct port if different).
-     - **Linux:** Add `--add-host=host.docker.internal:host-gateway` to the `args` in `mcp.json` and use `OPENL_BASE_URL=http://host.docker.internal:8080/rest` in the env file.
+     - **macOS / Windows:** `OPENL_BASE_URL=http://host.docker.internal:8080` (use the correct port if different).
+     - **Linux:** Add `--add-host=host.docker.internal:host-gateway` to the `args` in `mcp.json` and use `OPENL_BASE_URL=http://host.docker.internal:8080` in the env file.
    - Ensure OpenL Studio is running and reachable from the host (e.g. `curl http://localhost:8080/rest/repos` with your PAT in the header).
 
 4. **Enable debug auth** (optional): In the env file add `DEBUG_AUTH=true`, then restart the MCP server and check the output for detailed auth and request logs.
@@ -258,8 +258,8 @@ If you see `[ERROR] Tool error: openl_list_repositories` or similar in the MCP s
 The OpenL Studio MCP server **already uses** `Authorization: Token <PAT>` for PAT (see `[Auth]` log line: `Header: Authorization: Token <PAT>`). It does **not** use Bearer. If Copilot suggests changing to "Token" from "Bearer", that is a mistaken inference from the tool failure.
 
 The real cause is usually one of:
-- **Docker + OpenL on host:** In your env file set `OPENL_BASE_URL=http://host.docker.internal:8080/rest` (not `http://localhost:8080/rest`), so the container can reach OpenL on your machine.
-- **401:** Token expired, revoked, or wrong; or `OPENL_BASE_URL` is not the REST base URL (e.g. use `/rest`, not the UI URL).
+- **Docker + OpenL on host:** In your env file set `OPENL_BASE_URL=http://host.docker.internal:8080` (not `http://localhost:8080`), so the container can reach OpenL on your machine.
+- **401:** Token expired, revoked, or wrong; or `OPENL_BASE_URL` is not the base URL (e.g. use `https://host`, not the UI URL).
 
 After fixing `OPENL_BASE_URL` (and token if needed), rebuild the image if you use a local build and restart the MCP server.
 
@@ -273,12 +273,12 @@ After fixing `OPENL_BASE_URL` (and token if needed), rebuild the image if you us
 
 - Confirm the env file path in `args` is **absolute** and correct.
 - Ensure `OPENL_PERSONAL_ACCESS_TOKEN` in the env file is the full PAT (starts with `openl_pat_`) and has no extra spaces or line breaks.
-- Verify `OPENL_BASE_URL` is the REST base URL (e.g. `https://host/rest`), not the UI URL.
+- Verify `OPENL_BASE_URL` is the base URL (e.g. `https://host`), not the UI URL.
 
 ### OpenL Studio not reachable from Docker
 
-- If OpenL runs on the host: use `http://host.docker.internal:8080/rest` (or the correct port) in `OPENL_BASE_URL` inside the env file (macOS/Windows Docker).
-- On Linux you may need `--add-host=host.docker.internal:host-gateway` in the `args` array and then use `http://host.docker.internal:8080/rest`.
+- If OpenL runs on the host: use `http://host.docker.internal:8080` (or the correct port) in `OPENL_BASE_URL` inside the env file (macOS/Windows Docker).
+- On Linux you may need `--add-host=host.docker.internal:host-gateway` in the `args` array and then use `http://host.docker.internal:8080`.
 
 ### Path to env file on Windows
 

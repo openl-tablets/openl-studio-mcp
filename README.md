@@ -20,9 +20,9 @@ npm install
 npm run build
 
 # Configure
-export OPENL_BASE_URL="http://localhost:8080/rest"
-export OPENL_USERNAME="admin"
-export OPENL_PASSWORD="admin"
+export OPENL_BASE_URL="<your-base-url>"
+export OPENL_USERNAME="<your-username>"
+export OPENL_PASSWORD="<your-password>"
 
 # Run
 npm start
@@ -89,14 +89,14 @@ See [Usage Examples](docs/guides/examples.md) for detailed tool usage and [Enabl
 
 ```bash
 # Required
-OPENL_BASE_URL=http://localhost:8080/rest
+OPENL_BASE_URL=<your-base-url>
 
 # Auth Method 1: Basic Auth
-OPENL_USERNAME=admin
-OPENL_PASSWORD=admin
+OPENL_USERNAME=<your-username>
+OPENL_PASSWORD=<your-password>
 
 # Auth Method 2: Personal Access Token
-OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
+OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
 
 # Optional
 OPENL_TIMEOUT=60000

@@ -42,7 +42,7 @@ The easiest way to see all logs - run the server directly in terminal:
 cd <path-to-project>
 
 # Set environment variables
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
 # Run the server
@@ -116,7 +116,7 @@ cat ~/Library/Application\ Support/Claude/config.json | jq '.mcpServers["openl-m
 #### Test 3: OpenL Connection Check
 
 ```bash
-curl -u admin:admin http://localhost:8080/rest/repository
+curl -u admin:admin http://localhost:8080/rest/repos
 ```
 
 If OpenL is running, you'll get JSON with repositories.
@@ -127,7 +127,7 @@ If OpenL is running, you'll get JSON with repositories.
 cd <path-to-project>
 
 # Set environment variables from your configuration
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 export OPENL_USERNAME="admin"
 export OPENL_PASSWORD="admin"
 # Run the server
@@ -214,7 +214,7 @@ Then open `debug.log` to view all errors.
    curl http://localhost:8080/rest/projects
    ```
 2. Check `OPENL_BASE_URL` in configuration
-3. Ensure URL ends with `/rest` (not `/rest/` - trailing slash is incorrect)
+3. Ensure `OPENL_BASE_URL` points to the OpenL server base URL (trailing slash is optional).
 
 ### Issue: "Authentication failed"
 
@@ -287,7 +287,7 @@ Possible causes:
 
 ### Solution: Use Local MCP Server with Remote OpenL Backend
 
-Instead of connecting to remote MCP server via SSE, run the MCP server locally and connect it to the remote OpenL backend via REST API.
+Instead of connecting to remote MCP server via SSE, run the MCP server locally and connect it to the remote OpenL backend via API.
 
 **Configuration:**
 
@@ -301,7 +301,7 @@ Instead of connecting to remote MCP server via SSE, run the MCP server locally a
         "<path-to-project>/dist/index.js"
       ],
       "env": {
-        "OPENL_BASE_URL": "https://<your-openl-server>/studio/rest",
+        "OPENL_BASE_URL": "https://<your-openl-server>",
         "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
@@ -357,7 +357,7 @@ Make sure you're using the correct format with `--header` flag:
 
 1. **stdio transport** is more reliable than SSE for MCP
 2. **Local process** gives better error visibility
-3. **REST API** connection to OpenL is well-tested and stable
+3. **API** connection to OpenL is well-tested and stable
 4. **No npm package dependencies** - just Node.js and your built MCP server
 
 ### Verification

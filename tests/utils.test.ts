@@ -8,6 +8,7 @@ import {
   sanitizeError,
   isAxiosError,
   validateTimeout,
+  normalizeOpenLBaseUrl,
   safeStringify,
   extractErrorDetails,
   parseProjectId,
@@ -208,6 +209,39 @@ describe("utils", () => {
     it("should handle very small valid timeouts", () => {
       const result = validateTimeout(100, 30000);
       expect(result).toBe(100);
+    });
+  });
+
+  describe("normalizeOpenLBaseUrl", () => {
+    it("should append /rest when missing", () => {
+      expect(normalizeOpenLBaseUrl("http://localhost:8080")).toBe("http://localhost:8080/rest");
+    });
+
+    it("should keep /rest when already present", () => {
+      expect(normalizeOpenLBaseUrl("http://localhost:8080/rest")).toBe("http://localhost:8080/rest");
+    });
+
+    it("should append /rest to existing path", () => {
+      expect(normalizeOpenLBaseUrl("http://localhost:8080/studio")).toBe(
+        "http://localhost:8080/studio/rest"
+      );
+    });
+
+    it("should normalize trailing slash at root path", () => {
+      expect(normalizeOpenLBaseUrl("http://localhost:8080/")).toBe("http://localhost:8080/rest");
+    });
+
+    it("should normalize multiple trailing slashes", () => {
+      expect(normalizeOpenLBaseUrl("http://localhost:8080////")).toBe("http://localhost:8080/rest");
+      expect(normalizeOpenLBaseUrl("http://localhost:8080/studio///")).toBe(
+        "http://localhost:8080/studio/rest"
+      );
+    });
+
+    it("should throw descriptive error for invalid URL", () => {
+      expect(() => normalizeOpenLBaseUrl("")).toThrow(/Invalid OPENL_BASE_URL/);
+      expect(() => normalizeOpenLBaseUrl("not-a-url")).toThrow(/Invalid OPENL_BASE_URL/);
+      expect(() => normalizeOpenLBaseUrl("/relative/path")).toThrow(/Invalid OPENL_BASE_URL/);
     });
   });
 

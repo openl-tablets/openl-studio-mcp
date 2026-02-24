@@ -42,7 +42,7 @@ Configure authentication in the MCP client configuration file:
       "command": "node",
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_BASE_URL": "http://localhost:8080",
         "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
@@ -58,7 +58,7 @@ Configure authentication in the MCP client configuration file:
       "command": "node",
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_BASE_URL": "http://localhost:8080",
         "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
@@ -72,12 +72,12 @@ When connecting via HTTP, authentication is passed through:
 
 1. **Query parameters** in URL:
    ```text
-   http://localhost:3000/mcp/sse?OPENL_BASE_URL=http://studio:8080/rest&OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
+   http://localhost:3000/mcp/sse?OPENL_BASE_URL=http://studio:8080&OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
    ```
 
 2. **HTTP headers**:
    ```text
-   X-OPENL-BASE-URL: http://studio:8080/rest
+   X-OPENL-BASE-URL: http://studio:8080
    X-OPENL-PERSONAL-ACCESS-TOKEN: <your-token>
    ```
 
@@ -88,7 +88,7 @@ In Docker configuration (`compose.yaml`), **only** the base URL is set:
 ```yaml
 environment:
   PORT: 3000
-  OPENL_BASE_URL: http://studio:8080/rest
+  OPENL_BASE_URL: http://studio:8080
   NODE_ENV: production
   # Authentication is NOT set here!
 ```
@@ -113,7 +113,7 @@ Basic Authentication uses HTTP Basic Auth with username and password.
 
 **Environment Variables:**
 ```bash
-OPENL_BASE_URL=http://localhost:8080/rest
+OPENL_BASE_URL=http://localhost:8080
 OPENL_USERNAME=admin
 OPENL_PASSWORD=admin
 ```
@@ -126,7 +126,7 @@ OPENL_PASSWORD=admin
       "command": "node",
       "args": ["/path/to/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_BASE_URL": "http://localhost:8080",
         "OPENL_USERNAME": "admin",
         "OPENL_PASSWORD": "admin"
       }
@@ -181,7 +181,7 @@ Personal Access Token (PAT) authentication uses user-generated tokens created in
 
 **Environment Variables:**
 ```bash
-OPENL_BASE_URL=https://openl.example.com/rest
+OPENL_BASE_URL=https://openl.example.com
 OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
 ```
 
@@ -193,7 +193,7 @@ OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>
       "command": "node",
       "args": ["<path-to-project>/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "https://openl.example.com/rest",
+        "OPENL_BASE_URL": "https://openl.example.com",
         "OPENL_PERSONAL_ACCESS_TOKEN": "<your-pat-token>"
       }
     }
@@ -329,7 +329,7 @@ OPENL_PERSONAL_ACCESS_TOKEN  # Personal Access Token (format: openl_pat_<publicI
 
 ### Local Development with Basic Auth
 ```bash
-export OPENL_BASE_URL=http://localhost:8080/rest
+export OPENL_BASE_URL=http://localhost:8080
 export OPENL_USERNAME=admin
 export OPENL_PASSWORD=admin
 npm start
@@ -337,7 +337,7 @@ npm start
 
 ### Production with Personal Access Token
 ```bash
-export OPENL_BASE_URL=https://openl-prod.example.com/rest
+export OPENL_BASE_URL=https://openl-prod.example.com
 export OPENL_PERSONAL_ACCESS_TOKEN=$(vault read -field=token secret/openl/prod/pat)
 export OPENL_TIMEOUT=60000
 npm start

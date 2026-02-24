@@ -264,7 +264,7 @@ Documentation organized into 4 main sections with 19+ guides:
 - **[Architecture](docs/development/architecture.md)** - System design, components, and technical decisions
 - **[Testing Guide](docs/development/testing.md)** - Test strategy, execution, and coverage reporting
 - **[Code Standards](docs/development/code-standards.md)** - Best practices, linting rules, and conventions
-- **[Tool Review](docs/development/tool-review.md)** - Technical analysis of MCP tools vs OpenL REST API
+- **[Tool Review](docs/development/tool-review.md)** - Technical analysis of MCP tools vs OpenL API
 
 ---
 
@@ -417,7 +417,7 @@ Set environment variables:
 
 ```bash
 # Required
-export OPENL_BASE_URL="http://localhost:8080/rest"
+export OPENL_BASE_URL="http://localhost:8080"
 
 # Authentication Method 1: Basic Auth (Development)
 export OPENL_USERNAME="admin"
@@ -451,7 +451,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      OPENL_BASE_URL: http://openl:8080/rest
+      OPENL_BASE_URL: http://openl:8080
       OPENL_PERSONAL_ACCESS_TOKEN: ${OPENL_PAT}
 ```
 
@@ -476,7 +476,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "command": "node",
       "args": ["/path/to/openl-studio-mcp/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_BASE_URL": "http://localhost:8080",
         "OPENL_PERSONAL_ACCESS_TOKEN": "<your-token>"
       }
     }
@@ -561,7 +561,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      OPENL_BASE_URL: http://openl:8080/rest
+      OPENL_BASE_URL: http://openl:8080
       OPENL_PERSONAL_ACCESS_TOKEN: ${OPENL_PAT}
       OPENL_TIMEOUT: 60000
     restart: unless-stopped

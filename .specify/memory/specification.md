@@ -356,7 +356,7 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 ```json
 {
   "status": "healthy",
-  "baseUrl": "http://localhost:8080/rest",
+  "baseUrl": "http://localhost:8080",
   "authMethod": "Basic Auth",
   "timestamp": "2025-11-13T17:00:00Z",
   "serverReachable": true

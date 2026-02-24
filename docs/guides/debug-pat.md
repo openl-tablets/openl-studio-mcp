@@ -33,7 +33,7 @@ docker compose run -e DEBUG_AUTH=true mcp-server
 [Auth]   - PAT present: true
 [Auth]   - PAT length: 64 characters
 [Auth]   - PAT format valid: ✓
-[Auth]   - PAT prefix: openl_pat_7gIBWMpyFih...
+[Auth]   - PAT prefix: openl_pat_<your-prefix>...
 [Auth] Authorization Header:
 [Auth]   - Header name: Authorization
 [Auth]   - Header value format: Token <PAT>
@@ -119,6 +119,9 @@ If you get 401, check:
 - Token format is correct
 
 ## Manual Header Testing
+
+For MCP configuration use `OPENL_BASE_URL=http://localhost:8080` (without `/rest`).
+When testing OpenL API directly via `curl`, use API endpoints under `/rest`.
 
 ```bash
 # Test via curl

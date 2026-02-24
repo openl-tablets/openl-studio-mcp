@@ -203,6 +203,36 @@ export function validateTimeout(timeout: number | undefined, defaultTimeout: num
 }
 
 /**
+ * Ensure OpenL API base URL points to REST endpoint.
+ *
+ * Adds `/rest` suffix:
+ * - `http://host:8080` -> `http://host:8080/rest`
+ * - `http://host:8080/studio` -> `http://host:8080/studio/rest`
+ *
+ * Keeps URL unchanged when path already ends with `/rest`.
+ *
+ * @param baseUrl - OpenL base URL from configuration
+ * @returns Normalized URL with `/rest` suffix
+ */
+export function normalizeOpenLBaseUrl(baseUrl: string): string {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new Error(
+      `Invalid OPENL_BASE_URL: "${baseUrl}". Must be a valid absolute URL (e.g., "http://localhost:8080").`
+    );
+  }
+  const pathWithoutTrailingSlashes = url.pathname.replace(/\/+$/, "");
+
+  if (!pathWithoutTrailingSlashes.endsWith("/rest")) {
+    url.pathname = `${pathWithoutTrailingSlashes}/rest`;
+  }
+
+  return url.toString().replace(/\/$/, "");
+}
+
+/**
  * Safe JSON stringify that handles circular references
  *
  * @param obj - Object to stringify

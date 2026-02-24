@@ -122,7 +122,7 @@ The OpenL Studio MCP Server underwent a **major architectural refactoring** in N
                     │ HTTP/REST
 ┌───────────────────▼─────────────────────────────┐
 │      OpenL Studio REST API                      │
-│      (http://host:port/rest)                    │
+│      (http://host:port)                         │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -934,7 +934,7 @@ CMD ["node", "dist/index.js"]
       "command": "node",
       "args": ["/path/to/dist/index.js"],
       "env": {
-        "OPENL_BASE_URL": "http://localhost:8080/rest",
+        "OPENL_BASE_URL": "http://localhost:8080",
         "OPENL_USERNAME": "admin",
         "OPENL_PASSWORD": "admin"
       }
@@ -957,7 +957,7 @@ node dist/index.js
 **Environment Variables**:
 ```bash
 # Required
-OPENL_BASE_URL=http://localhost:8080/rest
+OPENL_BASE_URL=http://localhost:8080
 
 # Authentication (choose one)
 OPENL_USERNAME=admin

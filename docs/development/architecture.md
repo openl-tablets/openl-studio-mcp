@@ -14,7 +14,7 @@
 │   MCP Server    │  ← Standalone repository
 │  (Node.js/TS)   │
 └────────┬────────┘
-         │ HTTP REST API
+         │ HTTP API
          │ (JSON)
          ▼
 ┌─────────────────┐
@@ -50,7 +50,7 @@
    │
 2. Claude → MCP Server: calls tool openl_list_repositories
    │
-3. MCP Server → OpenL API: GET /rest/repository
+3. MCP Server → OpenL API: GET /repos
    │
 4. OpenL → MCP Server: returns JSON with repositories
    │
@@ -58,16 +58,6 @@
    │
 6. Claude → You: shows list of repositories
 ```
-
-## Ports and Addresses
-
-| Component | Port | URL |
-|-----------|------|-----|
-| OpenL Studio | 8080 | <http://localhost:8080/studio> |
-| OpenL REST API | 8080 | <http://localhost:8080/rest> |
-| Rule Services | 8080 | <http://localhost:8080/services> |
-| PostgreSQL | 5432 | localhost:5432 |
-| MCP Server | - | Works via stdio (no port) |
 
 ## Configuration Files
 
@@ -116,20 +106,20 @@ MCP Server uses one of two methods:
 
 1. **Basic Auth** (default)
    ```env
-   OPENL_USERNAME=admin
-   OPENL_PASSWORD=admin
+   OPENL_USERNAME=<your-username>
+   OPENL_PASSWORD=<your-password>
    ```
 
 2. **Personal Access Token**
    ```env
-   OPENL_PERSONAL_ACCESS_TOKEN=your-pat-token
+   OPENL_PERSONAL_ACCESS_TOKEN=<your-token>
    ```
 
 ## Health Check
 
 ### Level 1: Is OpenL accessible?
 ```bash
-curl http://localhost:8080/rest/repository
+curl http://localhost:8080/rest/repos
 ```
 
 ### Level 2: Is MCP Server configured?
