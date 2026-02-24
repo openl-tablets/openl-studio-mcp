@@ -1,21 +1,23 @@
 # Security Policy
 
-## Supported Versions
-
-We release patches for security vulnerabilities for the following versions:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.0   | :white_check_mark: |
-| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+**Please do not report security vulnerabilities through public GitHub issues, pull requests, or discussions.**
 
-If you discover a security vulnerability in the OpenL Studio MCP Server, please report it by emailing:
+### How to Report
 
-**security@openl-tablets.org**
+**Primary method (recommended):**
+1. Go to the [Security tab](https://github.com/openl-tablets/openl-studio-mcp/security) of this repository
+2. Click "Report a vulnerability"
+3. Follow the private vulnerability reporting workflow
+
+### Safe Harbor
+
+We support responsible disclosure and will not pursue legal action against security researchers who:
+- Make a good faith effort to avoid privacy violations and service disruption
+- Report vulnerabilities promptly and privately
+- Give us reasonable time to fix issues before public disclosure
 
 ### What to Include
 
@@ -31,9 +33,13 @@ Please include the following information in your report:
 
 ### Response Timeline
 
-- **Initial Response**: We aim to respond within 3 business days
-- **Status Updates**: We aim to provide updates every 5 business days until resolved
-- **Resolution**: We aim to release a fix within 30 days for critical vulnerabilities
+After you submit a vulnerability report:
+
+- **Acknowledgment**: We will acknowledge receipt of your vulnerability report within 3 business days
+- **Assessment**: We will investigate the vulnerability and assess its impact
+- **Communication**: We will keep you informed about our progress
+- **Resolution**: We will work on a fix and coordinate disclosure timing with you
+- **Credit**: We will credit you in the security advisory (unless you prefer to remain anonymous)
 
 ### Disclosure Policy
 
@@ -51,9 +57,8 @@ Please include the following information in your report:
 2. **Always use HTTPS/TLS** when connecting to OpenL Studio in production
 3. **Never commit credentials** to version control
 4. **Rotate tokens regularly** and revoke unused tokens immediately
-5. **Keep dependencies updated**: Run `npm audit` and `npm update` regularly
+5. **Keep dependencies updated**: Run `npm audit` regularly; apply updates intentionally with lockfile and CI testing
 6. **Use environment variables** for all sensitive configuration
-7. **Enable audit logging** via `OPENL_CLIENT_DOCUMENT_ID` for tracking requests
 
 ### For Developers
 
@@ -72,11 +77,18 @@ Please include the following information in your report:
 - **Personal Access Token (PAT)**: Recommended for production. Tokens should be treated as passwords.
 - **Token Storage**: Never hardcode tokens in source code. Use environment variables or secure vaults.
 
-### Network Security
+### MCP Transport Security
 
-- **HTTPS Required**: Production deployments must use HTTPS to encrypt credentials in transit
-- **CORS**: HTTP server mode includes CORS support for cross-origin requests
-- **Authentication Headers**: Authentication via HTTP headers is recommended; query parameters are supported but discouraged (may be logged by proxies and appear in server logs)
+This server implements multiple MCP transport modes. Each has specific security requirements:
+
+- **stdio transport**: Runs as a subprocess; inherits security context of parent process. Safe for local Claude Desktop use.
+- **Streamable HTTP / SSE transport**: 
+  - **Origin Validation**: The server validates `Origin` headers to prevent DNS rebinding attacks
+  - **Localhost Binding**: When running locally, bind to `localhost` (not `0.0.0.0`) to prevent external access
+  - **Authentication Required**: Always require authentication for HTTP transports; never expose unauthenticated endpoints
+  - **Session Handling**: Verify all inbound requests; do not rely solely on session-based authentication without additional validation
+
+**Important**: When exposing MCP over HTTP, treat it as a privileged API that can execute commands and modify data. Use defense-in-depth (authentication + authorization + input validation).
 
 ### Input Validation
 
@@ -87,6 +99,26 @@ Please include the following information in your report:
 ### Credential Redaction
 
 The server redacts sensitive data from error messages, logs, and API responses to prevent credential leakage. This includes tokens, passwords, API keys, and authorization headers.
+
+### MCP-Specific Risks: Prompt Injection & Tool Chaining
+
+MCP servers are often used in chains with other tools and AI models. This creates unique security risks:
+
+**Prompt Injection Risks:**
+- AI models may pass maliciously crafted arguments to tools (e.g., paths like `../../etc/passwd`, arguments like `--force`)
+- **Never trust tool inputs**, even if they appear to come from an AI assistant
+- Validate all paths, filenames, and arguments strictly using allowlists where possible
+
+**Tool Chaining Hardening:**
+1. **Path Validation**: Deny absolute paths, parent directory traversal (`..`), and symbolic links unless explicitly required
+2. **Argument Validation**: Reject option-like arguments (starting with `-` or `--`) in user-controlled fields
+3. **Strict Type Validation**: Use Zod schemas to enforce types, formats, and bounds on all inputs
+4. **Allowlists Over Denylists**: For filenames, project IDs, and commands, use allowlists when feasible
+5. **Audit All State-Changing Operations**: Log all creates, updates, deletes, and deployments with full context
+
+**Real-world example**: Public MCP security advisories have documented argument injection and path traversal attacks in Git-based MCP tools that enabled file overwrites and command execution when chained with other servers.
+
+**Defense strategy**: Treat every tool invocation as potentially malicious. Validate early, fail safely, and never assume the model will provide safe inputs.
 
 ## Security Updates
 
@@ -116,10 +148,3 @@ This policy does **not** cover:
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
 - [npm Security Best Practices](https://docs.npmjs.com/security-best-practices)
-
-## Questions?
-
-For security-related questions that are not vulnerabilities, please use:
-- [GitHub Discussions](https://github.com/openl-tablets/openl-studio-mcp/discussions)
-
-For vulnerability reports, email: **security@openl-tablets.org**

@@ -62,16 +62,15 @@ See [prompts/create_rule.md](./prompts/create_rule.md) for detailed table type g
 
 ## Tools
 
-The MCP server provides 27 active tools (out of 31 total defined) for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
+The MCP server provides 25 active tools for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
 **Categories:**
-- **Repository Management** (4 tools) - List repositories, branches, features, revision history
-- **Project Management** (14 tools) - List, open, save, close, branch projects; upload/download files; test execution
-- **Rules & Tables** (6 tools) - List, get, update, append, create, execute tables/rules
-- **Version Control** (3 tools) - Get project/file history, revert versions
+- **Repository Management** (4 tools) - List repositories, branches, features
+- **Project Management** (12 active + 2 disabled = 14 total) - List, open, save, branch projects, test execution
+- **Rules & Tables** (5 active + 1 disabled = 6 total) - List, get, update, append, create tables
 - **Deployment** (4 tools) - List, deploy, redeploy projects
 
-**Note:** 4 tools are temporarily disabled pending implementation (`validate_project`, `get_project_errors`, `test_project`, `compare_versions`).
+**Note:** 6 additional tools are temporarily disabled pending implementation fixes.
 
 See [Usage Examples](docs/guides/examples.md) for detailed tool usage and [Enable Disabled Tools](docs/reference/enable-disabled-tools.md) for tool reference.
 
@@ -126,7 +125,14 @@ npm run lint           # Check code quality
 npm run watch          # Dev mode with auto-rebuild
 ```
 
-See [Contributing Guide](docs/development/contributing.md) for development guidelines and [Testing Guide](docs/development/testing.md) for test suites and coverage reports.
+**Test Coverage** (35.22% overall):
+- validators.ts: 96.15%
+- utils.ts: 97.95%
+- auth.ts: 63.01%
+- client.ts: 45.32%
+- formatters.ts: 44.19%
+
+See [Contributing Guide](docs/development/contributing.md) for development guidelines and [Testing Guide](docs/development/testing.md) for test suites.
 
 ## Project Structure
 
@@ -148,9 +154,7 @@ openl-studio-mcp/
 ## Additional Documentation
 
 - [Documentation Index](docs/README.md) - Complete documentation navigation
-- [VS Code Copilot MCP Setup](docs/setup/vscode-copilot-mcp.md) - VS Code Copilot integration
 - [Debug Personal Access Token](docs/guides/debug-pat.md) - PAT debugging guide
-
 - 🚀 [Quick Start](docs/getting-started/quick-start.md) - Get up and running in 5 minutes
 - ⚙️ [MCP Connection Guide](docs/setup/mcp-connection-guide.md) - Configure Claude Desktop, Cursor, or Docker
 - 📖 [Usage Examples](docs/guides/examples.md) - Learn how to use MCP tools
