@@ -2,7 +2,7 @@
 
 Model Context Protocol server for [OpenL Studio](https://github.com/openl-tablets/openl-tablets) Business Rules Management System.
 
-Built with MCP SDK v1.26.0 featuring type-safe validation (Zod) and comprehensive OpenL Studio integration.
+Built with MCP SDK v1.26+ featuring type-safe validation (Zod) and comprehensive OpenL Studio integration.
 
 ## Quick Links
 
@@ -62,15 +62,16 @@ See [prompts/create_rule.md](./prompts/create_rule.md) for detailed table type g
 
 ## Tools
 
-The MCP server provides 25 active tools for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
+The MCP server provides 27 active tools (out of 31 total defined) for managing OpenL Studio repositories, projects, rules, and deployments. All tools are prefixed with `openl_` and versioned (v1.0.0+).
 
 **Categories:**
-- **Repository Management** (4 tools) - List repositories, branches, features
-- **Project Management** (12 active + 2 disabled = 14 total) - List, open, save, branch projects, test execution
-- **Rules & Tables** (5 active + 1 disabled = 6 total) - List, get, update, append, create tables
+- **Repository Management** (4 tools) - List repositories, branches, features, revision history
+- **Project Management** (14 tools) - List, open, save, close, branch projects; upload/download files; test execution
+- **Rules & Tables** (6 tools) - List, get, update, append, create, execute tables/rules
+- **Version Control** (3 tools) - Get project/file history, revert versions
 - **Deployment** (4 tools) - List, deploy, redeploy projects
 
-6 additional tools are temporarily disabled pending implementation fixes.
+**Note:** 4 tools are temporarily disabled pending implementation (`validate_project`, `get_project_errors`, `test_project`, `compare_versions`).
 
 See [Usage Examples](docs/guides/examples.md) for detailed tool usage and [Enable Disabled Tools](docs/reference/enable-disabled-tools.md) for tool reference.
 
@@ -114,30 +115,23 @@ See [MCP Connection Guide](docs/setup/mcp-connection-guide.md) for client-specif
 - **4 Response Formats**: json, markdown, markdown_concise, markdown_detailed
 - **Pagination Support**: Metadata for all list operations
 - **AI Prompts**: 14 expert guidance templates
-- **Comprehensive Tests**: 393 tests covering core functionality
+- **Comprehensive Tests**: Full test suite covering core functionality
 
 ## Development
 
 ```bash
 npm run build          # Build TypeScript
-npm test               # Run tests (393 total, 35% coverage)
+npm test               # Run all tests
 npm run lint           # Check code quality
 npm run watch          # Dev mode with auto-rebuild
 ```
 
-**Test Coverage** (35.22% overall):
-- validators.ts: 96.15%
-- utils.ts: 97.95%
-- auth.ts: 63.01%
-- client.ts: 45.32%
-- formatters.ts: 44.19%
-
-See [Contributing Guide](docs/development/contributing.md) for development guidelines and [Testing Guide](docs/development/testing.md) for test suites.
+See [Contributing Guide](docs/development/contributing.md) for development guidelines and [Testing Guide](docs/development/testing.md) for test suites and coverage reports.
 
 ## Project Structure
 
 ```
-mcp-server/
+openl-studio-mcp/
 ├── src/                    # Source code (TypeScript)
 ├── tests/                  # Jest test suites
 ├── prompts/                # AI assistant guidance (OpenL-specific)
@@ -151,14 +145,18 @@ mcp-server/
 └── README.md               # This file
 ```
 
-## Related Documentation
+## Additional Documentation
 
 - [Documentation Index](docs/README.md) - Complete documentation navigation
-- [Quick Start Guide](docs/getting-started/quick-start.md) - Get started quickly
-- [MCP Connection Guide](docs/setup/mcp-connection-guide.md) - Connect Cursor or Claude Desktop
-- [Usage Examples](docs/guides/examples.md) - Learn how to use MCP tools
-- [Authentication Guide](docs/guides/authentication.md) - Authentication setup
-- [Troubleshooting Guide](docs/guides/troubleshooting.md) - Common issues and solutions
+- [VS Code Copilot MCP Setup](docs/setup/vscode-copilot-mcp.md) - VS Code Copilot integration
+- [Debug Personal Access Token](docs/guides/debug-pat.md) - PAT debugging guide
+
+- 🚀 [Quick Start](docs/getting-started/quick-start.md) - Get up and running in 5 minutes
+- ⚙️ [MCP Connection Guide](docs/setup/mcp-connection-guide.md) - Configure Claude Desktop, Cursor, or Docker
+- 📖 [Usage Examples](docs/guides/examples.md) - Learn how to use MCP tools
+- 🔐 [Authentication](docs/guides/authentication.md) - Authentication setup
+- 🐛 [Troubleshooting](docs/guides/troubleshooting.md) - Common issues and solutions
+- 👨‍💻 [Contributing](docs/development/contributing.md) - Development guide
 
 ## Resources
 
@@ -169,4 +167,4 @@ mcp-server/
 
 ## License
 
-Follows OpenL Studio project license.
+LGPL-3.0 - GNU Lesser General Public License v3.0 (follows OpenL Studio project license).

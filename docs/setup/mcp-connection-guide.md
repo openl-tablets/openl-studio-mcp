@@ -5,8 +5,8 @@ This is a detailed step-by-step guide for setting up connections to the OpenL St
 ## Quick Start
 
 Choose your setup scenario:
-- **Remote MCP Server** → [Scenario 1 (Cursor)](#scenario-1-connecting-to-remote-mcp-using-cursor) or [Scenario 3 (Claude Desktop)](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
-- **Docker MCP Server** → [Scenario 2 (Cursor)](#scenario-2-connecting-to-mcp-in-docker-using-cursor) or [Scenario 4 (Claude Desktop)](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+- **Remote MCP Server** → [Scenario 1 (Cursor)](#scenario-1-connecting-to-remote-mcp-using-cursor), [Scenario 3 (Claude Desktop)](#scenario-3-connecting-to-remote-mcp-using-claude-desktop), or [Scenario 5 (VS Code)](#scenario-5-connecting-to-remote-mcp-using-vs-code)
+- **Docker MCP Server** → [Scenario 2 (Cursor)](#scenario-2-connecting-to-mcp-in-docker-using-cursor), [Scenario 4 (Claude Desktop)](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop), or [Scenario 6 (VS Code)](#scenario-6-connecting-to-mcp-in-docker-using-vs-code)
 
 **Before you start:** Make sure you have created a [Personal Access Token](#step-1-creating-a-personal-access-token-pat) in OpenL Studio UI.
 
@@ -17,6 +17,8 @@ Choose your setup scenario:
 - **Cursor to Docker MCP** → [Scenario 2](#scenario-2-connecting-to-mcp-in-docker-using-cursor)
 - **Claude Desktop to Remote MCP** → [Scenario 3](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
 - **Claude Desktop to Docker MCP** → [Scenario 4](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+- **VS Code to Remote MCP** → [Scenario 5](#scenario-5-connecting-to-remote-mcp-using-vs-code)
+- **VS Code to Docker MCP** → [Scenario 6](#scenario-6-connecting-to-mcp-in-docker-using-vs-code)
 
 **I need help with...**
 - **Creating a PAT** → [Step 1: Creating a Personal Access Token](#step-1-creating-a-personal-access-token-pat)
@@ -38,6 +40,8 @@ Choose your setup scenario:
 - [Scenario 2: Docker MCP with Cursor](#scenario-2-connecting-to-mcp-in-docker-using-cursor)
 - [Scenario 3: Remote MCP with Claude Desktop](#scenario-3-connecting-to-remote-mcp-using-claude-desktop)
 - [Scenario 4: Docker MCP with Claude Desktop](#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop)
+- [Scenario 5: Remote MCP with VS Code](#scenario-5-connecting-to-remote-mcp-using-vs-code)
+- [Scenario 6: Docker MCP with VS Code](#scenario-6-connecting-to-mcp-in-docker-using-vs-code)
 
 ### Verification & Troubleshooting
 - [Verifying Connection](#verifying-connection) - Test your setup
@@ -258,8 +262,9 @@ npm config get prefix
 **Important:** Replace:
 - `/Users/username/.nvm/versions/node/v24.0.0/bin/node` → your Node.js path
 - `/Users/username/.nvm/versions/node/v24.0.0/bin/mcp-remote` → your mcp-remote path
-- `https://<your-openl-server>/mcp/sse` → your OpenL server URL with `/mcp/sse` path
-- Replace `<your-pat-token>` with your Personal Access Token
+- `https://<your-openl-server>/mcp/sse` → your OpenL MCP server URL (including the `/mcp/sse` endpoint path)
+  - Example: `https://openl.example.com/mcp/sse` or `https://openl.example.com:8080/mcp/sse`
+- `<your-pat-token>` → your Personal Access Token
 
 **Via Configuration File**
 
@@ -322,7 +327,7 @@ If the remote MCP server provides a direct HTTP SSE endpoint (similar to Docker 
 }
 ```
 
-**Or using StreamableHTTP transport:**
+**Or using streamablehttp transport:**
 
 ```json
 {
@@ -338,7 +343,7 @@ If the remote MCP server provides a direct HTTP SSE endpoint (similar to Docker 
 - Replace `https://<your-openl-server>/mcp/sse` with your OpenL server URL
 - Replace `<your-pat-token>` with your Personal Access Token
 - Use `transport: "sse"` for SSE (Server-Sent Events) - uses GET requests, standard for most cases
-- Use `transport: "streamablehttp"` for StreamableHTTP - uses POST requests instead of GET, which can have practical benefits in certain network scenarios (e.g., proxy configurations, firewall rules)
+- Use `transport: "streamablehttp"` for streamable HTTP transport - uses POST requests instead of GET, which can have practical benefits in certain network scenarios (e.g., proxy configurations, firewall rules)
 
 **Note:** This method is for **Cursor IDE integration specifically**. Claude Desktop MCP client does not support HTTP/SSE transports at all (only stdio)—it requires a local stdio proxy bridge (like `mcp-remote`) for remote servers. If you're unsure, use Method A (mcp-remote) which is more universally supported.
 
@@ -586,6 +591,203 @@ Follow the same steps as in [Scenario 1, Step 1.1](#step-11-finding-nodejs-and-m
 
 ---
 
+## Scenario 5: Connecting to Remote MCP using VS Code
+
+This method connects VS Code Copilot to a remote MCP server. VS Code uses HTTP-based transport and supports both query parameter and header-based authentication.
+
+### Step 5.1: Prerequisites
+
+Ensure you have:
+- **VS Code** installed (version with Copilot support)
+- **GitHub Copilot** extension installed and activated
+- **Personal Access Token** created in OpenL Studio
+
+### Step 5.2: Configuration
+
+1. **Open VS Code Settings:**
+   - Press `Cmd + ,` (macOS) or `Ctrl + ,` (Windows/Linux)
+   - Or via menu: `Code` → `Preferences` → `Settings`
+
+2. **Search for MCP settings:**
+   - In settings search, type: `mcp` or `Model Context Protocol`
+   - Find the **"GitHub Copilot > MCP: Servers"** section
+
+3. **Edit settings.json:**
+   - Click **"Edit in settings.json"** link
+   - Or open Command Palette (`Cmd/Ctrl + Shift + P`) and select: `Preferences: Open User Settings (JSON)`
+
+4. **Add MCP server configuration:**
+
+**Method 1: Using Query Parameters (Simple)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-remote": {
+      "type": "http",
+      "url": "https://<your-openl-server>/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>"
+    }
+  }
+}
+```
+
+**Method 2: Using Headers (Recommended for Production)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-remote": {
+      "type": "http",
+      "url": "https://<your-openl-server>/mcp/sse",
+      "headers": {
+        "Authorization": "Token <your-pat-token>"
+      }
+    }
+  }
+}
+```
+
+**Method 3: Using Basic Auth (Alternative)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-remote": {
+      "type": "http",
+      "url": "https://<your-openl-server>/mcp/sse?OPENL_USERNAME=<username>&OPENL_PASSWORD=<password>"
+    }
+  }
+}
+```
+
+**Important:** Replace:
+- `https://<your-openl-server>/mcp/sse` → your OpenL MCP server URL
+  - Example: `https://openl.example.com/mcp/sse` or `https://openl.example.com:8080/mcp/sse`
+- `<your-pat-token>` → your Personal Access Token
+- `<username>` and `<password>` → your OpenL credentials (only for dev/testing)
+
+**Security Note:** For production environments, use Personal Access Token (PAT) with header-based authentication (Method 2) instead of embedding credentials in URL.
+
+5. **Save settings.json**
+
+### Step 5.3: Verify Configuration
+
+1. Reload VS Code window:
+   - Open Command Palette (`Cmd/Ctrl + Shift + P`)
+   - Select: `Developer: Reload Window`
+
+2. Check GitHub Copilot Chat:
+   - Open Copilot Chat panel
+   - Look for MCP server status indicator
+   - Should show "Connected" or green status
+
+3. Test in Copilot Chat:
+   ```text
+   @workspace List repositories in OpenL Studio
+   ```
+
+---
+
+## Scenario 6: Connecting to MCP in Docker using VS Code
+
+This method connects VS Code Copilot to an MCP server running in a Docker container.
+
+### Step 6.1: Verifying Docker Container Availability
+
+Follow the same steps as in [Scenario 2, Step 2.1](#step-21-verifying-docker-container-availability).
+
+### Step 6.2: Configuration
+
+1. **Open VS Code Settings** (see [Scenario 5, Step 5.2](#step-52-configuration))
+
+2. **Add MCP server configuration:**
+
+**Method 1: Using Query Parameters (Development)**
+
+**For local Docker:**
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>"
+    }
+  }
+}
+```
+
+**For remote Docker:**
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://<docker-host>:3000/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>"
+    }
+  }
+}
+```
+
+**Method 2: Using Headers (Recommended)**
+
+**For local Docker:**
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse",
+      "headers": {
+        "Authorization": "Token <your-pat-token>"
+      }
+    }
+  }
+}
+```
+
+**For remote Docker:**
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://<docker-host>:3000/mcp/sse",
+      "headers": {
+        "Authorization": "Token <your-pat-token>"
+      }
+    }
+  }
+}
+```
+
+**Method 3: Using Basic Auth (Development/Testing Only)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=admin&OPENL_PASSWORD=admin"
+    }
+  }
+}
+```
+
+**Important:** Replace:
+- `http://localhost:3000` → your Docker container URL
+- For remote Docker: use `http://<docker-host>:3000`
+- `<your-pat-token>` → your Personal Access Token
+
+**Security Note:** Never commit credentials to version control. Use environment variables or secure vaults in production.
+
+3. **Save settings.json**
+
+### Step 6.3: Verify Configuration
+
+Follow the same verification steps as in [Scenario 5, Step 5.3](#step-53-verify-configuration).
+
+---
+
 ## Verifying Connection
 
 After configuring any of the scenarios, perform verification:
@@ -628,6 +830,37 @@ After configuring any of the scenarios, perform verification:
      List repositories in OpenL Studio
      ```
    - Claude should use MCP tools and show results
+
+### In VS Code
+
+1. **Check MCP server status:**
+   - Open VS Code settings (`Cmd/Ctrl + ,`)
+   - Search for: `github.copilot.chat.mcp.servers`
+   - Verify your server configuration is present
+   - Check Output panel for any connection errors:
+     - View → Output
+     - Select "GitHub Copilot Chat" from dropdown
+
+2. **Test in Copilot Chat:**
+   - Open Copilot Chat panel (usually on the left sidebar)
+   - Or use `Cmd/Ctrl + Shift + I` to open chat
+   - Enter request:
+     ```text
+     @workspace What OpenL Studio MCP tools are available?
+     ```
+   - Or:
+     ```text
+     @workspace List repositories in OpenL Studio
+     ```
+   - VS Code Copilot should recognize and use the MCP server
+
+3. **Check for errors:**
+   - If connection fails, check:
+     - Settings JSON syntax is valid
+     - URL is correct and accessible
+     - Authentication credentials are valid
+     - Docker container is running (for Docker scenarios)
+   - View logs in Output panel: `GitHub Copilot Chat`
 
 ---
 
@@ -917,9 +1150,85 @@ After configuring any of the scenarios, perform verification:
 }
 ```
 
+### VS Code: Remote Connection
+
+**Method 1: Using Headers (Recommended)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-remote": {
+      "type": "http",
+      "url": "https://<your-openl-server>/mcp/sse",
+      "headers": {
+        "Authorization": "Token <your-pat-token>"
+      }
+    }
+  }
+}
+```
+
+**Method 2: Using Query Parameters**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-remote": {
+      "type": "http",
+      "url": "https://<your-openl-server>/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>"
+    }
+  }
+}
+```
+
+### VS Code: Docker Connection
+
+**Method 1: Using Headers (Recommended)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse",
+      "headers": {
+        "Authorization": "Token <your-pat-token>"
+      }
+    }
+  }
+}
+```
+
+**Method 2: Using Query Parameters**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse?OPENL_PERSONAL_ACCESS_TOKEN=<your-pat-token>"
+    }
+  }
+}
+```
+
+**Method 3: Using Basic Auth (Development Only)**
+
+```json
+{
+  "github.copilot.chat.mcp.servers": {
+    "openl-mcp-server-docker": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp/sse?OPENL_USERNAME=admin&OPENL_PASSWORD=admin"
+    }
+  }
+}
+```
+
 ---
 
 **Note:** In all examples, replace:
 - Node.js and mcp-remote paths with your actual paths
 - OpenL server URL with your server
 - Personal Access Token with your token
+- For production: use header-based authentication instead of query parameters

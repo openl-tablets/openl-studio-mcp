@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing! This guide covers the essentials for extending the codebase.
 
+**By participating in this project, you agree to abide by our [Code of Conduct](../CODE_OF_CONDUCT.md).**
+
 ## Development Setup
 
 ### Prerequisites
