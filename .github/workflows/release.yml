@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
       packages: write
 
     steps:
@@ -53,6 +52,6 @@ jobs:
             --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --label "org.opencontainers.image.version=${{ github.ref_name }}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
-            --label "org.opencontainers.image.title=OpenL MCP Server" \
+            --label "org.opencontainers.image.title=OpenL Studio MCP Server" \
             --label "org.opencontainers.image.description=Model Context Protocol server for OpenL Studio" \
             .
