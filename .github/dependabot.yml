@@ -9,9 +9,45 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      all-npm-dependencies:
+      npm-runtime:
+        dependency-type: "production"
         patterns:
           - "*"
+      npm-eslint:
+        dependency-type: "development"
+        patterns:
+          - "eslint"
+          - "@typescript-eslint/*"
+      npm-types:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+      npm-testing:
+        dependency-type: "development"
+        patterns:
+          - "jest"
+          - "ts-jest"
+          - "nock"
+          - "axios-mock-adapter"
+      npm-ts-tooling:
+        dependency-type: "development"
+        patterns:
+          - "typescript"
+          - "ts-node"
+      npm-dev-other:
+        dependency-type: "development"
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "eslint"
+          - "@typescript-eslint/*"
+          - "@types/*"
+          - "jest"
+          - "ts-jest"
+          - "nock"
+          - "axios-mock-adapter"
+          - "typescript"
+          - "ts-node"
 
   - package-ecosystem: "github-actions"
     directory: "/"
