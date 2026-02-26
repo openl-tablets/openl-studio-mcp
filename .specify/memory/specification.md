@@ -398,10 +398,10 @@ The OpenL Studio MCP Server is a Model Context Protocol implementation that prov
 **Requirement**: Support OpenL Studio 6.0.0+ REST API.
 
 **API Changes Supported**:
-- Base64-encoded project IDs
-- New endpoint structure `/projects/{base64-id}`
-- Backward compatibility with older formats
-- All three project ID formats accepted
+- Project IDs are treated as opaque backend values and used directly in path segments
+- Endpoint structure `/projects/{projectId}`
+- Legacy project ID format conversion is not performed in MCP
+- Backward compatibility note: clients must pass the exact `projectId` returned by `openl_list_projects`
 
 **Known Limitations** (Documented):
 - `/tables` POST endpoint returns 405 (use upload_file instead)

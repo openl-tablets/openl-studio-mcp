@@ -10,6 +10,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { randomUUID } from 'node:crypto';
+import { writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -427,13 +430,21 @@ async function handleResourceRead(
             const fileBuffer = await client.downloadFile(projectId, filePath);
             mimeType = "application/octet-stream";
 
-            // Return base64-encoded file content
+            const tempFileName = `openl-resource-${Date.now()}-${Math.random().toString(16).slice(2)}-${filePath.split("/").pop() || "file.bin"}`;
+            const tempFilePath = join(tmpdir(), tempFileName);
+            await writeFile(tempFilePath, fileBuffer);
+
             return {
               contents: [
                 {
                   uri,
-                  mimeType,
-                  text: fileBuffer.toString("base64"),
+                  mimeType: "application/json",
+                  text: safeStringify({
+                    filePath,
+                    downloadedTo: tempFilePath,
+                    size: fileBuffer.length,
+                    mode: "binary-file-path",
+                  }),
                 },
               ],
             };

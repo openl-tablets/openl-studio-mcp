@@ -234,7 +234,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl List Projects",
     version: "1.0.0",
     description:
-      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name).",
+      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field from API to use with other tools. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name).",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     annotations: {
       readOnlyHint: true,
@@ -315,24 +315,19 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         totalCount = 0;
       }
 
-      // Transform projects to include a flat projectId field for easier use
-      // Use original project.id from API response without modification
-      // Handle both OpenL 6.0.0+ (base64 string) and older versions (object) formats
+      // Transform projects to include a flat projectId field for easier use.
+      // projectId is an opaque backend value and must be passed through unchanged.
       const transformedProjects = projects.map((project) => {
-        // Use original project.id directly - if it's a string (base64), use as-is
-        // If it's an object (old format), convert to base64 format like the API expects
-        let projectId: string;
-        if (typeof project.id === 'string') {
-          // Already in base64 format from API - use directly
-          projectId = project.id;
-        } else {
-          // Old format object - convert to base64 format
-          const colonFormat = `${project.id.repository}:${project.id.projectName}`;
-          projectId = Buffer.from(colonFormat, 'utf-8').toString('base64');
+        if (typeof project.id !== "string" || project.id.length === 0) {
+          throw new McpError(
+            ErrorCode.InternalError,
+            "Invalid project ID returned by backend: expected non-empty string."
+          );
         }
+
         return {
           ...project,
-          projectId,
+          projectId: project.id,
         };
       });
 
@@ -654,31 +649,29 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
       const typedArgs = args as {
         projectId: string;
         fileName: string;
-        fileContent: string;
+        localFilePath: string;
         comment?: string;
         response_format?: "json" | "markdown";
       };
 
-      if (!typedArgs || !typedArgs.projectId || !typedArgs.fileName || !typedArgs.fileContent) {
+      if (!typedArgs || !typedArgs.projectId || !typedArgs.fileName || !typedArgs.localFilePath) {
         throw new McpError(
           ErrorCode.InvalidParams,
-          "Missing required arguments: projectId, fileName, fileContent"
+          "Missing required arguments: projectId, fileName, localFilePath"
         );
       }
 
       const format = validateResponseFormat(typedArgs.response_format);
-
-      // Validate base64 content
-      if (!validateBase64(typedArgs.fileContent)) {
-        throw new McpError(ErrorCode.InvalidParams, "Invalid base64 content in fileContent parameter");
-      }
-
-      // Decode base64 file content
-      const buffer = Buffer.from(typedArgs.fileContent, "base64");
+      const sourceFilePath = resolve(typedArgs.localFilePath);
+      const buffer = await readFile(sourceFilePath);
 
       const result = await client.uploadFile(typedArgs.projectId, typedArgs.fileName, buffer, typedArgs.comment);
 
-      const formattedResult = formatResponse(result, format);
+      const formattedResult = formatResponse({
+        ...result,
+        sourceFilePath,
+        mode: "binary-file-path",
+      }, format);
 
       return {
         content: [{ type: "text", text: formattedResult }],
@@ -707,23 +700,26 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
         projectId: string;
         fileName: string;
         version?: string;
+        outputFilePath: string;
         response_format?: "json" | "markdown";
       };
 
-      if (!typedArgs || !typedArgs.projectId || !typedArgs.fileName) {
-        throw new McpError(ErrorCode.InvalidParams, "Missing required arguments: projectId, fileName");
+      if (!typedArgs || !typedArgs.projectId || !typedArgs.fileName || !typedArgs.outputFilePath) {
+        throw new McpError(ErrorCode.InvalidParams, "Missing required arguments: projectId, fileName, outputFilePath");
       }
 
       const format = validateResponseFormat(typedArgs.response_format);
 
       const fileBuffer = await client.downloadFile(typedArgs.projectId, typedArgs.fileName, typedArgs.version);
+      const outputFilePath = resolve(typedArgs.outputFilePath);
+      await writeFile(outputFilePath, fileBuffer);
 
-      // Return base64-encoded content with metadata
       const result = {
         fileName: typedArgs.fileName,
-        fileContent: fileBuffer.toString("base64"),
+        outputFilePath,
         size: fileBuffer.length,
         version: typedArgs.version || "HEAD",
+        mode: "binary-file-path",
       };
 
       const formattedResult = formatResponse(result, format);
@@ -1002,7 +998,7 @@ export function registerAllTools(_server: Server, _client: OpenLClient): void {
     title: "openl Create Project Table",
     version: "1.0.0",
     description:
-      "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (Excel file/folder name) and complete table structure (EditableTableView). The table structure must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for Rules/SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
+      "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (existing project module name) and complete table structure (EditableTableView). The table structure must include at least tableType, kind, name, plus type-specific data (rules/headers for Rules tables, rows for Spreadsheet, fields for Datatype). id is optional for create requests. Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
     inputSchema: schemas.z.toJSONSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
     annotations: {
       openWorldHint: true,

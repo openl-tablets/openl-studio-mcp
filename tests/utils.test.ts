@@ -421,32 +421,12 @@ describe("utils", () => {
       });
     });
 
-    it("should parse base64-encoded string", () => {
-      const encoded = Buffer.from("design:Project1").toString("base64");
-      const result = parseProjectId(encoded);
-
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "Project1",
-      });
-    });
-
     it("should parse plain colon-separated string", () => {
       const result = parseProjectId("design:Project1");
 
       expect(result).toEqual({
         repository: "design",
         projectName: "Project1",
-      });
-    });
-
-    it("should handle project names with spaces", () => {
-      const encoded = Buffer.from("design:Example 1 - Bank Rating").toString("base64");
-      const result = parseProjectId(encoded);
-
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "Example 1 - Bank Rating",
       });
     });
 
@@ -489,16 +469,12 @@ describe("utils", () => {
     });
 
     it("should handle special characters in project name", () => {
-      const encoded = Buffer.from("design:Project #1 (Test)").toString("base64");
-      const result = parseProjectId(encoded);
-
+      const result = parseProjectId("design:Project #1 (Test)");
       expect(result.projectName).toBe("Project #1 (Test)");
     });
 
     it("should handle unicode in project name", () => {
-      const encoded = Buffer.from("design:项目名称").toString("base64");
-      const result = parseProjectId(encoded);
-
+      const result = parseProjectId("design:项目名称");
       expect(result.projectName).toBe("项目名称");
     });
   });

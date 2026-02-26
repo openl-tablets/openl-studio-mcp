@@ -186,7 +186,7 @@ Flexible authentication supporting different deployment scenarios:
 1. **Basic Authentication** (requires HTTPS/TLS in production)
    - Username and password credentials
    - Suitable for development and trusted internal environments
-   - Header format: `Authorization: Basic <base64(username:password)>`
+   - Header format: `Authorization: Basic <base64(username:password)>` (Basic Auth only)
    - ⚠️ **Warning**: Always use HTTPS in production to prevent credential exposure
 
 2. **Personal Access Token (PAT)** ⭐ Recommended

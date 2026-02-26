@@ -8,11 +8,10 @@
 import axios, { AxiosInstance } from "axios";
 import type * as Types from "./types.js";
 import { AuthenticationManager } from "./auth.js";
-import { DEFAULTS, ERROR_LOCAL_REPOSITORY, HEADERS, PROJECT_ID_PATTERN, REPOSITORY_LOCAL } from "./constants.js";
+import { DEFAULTS, ERROR_LOCAL_REPOSITORY, HEADERS, REPOSITORY_LOCAL } from "./constants.js";
 import {
   validateTimeout,
   sanitizeError,
-  parseProjectId as parseProjectIdUtil,
   normalizeOpenLBaseUrl,
 } from "./utils.js";
 
@@ -335,152 +334,32 @@ export class OpenLClient {
   // =============================================================================
 
   /**
-   * Parse a project ID into repository and project name
+   * Build URL-safe project path for OpenL API
    *
-   * Accepts multiple formats for user convenience:
-   * 1. Base64 format (default): "ZGVzaWduOTpTYW1wbGUgUHJvamVjdDpjY2VkYzY5MmJlZWM5YmNmYTdiZmFiOTZmNzZmYTNhZjU0MTk4MjFkM2M5NDVkYTlmN2VjNzZjNmNkMDhlMDQ0" (from OpenL 6.0.0+ API, format: base64("repository:projectName:hashCode"))
-   * 2. Dash format: "repository-projectName" (backward compatibility, user-friendly)
-   * 3. Colon format: "repository:projectName" (backward compatibility, decoded base64)
+   * projectId is treated as an opaque backend identifier.
    *
-   * @param projectId - Project ID in any supported format
-   * @returns Tuple of [repository, projectName]
-   * @throws Error if project ID format is invalid
-   */
-  private parseProjectId(projectId: string): [string, string] {
-    // First, try base64 format (primary format: repository:projectName:hashCode)
-    if (PROJECT_ID_PATTERN.test(projectId.replace(/\s/g, ""))) {
-      try {
-        const parsed = parseProjectIdUtil(projectId);
-        return [parsed.repository, parsed.projectName];
-      } catch {
-        // If base64 decode fails, fall through to try other formats
-      }
-    }
-
-    // Try dash format (user-friendly format from list_projects, backward compatibility)
-    // Pattern: repository-projectName
-    const dashPattern = /^([^-]+)-(.+)$/;
-    const dashMatch = projectId.match(dashPattern);
-    if (dashMatch) {
-      return [dashMatch[1], dashMatch[2]];
-    }
-
-    // Try colon format (repository:projectName, backward compatibility)
-    if (projectId.includes(':')) {
-      try {
-        const parsed = parseProjectIdUtil(projectId);
-        return [parsed.repository, parsed.projectName];
-      } catch {
-        // Fall through to error
-      }
-    }
-
-    // If all formats fail, throw error
-    throw new Error(
-      `Invalid project ID format: ${projectId}. Expected formats:\n` +
-      `  - Base64-encoded string (e.g., "ZGVzaWduOTpTYW1wbGUgUHJvamVjdDpjY2VkYzY5MmJlZWM5YmNmYTdiZmFiOTZmNzZmYTNhZjU0MTk4MjFkM2M5NDVkYTlmN2VjNzZjNmNkMDhlMDQ0")\n` +
-      `  - "repository-projectName" (e.g., "design-Example 1 - Bank Rating") - backward compatibility\n` +
-      `  - "repository:projectName" (e.g., "design:Example 1 - Bank Rating") - backward compatibility\n\n` +
-      `To discover valid project IDs, use: openl_list_projects()`
-    );
-  }
-
-  /**
-   * Convert project ID to base64-encoded format
-   *
-   * OpenL 6.0.0+ uses base64-encoded IDs in URL paths.
-   * Format: base64("repository:projectName")
-   *
-   * @param projectId - Project ID in any format
-   * @returns Base64-encoded project ID
-   * @throws Error if projectId format is invalid
-   */
-  private toBase64ProjectId(projectId: string): string {
-    // If projectId is URL-encoded (contains %), decode it first
-    let decodedId = projectId;
-    if (projectId.includes('%')) {
-      try {
-        decodedId = decodeURIComponent(projectId);
-      } catch {
-        // If decoding fails, use original - might not be URL-encoded
-        decodedId = projectId;
-      }
-    }
-
-    // If contains '-' or ':', definitely needs parsing and encoding
-    if (decodedId.includes('-') || decodedId.includes(':')) {
-      const [repository, projectName] = this.parseProjectId(decodedId);
-      const colonFormat = `${repository}:${projectName}`;
-      return Buffer.from(colonFormat, 'utf-8').toString('base64');
-    }
-
-    // No dash or colon - might be already base64, validate but don't re-encode
-    // First check if it matches base64 pattern
-    const normalizedId = decodedId.replace(/\s/g, "");
-    if (!PROJECT_ID_PATTERN.test(normalizedId)) {
-      throw new Error(
-        `Invalid project ID format: "${projectId}" does not match base64 pattern. ` +
-        `Expected formats: base64-encoded string, "repository-projectName", or "repository:projectName"`
-      );
-    }
-
-    // Validate that it's valid base64 and has expected format
-    // But don't re-encode - if it's already base64 from API, use it as-is
-    try {
-      const decoded = Buffer.from(normalizedId, "base64").toString("utf-8");
-      
-      // Check if decoded string has expected format (repository:projectName or repository:projectName:hashCode)
-      const parts = decoded.split(":");
-      if (parts.length < 2 || !parts[0] || !parts[1]) {
-        throw new Error(`Decoded base64 does not have expected format: "${decoded}"`);
-      }
-
-      // Valid base64 with correct format - return as-is (don't re-encode)
-      // The ID from API is already correctly encoded, no need to change it
-      return normalizedId;
-    } catch (error) {
-      // If decode fails or validation fails, throw descriptive error
-      throw new Error(
-        `Invalid base64 project ID: "${projectId}". ` +
-        `Validation failed: ${error instanceof Error ? error.message : String(error)}. ` +
-        `Expected formats: base64-encoded string, "repository-projectName", or "repository:projectName"`
-      );
-    }
-  }
-
-  /**
-   * Build URL-safe project path for OpenL 6.0.0+ API
-   *
-   * OpenL 6.0.0+ changed the API structure to use base64-encoded project IDs:
-   * - Old: /repos/{repository}/projects/{projectName}
-   * - New: /projects/{base64-id}
-   *
-   * @param projectId - Project ID in any format
+   * @param projectId - Project ID returned by backend
    * @returns URL-encoded project path
    */
   private buildProjectPath(projectId: string): string {
-    // If projectId is already URL-encoded (contains %), decode it first to get clean base64
-    // Then re-encode it properly for URL
-    let cleanBase64Id: string;
-    if (projectId.includes('%')) {
-      // URL-encoded: decode first, then normalize
+    // Normalize the projectId to avoid issues with surrounding whitespace
+    // and double-encoding of already-percent-encoded values.
+    const trimmed = projectId.trim();
+
+    let normalizedId = trimmed;
+
+    // If the ID appears to contain percent-encoded sequences, attempt to decode
+    // it first to avoid double-encoding (e.g., %20 -> %2520).
+    if (/%[0-9A-Fa-f]{2}/.test(trimmed)) {
       try {
-        const decoded = decodeURIComponent(projectId);
-        cleanBase64Id = this.toBase64ProjectId(decoded);
+        normalizedId = decodeURIComponent(trimmed);
       } catch {
-        // If decoding fails, try treating as non-encoded
-        cleanBase64Id = this.toBase64ProjectId(projectId);
+        // If decoding fails (malformed encoding), fall back to the trimmed value.
+        normalizedId = trimmed;
       }
-    } else {
-      // Not URL-encoded: convert to base64 if needed
-      cleanBase64Id = this.toBase64ProjectId(projectId);
     }
-    
-    // Always URL-encode the final base64 string for URL safety
-    // This ensures padding characters (=) are properly encoded as %3D
-    const encodedPath = `/projects/${encodeURIComponent(cleanBase64Id)}`;
-    
-    return encodedPath;
+
+    return `/projects/${encodeURIComponent(normalizedId)}`;
   }
 
   /**
@@ -548,7 +427,7 @@ export class OpenLClient {
   /**
    * Get project details by ID
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @returns Project details
    */
   async getProject(projectId: string): Promise<Types.ComprehensiveProject> {
@@ -583,7 +462,7 @@ export class OpenLClient {
   /**
    * Delete a project
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @returns void (204 No Content on success)
    */
   async deleteProject(projectId: string): Promise<void> {
@@ -600,7 +479,7 @@ export class OpenLClient {
    * For switching branches on an already opened project, use {@link switchBranch} instead
    * to avoid a 409 Conflict error.
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param options - Optional branch, revision, and comment
    * @returns Success status (204 No Content on success)
    */
@@ -631,7 +510,7 @@ export class OpenLClient {
    * opened project. However, a PATCH with just {"branch": "..."} is accepted
    * and returns 204.
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param branch - Target branch name to switch to
    * @returns Success status (204 No Content on success)
    */
@@ -655,7 +534,7 @@ export class OpenLClient {
    *
    * Updates project status to CLOSED using PATCH /projects/{projectId}
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param comment - Optional comment describing why the project is being closed
    * @returns Success status (204 No Content on success)
    */
@@ -677,7 +556,7 @@ export class OpenLClient {
    * Only OPENED and CLOSED can be set; other statuses (LOCAL, ARCHIVED, VIEWING_VERSION, EDITING) are set automatically by the backend.
    * Prevents accidental data loss by requiring explicit confirmation when closing projects with unsaved changes.
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param request - Status update request; status may be OPENED or CLOSED only
    * @returns Success status (204 No Content on success)
    * @throws Error if trying to close EDITING project without save or explicit discard
@@ -747,7 +626,7 @@ export class OpenLClient {
    *
    * This method validates the project before saving (if validation endpoint is available).
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param comment - Comment for the new revision (required when project is EDITING; used as commit message)
    * @param options - Optional. closeAfterSave: if true, send status CLOSED so project is saved and closed in one request.
    * @returns Save result; if project is not EDITING, returns success with message "nothing to save" (no API call).
@@ -816,7 +695,7 @@ export class OpenLClient {
   /**
    * Upload an Excel file with rules to a project
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param fileName - Name of the file to upload
    * @param fileContent - File content as Buffer or string
    * @param comment - Optional comment
@@ -902,7 +781,7 @@ export class OpenLClient {
   /**
    * Download an Excel file from a project
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param fileName - Name of the file to download (use the exact 'file' value from list_tables response)
    * @param version - Optional Git commit hash to download specific version
    * @returns File content as Buffer
@@ -910,9 +789,6 @@ export class OpenLClient {
    */
   async downloadFile(projectId: string, fileName: string, version?: string): Promise<Buffer> {
     const projectPath = this.buildProjectPath(projectId);
-
-    // Parse project ID to get the project name (without repository prefix)
-    const [, projectName] = this.parseProjectId(projectId);
 
     // Build request params
     const params: any = {};
@@ -924,17 +800,17 @@ export class OpenLClient {
     // The OpenL API expects the full path AS-IS from list_tables, including the project directory.
     // We'll try multiple variations to handle different scenarios.
 
-    const projectPrefix = `${projectName}/`;
     const pathsToTry: string[] = [];
 
     // Try the fileName exactly as provided first
     pathsToTry.push(fileName);
 
-    // If fileName doesn't have the project prefix, try adding it
-    if (!fileName.startsWith(projectPrefix) && !fileName.includes('/')) {
-      // User might have passed just the base filename like "Corporate Rating.xlsx"
-      // Try with the project name prefix: "Example 2 - Corporate Rating/Corporate Rating.xlsx"
-      pathsToTry.push(`${projectPrefix}${fileName}`);
+    // Keep a fallback without leading project directory for APIs that normalize paths.
+    if (fileName.includes("/")) {
+      const withoutProjectDir = fileName.substring(fileName.indexOf("/") + 1);
+      if (withoutProjectDir && withoutProjectDir !== fileName) {
+        pathsToTry.push(withoutProjectDir);
+      }
     }
 
     let lastError: any;
@@ -992,7 +868,7 @@ export class OpenLClient {
   /**
    * Create a new branch in a project
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param branchName - Name for the new branch
    * @param revision - Optional Git revision to branch from
    * @returns Success status
@@ -1021,7 +897,7 @@ export class OpenLClient {
   /**
    * List all tables/rules in a project with optional filters and pagination
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param filters - Optional filters for table type, name, properties, and pagination
    * @returns Array of table metadata (for backward compatibility, extracts content from PageResponse)
    */
@@ -1096,7 +972,7 @@ export class OpenLClient {
   /**
    * Create a new rule/table in a project
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param request - Rule creation request with name, type, and properties
    * @returns Creation result with table ID
    */
@@ -1139,14 +1015,14 @@ export class OpenLClient {
     } catch (error: unknown) {
       const errorMsg = sanitizeError(error);
 
-      // Check if this is a 405 Method Not Allowed error
-      if (errorMsg.includes('405')) {
+      // Newer OpenL versions use CreateNewTableRequest payload for POST /projects/{projectId}/tables
+      // and can reject legacy createRule payload with 400/405.
+      if (errorMsg.includes("400") || errorMsg.includes("405")) {
         return {
           success: false,
-          message: `Table creation via REST API is not supported in OpenL Studio 6.0.0. ` +
-                  `Tables must be created by uploading/modifying Excel files directly. ` +
-                  `Use upload_file to upload an Excel file with the table definition, or ` +
-                  `use the OpenL Studio UI to create tables interactively.`,
+          message: `Table creation requires the 'Create New Project Table' contract ` +
+            `(moduleName, optional sheetName, and full EditableTableView payload). ` +
+            `Use openl_create_project_table instead of createRule-style payload.`,
         };
       }
 
@@ -1160,7 +1036,7 @@ export class OpenLClient {
   /**
    * Create a new table in a project using BETA API
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param request - Table creation request with moduleName, sheetName, and complete table structure
    * @returns Created table summary with table ID
    */
@@ -1185,7 +1061,7 @@ export class OpenLClient {
   /**
    * Get detailed table data and structure
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param tableId - Table identifier
    * @returns Complete table view with data and structure
    */
@@ -1200,7 +1076,7 @@ export class OpenLClient {
   /**
    * Update table content
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param tableId - Table identifier
    * @param view - Updated table view with modifications (MUST include full table structure from get_table)
    * @param comment - Optional comment describing the changes (NOTE: not supported by OpenAPI schema, will be ignored)
@@ -1245,7 +1121,7 @@ export class OpenLClient {
   /**
    * Append lines to a project table
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param tableId - Table identifier
    * @param appendData - Data to append with fields and table type
    * @returns void (200 OK on success per schema)
@@ -1287,13 +1163,10 @@ export class OpenLClient {
    * @returns Success status (204 No Content on success)
    */
   async deployProject(request: Types.DeployProjectRequest): Promise<void> {
-    // Ensure projectId is in base64 format
-    const base64ProjectId = this.toBase64ProjectId(request.projectId);
-
     await this.axiosInstance.post(
       "/deployments",
       {
-        projectId: base64ProjectId,
+        projectId: request.projectId,
         deploymentName: request.deploymentName,
         productionRepositoryId: request.productionRepositoryId,
         comment: request.comment,
@@ -1312,13 +1185,10 @@ export class OpenLClient {
     deploymentId: string,
     request: Types.RedeployProjectRequest
   ): Promise<void> {
-    // Ensure projectId is in base64 format
-    const base64ProjectId = this.toBase64ProjectId(request.projectId);
-
     await this.axiosInstance.post(
       `/deployments/${encodeURIComponent(deploymentId)}`,
       {
-        projectId: base64ProjectId,
+        projectId: request.projectId,
         comment: request.comment,
       }
     );
@@ -1844,7 +1714,7 @@ export class OpenLClient {
    * This method will return a 404 error. Validation may occur
    * automatically when compiling or deploying projects.
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @returns Validation results with errors and warnings
    * @throws Error if endpoint doesn't exist (404)
    */
@@ -1859,7 +1729,7 @@ export class OpenLClient {
   /**
    * Get detailed project errors with categorization and fix suggestions
    *
-   * @param projectId - Project ID in base64-encoded format (default). Supports backward compatibility with "repository-projectName" and "repository:projectName" formats.
+   * @param projectId - Opaque project ID returned by backend.
    * @param includeWarnings - Include warnings in result (default: true)
    * @returns Detailed validation result with error categorization
    */
@@ -2117,24 +1987,15 @@ export class OpenLClient {
   /**
    * Get Git commit history for entire project
    *
-   * Uses the OpenAPI 3.0.1 endpoint structure:
-   * - /repos/{repo}/projects/{project-name}/history
-   * - /repos/{repo}/branches/{branch}/projects/{project-name}/history
+   * Uses project-based endpoint structure:
+   * - /projects/{projectId}/history
    *
    * @param request - Project history request with pagination parameters
    * @returns Project commit history with paginated response
    */
   async getProjectHistory(request: Types.GetProjectHistoryRequest): Promise<Types.GetProjectHistoryResult> {
-    // Parse project ID to get repository and project name
-    const [repository, projectName] = this.parseProjectId(request.projectId);
-
-    // Build the endpoint URL based on whether a branch is specified
-    let endpoint: string;
-    if (request.branch) {
-      endpoint = `/repos/${encodeURIComponent(repository)}/branches/${encodeURIComponent(request.branch)}/projects/${encodeURIComponent(projectName)}/history`;
-    } else {
-      endpoint = `/repos/${encodeURIComponent(repository)}/projects/${encodeURIComponent(projectName)}/history`;
-    }
+    const projectPath = this.buildProjectPath(request.projectId);
+    const endpoint = `${projectPath}/history`;
 
     // Build query parameters using OpenAPI 3.0.1 parameter names
     const params: Record<string, unknown> = {
@@ -2146,6 +2007,9 @@ export class OpenLClient {
     }
     if (request.techRevs !== undefined) {
       params.techRevs = request.techRevs;
+    }
+    if (request.branch) {
+      params.branch = request.branch;
     }
 
     const response = await this.axiosInstance.get<Types.PageResponseProjectRevision_Short>(

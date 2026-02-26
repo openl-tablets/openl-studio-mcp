@@ -193,9 +193,9 @@ describe("OpenLClient", () => {
 
     describe("getProject", () => {
       it("should fetch project by ID", async () => {
-        // projectId "design-project1" converts to "design:project1" -> base64
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        // projectId "design-project1" is used as path identifier
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
         const mockProject: Partial<ProjectViewModel> = {
           id: "design:project1:hash123",
@@ -207,18 +207,18 @@ describe("OpenLClient", () => {
           modifiedAt: "2024-01-01T00:00:00Z",
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockProject);
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockProject);
 
         const result = await client.getProject("design-project1");
         expect(result.name).toBe("project1");
       });
 
       it("should parse projectId with hyphen separator", async () => {
-        // projectId "design-InsuranceRules" converts to "design:InsuranceRules" -> base64
-        const base64ProjectId = Buffer.from("design:InsuranceRules").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        // projectId "design-InsuranceRules" is used as path identifier
+        const projectIdForPath = "design-InsuranceRules";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:InsuranceRules:hash123",
           name: "InsuranceRules",
           repository: "design",
@@ -229,30 +229,33 @@ describe("OpenLClient", () => {
         });
 
         await client.getProject("design-InsuranceRules");
-        expect(mockAxios.history.get[0].url).toContain(encodedBase64Id);
+        expect(mockAxios.history.get[0].url).toContain(encodedProjectId);
       });
 
       it("should handle project not found", async () => {
-        const base64ProjectId = Buffer.from("design:nonexistent").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-nonexistent";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(404);
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(404);
 
         await expect(client.getProject("design-nonexistent")).rejects.toThrow();
       });
 
-      it("should throw error for invalid projectId format", async () => {
-        await expect(client.getProject("invalid")).rejects.toThrow(/Invalid.*project ID/);
+      it("should pass opaque projectId through to API", async () => {
+        const encodedProjectId = encodeURIComponent("invalid");
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(404);
+
+        await expect(client.getProject("invalid")).rejects.toThrow();
       });
     });
 
     describe("updateProjectStatus", () => {
       it("should update project status", async () => {
         // updateProjectStatus first fetches the project, then updates it
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:project1:hash123",
           name: "project1",
           repository: "design",
@@ -263,7 +266,7 @@ describe("OpenLClient", () => {
         });
         
         // updateProjectStatus uses PATCH, not PUT
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply(200, {
           success: true,
           message: "Project status updated successfully",
         });
@@ -275,10 +278,10 @@ describe("OpenLClient", () => {
       });
 
       it("should send comment when provided", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:project1:hash123",
           name: "project1",
           repository: "design",
@@ -288,7 +291,7 @@ describe("OpenLClient", () => {
           modifiedAt: "2024-01-01T00:00:00Z",
         });
         
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.comment).toBe("Closing project");
           return [200, { success: true }];
@@ -301,10 +304,10 @@ describe("OpenLClient", () => {
       });
 
       it("should send discardChanges flag", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:project1:hash123",
           name: "project1",
           repository: "design",
@@ -315,7 +318,7 @@ describe("OpenLClient", () => {
         });
         
         // discardChanges is handled client-side, not sent to API
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply(200, {
           success: true,
           message: "Project closed (changes discarded)",
         });
@@ -327,10 +330,10 @@ describe("OpenLClient", () => {
       });
 
       it("should switch branches", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:project1:hash123",
           name: "project1",
           repository: "design",
@@ -340,7 +343,7 @@ describe("OpenLClient", () => {
           modifiedAt: "2024-01-01T00:00:00Z",
         });
         
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.branch).toBe("development");
           return [200, { success: true }];
@@ -352,10 +355,10 @@ describe("OpenLClient", () => {
       });
 
       it("should throw when project is in local repository", async () => {
-        const base64ProjectId = Buffer.from("local:myproject").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "local-myproject";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "local:myproject:hash",
           name: "myproject",
           repository: "local",
@@ -372,8 +375,8 @@ describe("OpenLClient", () => {
     });
 
     describe("openProject", () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       const mockDesignProject = (status: string) => ({
         id: "design:project1:hash123",
@@ -386,9 +389,9 @@ describe("OpenLClient", () => {
       });
 
       it("should open a project with status OPENED", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockDesignProject("CLOSED"));
 
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.status).toBe("OPENED");
           return [204];
@@ -400,9 +403,9 @@ describe("OpenLClient", () => {
       });
 
       it("should open a project on a specific branch", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockDesignProject("CLOSED"));
 
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.status).toBe("OPENED");
           expect(data.branch).toBe("development");
@@ -415,9 +418,9 @@ describe("OpenLClient", () => {
 
       it("should always send status OPENED regardless of current project status", async () => {
         // Even if the project is already OPENED, openProject always sends status
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockDesignProject("OPENED"));
 
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.status).toBe("OPENED");
           return [204];
@@ -428,9 +431,9 @@ describe("OpenLClient", () => {
       });
 
       it("should open a project at a specific revision", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("CLOSED"));
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockDesignProject("CLOSED"));
 
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.status).toBe("OPENED");
           expect(data.revision).toBe("abc123");
@@ -442,7 +445,7 @@ describe("OpenLClient", () => {
       });
 
       it("should throw when project is in local repository", async () => {
-        const localBase64Id = Buffer.from("local:myproject").toString("base64");
+        const localBase64Id = "local-myproject";
         const encodedLocalId = encodeURIComponent(localBase64Id);
 
         mockAxios.onGet(`/projects/${encodedLocalId}`).reply(200, {
@@ -462,8 +465,8 @@ describe("OpenLClient", () => {
     });
 
     describe("switchBranch", () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       const mockDesignProject = (status: string) => ({
         id: "design:project1:hash123",
@@ -476,9 +479,9 @@ describe("OpenLClient", () => {
       });
 
       it("should send PATCH with only branch (no status)", async () => {
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, mockDesignProject("OPENED"));
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, mockDesignProject("OPENED"));
 
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.status).toBeUndefined();
           expect(data.branch).toBe("feature/new-rules");
@@ -491,7 +494,7 @@ describe("OpenLClient", () => {
       });
 
       it("should throw when project is in local repository", async () => {
-        const localBase64Id = Buffer.from("local:myproject").toString("base64");
+        const localBase64Id = "local-myproject";
         const encodedLocalId = encodeURIComponent(localBase64Id);
 
         mockAxios.onGet(`/projects/${encodedLocalId}`).reply(200, {
@@ -514,8 +517,8 @@ describe("OpenLClient", () => {
   describe("Table Management", () => {
     describe("listTables", () => {
       it("should fetch list of tables", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
         const mockTables: Partial<SummaryTableView>[] = [
           {
@@ -536,7 +539,7 @@ describe("OpenLClient", () => {
           },
         ];
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables`).reply(200, mockTables);
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables`).reply(200, mockTables);
 
         const result = await client.listTables("design-project1");
         expect(result.length).toBe(2);
@@ -544,10 +547,10 @@ describe("OpenLClient", () => {
       });
 
       it("should filter by table type", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables`, {
           params: { kind: ["Rules"] }
         }).reply(200, []);
 
@@ -556,10 +559,10 @@ describe("OpenLClient", () => {
       });
 
       it("should filter by name pattern", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables`, {
           params: { name: "calculate" }
         }).reply(200, []);
 
@@ -568,12 +571,12 @@ describe("OpenLClient", () => {
       });
 
       it("should filter by file", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
         // Note: file filtering might not be directly supported in the API
         // This test may need adjustment based on actual API behavior
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables`).reply(200, []);
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables`).reply(200, []);
 
         await client.listTables("design-project1", {});
         expect(mockAxios.history.get.length).toBe(1);
@@ -582,8 +585,8 @@ describe("OpenLClient", () => {
 
     describe("getTable", () => {
       it("should fetch table by ID", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedTableId = encodeURIComponent("calculatePremium_1234");
         
         const mockTable: Partial<SummaryTableView> = {
@@ -595,17 +598,17 @@ describe("OpenLClient", () => {
           pos: "A1",
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables/${encodedTableId}`).reply(200, mockTable);
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables/${encodedTableId}`).reply(200, mockTable);
 
         const result = await client.getTable("design-project1", "calculatePremium_1234");
         expect(result.id).toBe("calculatePremium_1234");
       });
 
       it("should URL-encode table ID", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onGet(new RegExp(`/projects/${encodedBase64Id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/tables/.*`)).reply((config) => {
+        mockAxios.onGet(new RegExp(`/projects/${encodedProjectId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/tables/.*`)).reply((config) => {
           expect(config.url).toContain("table%20id");
           return [200, {}];
         });
@@ -614,11 +617,11 @@ describe("OpenLClient", () => {
       });
 
       it("should handle table not found", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedTableId = encodeURIComponent("nonexistent");
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tables/${encodedTableId}`).reply(404);
+        mockAxios.onGet(`/projects/${encodedProjectId}/tables/${encodedTableId}`).reply(404);
 
         await expect(
           client.getTable("design-project1", "nonexistent")
@@ -628,8 +631,8 @@ describe("OpenLClient", () => {
 
     describe("updateTable", () => {
       it("should update table with new data", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedTableId = encodeURIComponent("calculatePremium_1234");
         
         // updateTable requires full table structure with all required fields
@@ -644,22 +647,22 @@ describe("OpenLClient", () => {
         };
 
         // updateTable returns void (204 No Content)
-        mockAxios.onPut(`/projects/${encodedBase64Id}/tables/${encodedTableId}`).reply(204);
+        mockAxios.onPut(`/projects/${encodedProjectId}/tables/${encodedTableId}`).reply(204);
 
         await client.updateTable("design-project1", "calculatePremium_1234", tableView);
         expect(mockAxios.history.put.length).toBe(1);
       });
 
       it("should send comment when provided", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedTableId = encodeURIComponent("table1");
         
         // Note: comment parameter is not supported by OpenAPI schema, will be ignored
         // The view is sent directly as request body
         const tableView = { id: "table1", name: "table1", tableType: "SimpleRules", kind: "Rules" };
         
-        mockAxios.onPut(`/projects/${encodedBase64Id}/tables/${encodedTableId}`).reply((config) => {
+        mockAxios.onPut(`/projects/${encodedProjectId}/tables/${encodedTableId}`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.id).toBe("table1");
           return [204];
@@ -671,8 +674,8 @@ describe("OpenLClient", () => {
 
     describe("createRule", () => {
       it("should create new rule table", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
         const ruleSpec = {
           name: "calculatePremium",
@@ -684,7 +687,7 @@ describe("OpenLClient", () => {
           ],
         };
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tables`).reply(201, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tables`).reply(201, {
           id: "calculatePremium_1234",
           ...ruleSpec,
         });
@@ -695,10 +698,10 @@ describe("OpenLClient", () => {
       });
 
       it("should include file path when provided", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tables`).reply((config) => {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tables`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.file).toBe("rules/Insurance.xlsx");
           return [201, {}];
@@ -712,10 +715,10 @@ describe("OpenLClient", () => {
       });
 
       it("should include dimension properties", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tables`).reply((config) => {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tables`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.properties).toEqual({ state: "CA", lob: "Auto" });
           return [201, {}];
@@ -732,10 +735,10 @@ describe("OpenLClient", () => {
 
   describe("File Operations", () => {
     describe("uploadFile", () => {
-      it("should upload file with base64 content", async () => {
+      it("should upload file with encoded content", async () => {
         const buffer = Buffer.from("test file content");
-        // New API format uses base64-encoded project ID
-        mockAxios.onPost("/projects/ZGVzaWduOnByb2plY3Qx/files/Rules.xlsx").reply(200, {
+        // New API format uses project ID path segment
+        mockAxios.onPost("/projects/design-project1/files/Rules.xlsx").reply(200, {
           success: true,
         });
 
@@ -744,7 +747,7 @@ describe("OpenLClient", () => {
       });
 
       it("should URL-encode file name", async () => {
-        mockAxios.onPost(/\/projects\/ZGVzaWduOnByb2plY3Qx\/files\/.*/).reply((config) => {
+        mockAxios.onPost(/\/projects\/design-project1\/files\/.*/).reply((config) => {
           expect(config.url).toContain("My%20Rules.xlsx");
           return [200, {}];
         });
@@ -754,7 +757,7 @@ describe("OpenLClient", () => {
       });
 
       it("should include comment when provided", async () => {
-        mockAxios.onPost("/projects/ZGVzaWduOnByb2plY3Qx/files/Rules.xlsx").reply((config) => {
+        mockAxios.onPost("/projects/design-project1/files/Rules.xlsx").reply((config) => {
           // Comment is sent as query parameter, not in body
           expect(config.params?.comment).toBe("Updated rates");
           return [200, {}];
@@ -765,7 +768,7 @@ describe("OpenLClient", () => {
       });
 
       it("should handle upload errors", async () => {
-        mockAxios.onPost("/projects/ZGVzaWduOnByb2plY3Qx/files/Rules.xlsx").reply(500);
+        mockAxios.onPost("/projects/design-project1/files/Rules.xlsx").reply(500);
 
         const buffer = Buffer.from("test");
         await expect(
@@ -779,18 +782,16 @@ describe("OpenLClient", () => {
         const fileContent = Buffer.from("test file content");
         // File path includes project name directory (as returned by list_tables)
         // Forward slashes are NOT encoded in the path
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/project1/Rules.xlsx").reply(200, fileContent);
+        mockAxios.onGet("/projects/design-project1/files/project1/Rules.xlsx").reply(200, fileContent);
 
         const result = await client.downloadFile("design-project1", "project1/Rules.xlsx");
         expect(result).toEqual(fileContent);
       });
 
-      it("should auto-add project prefix when given just filename", async () => {
+      it("should use provided filename as-is when given just filename", async () => {
         const fileContent = Buffer.from("test file content");
-        // First try without prefix (just filename) - fails with 404
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/Corporate%20Rating.xlsx").reply(404);
-        // Second try with project prefix added - succeeds (slash is not encoded)
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/project1/Corporate%20Rating.xlsx").reply(200, fileContent);
+        // Current client contract uses provided path as-is for plain filenames.
+        mockAxios.onGet("/projects/design-project1/files/Corporate%20Rating.xlsx").reply(200, fileContent);
 
         const result = await client.downloadFile("design-project1", "Corporate Rating.xlsx");
         expect(result).toEqual(fileContent);
@@ -799,7 +800,7 @@ describe("OpenLClient", () => {
       it("should handle file paths with spaces correctly", async () => {
         const fileContent = Buffer.from("test file content");
         // Path segments are encoded separately, slashes preserved
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/project1/My%20Rules.xlsx").reply(200, fileContent);
+        mockAxios.onGet("/projects/design-project1/files/project1/My%20Rules.xlsx").reply(200, fileContent);
 
         const result = await client.downloadFile("design-project1", "project1/My Rules.xlsx");
         expect(result).toEqual(fileContent);
@@ -807,7 +808,7 @@ describe("OpenLClient", () => {
 
       it("should download specific version", async () => {
         // Mock the file download with version parameter
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/project1/Rules.xlsx", { params: { version: "abc123" } })
+        mockAxios.onGet("/projects/design-project1/files/project1/Rules.xlsx", { params: { version: "abc123" } })
           .reply(200, Buffer.from("old content"));
 
         const result = await client.downloadFile("design-project1", "project1/Rules.xlsx", "abc123");
@@ -816,8 +817,8 @@ describe("OpenLClient", () => {
 
       it("should handle file not found with helpful error", async () => {
         // Both paths will return 404
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/NonExistent.xlsx").reply(404);
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/project1/NonExistent.xlsx").reply(404);
+        mockAxios.onGet("/projects/design-project1/files/NonExistent.xlsx").reply(404);
+        mockAxios.onGet("/projects/design-project1/files/project1/NonExistent.xlsx").reply(404);
 
         await expect(
           client.downloadFile("design-project1", "NonExistent.xlsx")
@@ -825,7 +826,7 @@ describe("OpenLClient", () => {
       });
 
       it("should handle 400 error with helpful message", async () => {
-        mockAxios.onGet("/projects/ZGVzaWduOnByb2plY3Qx/files/Bad.xlsx").reply(400);
+        mockAxios.onGet("/projects/design-project1/files/Bad.xlsx").reply(400);
 
         await expect(
           client.downloadFile("design-project1", "Bad.xlsx")
@@ -837,12 +838,12 @@ describe("OpenLClient", () => {
   describe("Deployment", () => {
     describe("deployProject", () => {
       it("should deploy project to production repository", async () => {
-        // deployProject uses /deployments endpoint with base64 projectId in body
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
+        // deployProject uses /deployments endpoint with projectId in body
+        const projectIdForPath = "design-project1";
         
         mockAxios.onPost("/deployments").reply((config) => {
           const data = JSON.parse(config.data);
-          expect(data.projectId).toBe(base64ProjectId);
+          expect(data.projectId).toBe(projectIdForPath);
           expect(data.deploymentName).toBe("project1");
           expect(data.productionRepositoryId).toBe("production-deploy");
           return [200];
@@ -858,11 +859,11 @@ describe("OpenLClient", () => {
       it("should include version when provided", async () => {
         // Note: version parameter is not supported in DeployProjectRequest
         // This test may need adjustment based on actual API behavior
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
+        const projectIdForPath = "design-project1";
         
         mockAxios.onPost("/deployments").reply((config) => {
           const data = JSON.parse(config.data);
-          expect(data.projectId).toBe(base64ProjectId);
+          expect(data.projectId).toBe(projectIdForPath);
           return [200];
         });
 
@@ -892,8 +893,8 @@ describe("OpenLClient", () => {
   describe("Version History", () => {
     describe("getFileHistory", () => {
       it("should fetch file commit history", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedFilePath = encodeURIComponent("Rules.xlsx");
         
         const mockHistory: Types.GetFileHistoryResult = {
@@ -906,7 +907,7 @@ describe("OpenLClient", () => {
           hasMore: false,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/files/${encodedFilePath}/history`).reply(200, mockHistory);
+        mockAxios.onGet(`/projects/${encodedProjectId}/files/${encodedFilePath}/history`).reply(200, mockHistory);
 
         const result = await client.getFileHistory({
           projectId: "design-project1",
@@ -917,11 +918,11 @@ describe("OpenLClient", () => {
       });
 
       it("should include pagination parameters", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedFilePath = encodeURIComponent("Rules.xlsx");
         
-        mockAxios.onGet(`/projects/${encodedBase64Id}/files/${encodedFilePath}/history`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/files/${encodedFilePath}/history`, {
           params: { limit: 20, offset: 10 }
         }).reply(200, {
           filePath: "Rules.xlsx",
@@ -943,7 +944,7 @@ describe("OpenLClient", () => {
 
     describe("getProjectHistory", () => {
       it("should fetch project commit history", async () => {
-        // getProjectHistory uses repository and projectName from projectId
+        // getProjectHistory uses /projects/{projectId}/history
         const mockHistory: Types.PageResponseProjectRevision_Short = {
           content: [
             { commitHash: "abc123", author: { name: "user1", email: "user1@test.com" }, modifiedAt: "2024-01-01T00:00:00Z", comment: "test" },
@@ -956,7 +957,9 @@ describe("OpenLClient", () => {
           totalPages: 1,
         };
 
-        mockAxios.onGet("/repos/design/projects/project1/history").reply(200, mockHistory);
+        mockAxios.onGet("/projects/design-project1/history", {
+          params: { page: 0, size: 50 }
+        }).reply(200, mockHistory);
 
         const result = await client.getProjectHistory({
           projectId: "design-project1",
@@ -966,9 +969,9 @@ describe("OpenLClient", () => {
       });
 
       it("should filter by branch", async () => {
-        // When branch is specified, uses different endpoint: /repos/{repo}/branches/{branch}/projects/{project}/history
-        mockAxios.onGet("/repos/design/branches/development/projects/project1/history", {
-          params: { page: 0, size: 50 }
+        // When branch is specified, branch is passed as query parameter.
+        mockAxios.onGet("/projects/design-project1/history", {
+          params: { page: 0, size: 50, branch: "development" }
         }).reply(200, {
           content: [],
           numberOfElements: 0,
@@ -987,24 +990,24 @@ describe("OpenLClient", () => {
 
     describe("revertVersion", () => {
       it("should revert project to specific version", async () => {
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         const encodedVersion = encodeURIComponent("abc123");
         
         // Mock the version fetch
-        mockAxios.onGet(`/projects/${encodedBase64Id}/versions/${encodedVersion}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/versions/${encodedVersion}`).reply(200, {
           version: "abc123",
           content: {},
         });
         
         // Mock validation
-        mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/validation`).reply(200, {
           valid: true,
           errors: [],
         });
         
         // Mock the revert operation
-        mockAxios.onPost(`/projects/${encodedBase64Id}/revert`).reply(200, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/revert`).reply(200, {
           version: "new-commit",
         });
 
@@ -1020,20 +1023,24 @@ describe("OpenLClient", () => {
       });
 
       it("should include comment when provided", async () => {
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
+        const encodedVersion = encodeURIComponent("abc123");
+
         // Mock the version fetch
-        mockAxios.onGet("/design/project1/versions/abc123").reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/versions/${encodedVersion}`).reply(200, {
           version: "abc123",
           content: {},
         });
         
         // Mock validation
-        mockAxios.onGet("/design/project1/validation").reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/validation`).reply(200, {
           valid: true,
           errors: [],
         });
         
         // Mock the revert operation with comment check
-        mockAxios.onPost("/design/project1/revert").reply((config) => {
+        mockAxios.onPost(`/projects/${encodedProjectId}/revert`).reply((config) => {
           const data = JSON.parse(config.data);
           expect(data.comment).toBe("Reverting bad changes");
           return [200, { version: "new-commit" }];
@@ -1057,10 +1064,10 @@ describe("OpenLClient", () => {
         };
 
         // executeRule uses buildProjectPath and /rules/{ruleName}/execute
-        const base64ProjectId = Buffer.from("design:project1").toString("base64");
-        const encodedBase64Id = encodeURIComponent(base64ProjectId);
+        const projectIdForPath = "design-project1";
+        const encodedProjectId = encodeURIComponent(projectIdForPath);
         
-        mockAxios.onPost(`/projects/${encodedBase64Id}/rules/calculatePremium/execute`).reply(200, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/rules/calculatePremium/execute`).reply(200, {
           result: 1000.0,
         });
 
@@ -1127,10 +1134,10 @@ describe("OpenLClient", () => {
   });
 
   describe("Test Execution Session", () => {
-    // Helper: the encoded project path for "design-project1"
-    const base64ProjectId = Buffer.from("design:project1").toString("base64");
-    const encodedBase64Id = encodeURIComponent(base64ProjectId);
-    const projectPath = `/projects/${encodedBase64Id}`;
+    // Helper: encoded project path for "design-project1"
+    const projectIdForPath = "design-project1";
+    const encodedProjectId = encodeURIComponent(projectIdForPath);
+    const projectPath = `/projects/${encodedProjectId}`;
 
     // Minimal project stub returned by getProject (needed by startProjectTests)
     const mockOpenProject = {
@@ -1355,9 +1362,9 @@ describe("OpenLClient", () => {
     });
 
     it("should encode special characters in project names", async () => {
-      // getProject converts projectId to base64, so we need to match the base64-encoded path
+      // getProject normalizes projectId for request path, so we match a generic projects path
       mockAxios.onGet(/\/projects\/.*/).reply((config) => {
-        // The projectId "design-Example 1 - Bank Rating" will be converted to base64
+        // The projectId "design-Example 1 - Bank Rating" will be normalized for path usage
         // and then URL-encoded, so we just check that it's a valid projects path
         expect(config.url).toMatch(/^\/projects\//);
         return [200, {}];

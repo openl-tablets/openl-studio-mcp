@@ -285,7 +285,7 @@ Always use placeholders:
 ### OpenL-Specific Features
 - Dual versioning (Git commits + dimension properties)
 - Table type awareness (Rules, Spreadsheet, Datatype, etc.)
-- Project ID format handling (base64, colon, dash formats)
+- Project ID format handling (current and legacy path formats)
 - Excel file upload/download support
 
 ## Usage Examples

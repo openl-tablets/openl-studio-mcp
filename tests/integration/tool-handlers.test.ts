@@ -114,9 +114,9 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_get_project", async () => {
-      // getProject converts projectId to base64 format
-      // "design-project1" -> "design:project1" -> base64
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
+      // getProject normalizes projectId for request path
+      // "design-project1" is used as project ID path segment
+      const projectIdForPath = "design-project1";
       const mockProject: Partial<ProjectViewModel> = {
         id: "design:project1:hash123",
         name: "project1",
@@ -127,8 +127,8 @@ describe("Tool Handler Integration Tests", () => {
         modifiedAt: "2024-01-01T00:00:00Z",
       };
 
-      // getProject uses buildProjectPath which converts to base64 and uses /projects/{base64Id}
-      mockAxios.onGet(`/projects/${encodeURIComponent(base64ProjectId)}`).reply(200, mockProject);
+      // getProject uses buildProjectPath and calls /projects/{projectIdPath}
+      mockAxios.onGet(`/projects/${encodeURIComponent(projectIdForPath)}`).reply(200, mockProject);
 
       const result = await executeTool("openl_get_project", {
         projectId: "design-project1",
@@ -238,12 +238,12 @@ describe("Tool Handler Integration Tests", () => {
         success: true,
       });
 
-      const fileContent = Buffer.from("test content").toString("base64");
+      const localFilePath = "/tmp/Rules.xlsx";
 
       const result = await executeTool("openl_upload_file", {
         projectId: "design-project1",
         fileName: "Rules.xlsx",
-        fileContent,
+        localFilePath,
       }, client);
 
       expect(result.content[0].type).toBe("text");
@@ -259,10 +259,11 @@ describe("Tool Handler Integration Tests", () => {
       const result = await executeTool("openl_download_file", {
         projectId: "design-project1",
         fileName: "Rules.xlsx",
+        outputFilePath: "/tmp/Rules.xlsx",
       }, client);
 
       expect(result.content[0].type).toBe("text");
-      // Response should contain base64 encoded content
+      // Response should contain output file path metadata
       expect(result.content[0].text).toBeDefined();
     });
   });
@@ -415,10 +416,10 @@ describe("Tool Handler Integration Tests", () => {
 
 
     it("should execute openl_open_project", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -428,7 +429,7 @@ describe("Tool Handler Integration Tests", () => {
         modifiedAt: "2024-01-01T00:00:00Z",
       });
 
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`, {
         status: "OPENED",
       }).reply(204);
 
@@ -441,10 +442,10 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_open_project with branch", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -454,7 +455,7 @@ describe("Tool Handler Integration Tests", () => {
         modifiedAt: "2024-01-01T00:00:00Z",
       });
 
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`, {
         status: "OPENED",
         branch: "develop",
       }).reply(204);
@@ -469,11 +470,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_save_project", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // save_project requires project status EDITING and comment
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -484,10 +485,10 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       // Mock validation endpoint (404 = validation unavailable, proceed with save)
-      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
+      mockAxios.onGet(`/projects/${encodedProjectId}/validation`).reply(404);
 
       // Save is done via PATCH /projects/{projectId} with { comment } (204 No Content)
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`, {
         comment: "Test commit",
       }).reply(204);
 
@@ -502,10 +503,10 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_save_project with closeAfterSave sends comment and status CLOSED in one PATCH", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -515,10 +516,10 @@ describe("Tool Handler Integration Tests", () => {
         modifiedAt: "2024-01-01T00:00:00Z",
       });
 
-      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
+      mockAxios.onGet(`/projects/${encodedProjectId}/validation`).reply(404);
 
       let patchBody: { comment?: string; status?: string } = {};
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
         patchBody = config.data ? JSON.parse(config.data) : {};
         return [204];
       });
@@ -536,11 +537,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_close_project without unsaved changes", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // Mock project fetch to check status
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -551,7 +552,7 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       // Mock close
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`, {
         status: "CLOSED",
       }).reply(200);
 
@@ -564,11 +565,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_close_project with saveChanges", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // Mock project fetch to check status
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -579,10 +580,10 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       // Mock validation endpoint (404 = validation unavailable, proceed with save)
-      mockAxios.onGet(`/projects/${encodedBase64Id}/validation`).reply(404);
+      mockAxios.onGet(`/projects/${encodedProjectId}/validation`).reply(404);
 
       // saveProject uses PATCH with { comment }; closeProject uses PATCH with { status: "CLOSED" }
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`).reply((config) => {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`).reply((config) => {
         const data = config.data ? JSON.parse(config.data) : {};
         if (data.status === "CLOSED") return [204];
         if (data.comment === "Save before close") return [204];
@@ -601,11 +602,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should execute openl_close_project with discardChanges", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // Mock project fetch to check status
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -616,7 +617,7 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       // Mock close (discarding changes)
-      mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+      mockAxios.onPatch(`/projects/${encodedProjectId}`, {
         status: "CLOSED",
       }).reply(200);
 
@@ -631,10 +632,10 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should require confirmDiscard when closing EDITING with discardChanges", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -657,11 +658,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should error when closing project with unsaved changes without saveChanges or discardChanges", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // Mock project fetch to check status
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -680,11 +681,11 @@ describe("Tool Handler Integration Tests", () => {
     });
 
     it("should error when saveChanges is true but comment is missing", async () => {
-      const base64ProjectId = Buffer.from("design:project1").toString("base64");
-      const encodedBase64Id = encodeURIComponent(base64ProjectId);
+      const projectIdForPath = "design-project1";
+      const encodedProjectId = encodeURIComponent(projectIdForPath);
 
       // Mock project fetch to check status
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -817,12 +818,12 @@ describe("Tool Handler Integration Tests", () => {
   });
 
   describe("Test Execution Tools", () => {
-    const base64ProjectId = Buffer.from("design:project1").toString("base64");
-    const encodedBase64Id = encodeURIComponent(base64ProjectId);
+    const projectIdForPath = "design-project1";
+    const encodedProjectId = encodeURIComponent(projectIdForPath);
 
     beforeEach(() => {
       // Mock project fetch for auto-open functionality
-      mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+      mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
         id: "design:project1:hash123",
         name: "project1",
         repository: "design",
@@ -841,7 +842,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=abc123; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -862,7 +863,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=def456; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`, undefined, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`, undefined, {
           params: { tableId: "Test_calculatePremium_1234" },
         }).reply(202, {
           status: "accepted",
@@ -879,7 +880,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should auto-open project if closed", async () => {
         // Mock project as closed
-        mockAxios.onGet(`/projects/${encodedBase64Id}`).reply(200, {
+        mockAxios.onGet(`/projects/${encodedProjectId}`).reply(200, {
           id: "design:project1:hash123",
           name: "project1",
           repository: "design",
@@ -890,7 +891,7 @@ describe("Tool Handler Integration Tests", () => {
         });
 
         // Mock project open
-        mockAxios.onPatch(`/projects/${encodedBase64Id}`, {
+        mockAxios.onPatch(`/projects/${encodedProjectId}`, {
           status: "OPENED",
         }).reply(200);
 
@@ -898,7 +899,7 @@ describe("Tool Handler Integration Tests", () => {
           "x-test-execution-id": "test-session-789",
         };
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -916,7 +917,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=xyz789; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -926,7 +927,7 @@ describe("Tool Handler Integration Tests", () => {
 
         // Verify headers are stored by making a get_test_results call
         // Mock the /tests/summary endpoint and verify headers are sent
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`).reply((config) => {
           // Verify that session headers are present in the request
           expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-abc");
           expect(config.headers).toHaveProperty("x-custom-header", "custom-value");
@@ -955,7 +956,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=summary123; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -971,7 +972,7 @@ describe("Tool Handler Integration Tests", () => {
           numberOfFailures: 2,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`).reply((config) => {
           // Verify headers are propagated
           expect(config.headers).toHaveProperty("x-test-execution-id");
           expect(config.headers).toHaveProperty("Accept", "application/json");
@@ -1002,7 +1003,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should support failures parameter", async () => {
         // Start test execution
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-failures" });
 
@@ -1011,7 +1012,7 @@ describe("Tool Handler Integration Tests", () => {
         }, client);
 
         // Get summary with failures parameter
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { failures: 5 },
         }).reply(200, {
           testCases: [],
@@ -1029,7 +1030,7 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       it("should pass unpaged=true parameter", async () => {
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-summary-unpaged" });
 
@@ -1037,7 +1038,7 @@ describe("Tool Handler Integration Tests", () => {
           projectId: "design-project1",
         }, client);
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { unpaged: true },
         }).reply(200, {
           testCases: [],
@@ -1063,7 +1064,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=results456; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -1099,7 +1100,7 @@ describe("Tool Handler Integration Tests", () => {
           numberOfElements: 2,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`).reply((config) => {
           // Verify headers are propagated
           expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-results");
           expect(config.headers).toHaveProperty("Cookie", "JSESSIONID=results456");
@@ -1132,7 +1133,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should support pagination parameters", async () => {
         // Start test execution
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-pagination" });
 
@@ -1151,7 +1152,7 @@ describe("Tool Handler Integration Tests", () => {
           numberOfElements: 50,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { page: 1, size: 50 },
         }).reply(200, mockResults);
 
@@ -1171,7 +1172,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should calculate offset correctly from pageNumber and pageSize", async () => {
         // Start test execution
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-offset" });
 
@@ -1189,7 +1190,7 @@ describe("Tool Handler Integration Tests", () => {
           numberOfElements: 25,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { page: 2, size: 25 },
         }).reply(200, mockResults);
 
@@ -1208,7 +1209,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should support failuresOnly parameter", async () => {
         // Start test execution
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-failures-only" });
 
@@ -1216,7 +1217,7 @@ describe("Tool Handler Integration Tests", () => {
           projectId: "design-project1",
         }, client);
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { failuresOnly: true },
         }).reply(200, {
           testCases: [],
@@ -1234,7 +1235,7 @@ describe("Tool Handler Integration Tests", () => {
       });
 
       it("should pass unpaged=true parameter", async () => {
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-results-unpaged" });
 
@@ -1242,7 +1243,7 @@ describe("Tool Handler Integration Tests", () => {
           projectId: "design-project1",
         }, client);
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { unpaged: true },
         }).reply(200, {
           testCases: [],
@@ -1271,7 +1272,7 @@ describe("Tool Handler Integration Tests", () => {
           "set-cookie": ["JSESSIONID=bytable789; Path=/"],
         } as any;
 
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, sessionHeaders);
 
@@ -1308,7 +1309,7 @@ describe("Tool Handler Integration Tests", () => {
           totalPages: 1,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`).reply((config) => {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`).reply((config) => {
           // Verify headers are propagated
           expect(config.headers).toHaveProperty("x-test-execution-id", "test-session-by-table");
           expect(config.headers).toHaveProperty("Cookie", "JSESSIONID=bytable789");
@@ -1366,7 +1367,7 @@ describe("Tool Handler Integration Tests", () => {
 
       it("should support pagination parameters", async () => {
         // Start test execution
-        mockAxios.onPost(`/projects/${encodedBase64Id}/tests/run`).reply(202, {
+        mockAxios.onPost(`/projects/${encodedProjectId}/tests/run`).reply(202, {
           status: "accepted",
         }, { "x-test-execution-id": "test-session-by-table-pagination" });
 
@@ -1392,7 +1393,7 @@ describe("Tool Handler Integration Tests", () => {
           pageSize: 50,
         };
 
-        mockAxios.onGet(`/projects/${encodedBase64Id}/tests/summary`, {
+        mockAxios.onGet(`/projects/${encodedProjectId}/tests/summary`, {
           params: { page: 0, size: 50 },
         }).reply(200, allResults);
 

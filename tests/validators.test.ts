@@ -7,147 +7,45 @@ import { describe, it, expect } from "@jest/globals";
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import {
   validateProjectId,
-  validateBase64,
   validatePagination,
   validateResponseFormat,
 } from "../src/validators.js";
 
 describe("validators", () => {
   describe("validateProjectId", () => {
-    it("should validate correct base64 projectId with format repository:projectName:hashCode", () => {
-      // Example: "design9:Sample Project:ccedc692beec9bcfa7bfab96f76fa3af5419821d3c945da9f7ec76c6cd08e044"
-      const base64Id = "ZGVzaWduOTpTYW1wbGUgUHJvamVjdDpjY2VkYzY5MmJlZWM5YmNmYTdiZmFiOTZmNzZmYTNhZjU0MTk4MjFkM2M5NDVkYTlmN2VjNzZjNmNkMDhlMDQ0";
-      const result = validateProjectId(base64Id);
-      expect(result).toEqual({
-        repository: "design9",
-        projectName: "Sample Project",
-      });
+    it("should accept non-empty backend projectId as-is", () => {
+      const projectId = "project-id-from-backend";
+      const result = validateProjectId(projectId);
+      expect(result).toBe(projectId);
     });
 
-    it("should validate base64 projectId with simple project name", () => {
-      // "design:InsuranceRules:abc123"
-      const base64Id = Buffer.from("design:InsuranceRules:abc123").toString("base64");
-      const result = validateProjectId(base64Id);
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "InsuranceRules",
-      });
+    it("should trim surrounding whitespace", () => {
+      const result = validateProjectId("  backend-id  ");
+      expect(result).toBe("backend-id");
     });
 
-    it("should validate base64 projectId with spaces in project name", () => {
-      // "design:Example 1 - Bank Rating:hash123"
-      const base64Id = Buffer.from("design:Example 1 - Bank Rating:hash123").toString("base64");
-      const result = validateProjectId(base64Id);
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "Example 1 - Bank Rating",
-      });
-    });
-
-    it("should validate base64 projectId with complex project name", () => {
-      // "design:my-complex-project-name:hash456"
-      const base64Id = Buffer.from("design:my-complex-project-name:hash456").toString("base64");
-      const result = validateProjectId(base64Id);
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "my-complex-project-name",
-      });
-    });
-
-    it("should throw error for invalid base64 format", () => {
-      expect(() => validateProjectId("invalid@base64!")).toThrow(McpError);
-      expect(() => validateProjectId("invalid@base64!")).toThrow(/Invalid projectId format/);
-    });
-
-    it("should throw error for base64 that doesn't decode to correct format", () => {
-      // Valid base64 but invalid format (no colons)
-      const invalidBase64 = Buffer.from("no-colons-here").toString("base64");
-      expect(() => validateProjectId(invalidBase64)).toThrow(McpError);
-      expect(() => validateProjectId(invalidBase64)).toThrow(/Invalid decoded format/);
-    });
-
-    it("should throw error for base64 with wrong number of parts", () => {
-      // Only 2 parts instead of 3
-      const twoPartsBase64 = Buffer.from("design:InsuranceRules").toString("base64");
-      expect(() => validateProjectId(twoPartsBase64)).toThrow(McpError);
-      expect(() => validateProjectId(twoPartsBase64)).toThrow(/3 parts/);
+    it("should allow IDs with separators", () => {
+      expect(validateProjectId("repo:project/hash-123")).toBe("repo:project/hash-123");
     });
 
     it("should throw error for empty projectId", () => {
       expect(() => validateProjectId("")).toThrow(McpError);
     });
 
-    it("should throw error for base64 with empty parts", () => {
-      // ":projectName:hashCode" - empty repository
-      const emptyRepoBase64 = Buffer.from(":projectName:hashCode").toString("base64");
-      expect(() => validateProjectId(emptyRepoBase64)).toThrow(McpError);
+    it("should throw error for whitespace-only projectId", () => {
+      expect(() => validateProjectId("   ")).toThrow(McpError);
     });
 
-    it("should include actionable error message", () => {
-      expect(() => validateProjectId("invalid")).toThrow(/openl_list_projects/);
+    it("should throw error for non-string projectId", () => {
+      expect(() => validateProjectId(123 as unknown as string)).toThrow(McpError);
     });
 
-    it("should accept base64 with whitespace (strips whitespace)", () => {
-      // Base64 with spaces/newlines should be accepted
-      const base64Id = Buffer.from("design:InsuranceRules:hash123").toString("base64");
-      const withSpaces = base64Id.replace(/(.{10})/g, "$1 ");
-      const result = validateProjectId(withSpaces);
-      expect(result).toEqual({
-        repository: "design",
-        projectName: "InsuranceRules",
-      });
-    });
-  });
-
-  describe("validateBase64", () => {
-    it("should validate correct base64 string", () => {
-      const base64 = Buffer.from("Hello World").toString("base64");
-      expect(validateBase64(base64)).toBe(true);
+    it("should accept any non-empty opaque projectId", () => {
+      expect(validateProjectId("invalid")).toBe("invalid");
     });
 
-    it("should validate empty base64 string", () => {
-      expect(validateBase64("")).toBe(true);
-    });
-
-    it("should validate base64 with padding", () => {
-      expect(validateBase64("SGVsbG8gV29ybGQ=")).toBe(true);
-    });
-
-    it("should validate base64 without padding", () => {
-      expect(validateBase64("SGVsbG8gV29ybGQ")).toBe(true);
-    });
-
-    it("should validate long base64 string", () => {
-      const longString = "A".repeat(10000);
-      const base64 = Buffer.from(longString).toString("base64");
-      expect(validateBase64(base64)).toBe(true);
-    });
-
-    it("should reject invalid base64 with special characters", () => {
-      expect(validateBase64("Hello@World!")).toBe(false);
-    });
-
-    it("should accept base64 with spaces (strips whitespace)", () => {
-      // Node.js Buffer.from() ignores whitespace in base64, so we should too
-      expect(validateBase64("SGVs bG8=")).toBe(true);
-    });
-
-    it("should accept base64 with newlines (strips whitespace)", () => {
-      // Node.js Buffer.from() ignores whitespace in base64, so we should too
-      expect(validateBase64("SGVs\nbG8=")).toBe(true);
-    });
-
-    it("should accept base64 with tabs and carriage returns", () => {
-      expect(validateBase64("SGVs\t\rbG8=")).toBe(true);
-    });
-
-    it("should accept multi-line formatted base64", () => {
-      const multiline = "SGVsbG8g\nV29ybGQh\nVGhpcyBp\ncyBhIHRl\nc3Q=";
-      expect(validateBase64(multiline)).toBe(true);
-    });
-
-    it("should reject invalid characters", () => {
-      expect(validateBase64("SGVsbG8#V29ybGQ=")).toBe(false);
+    it("should include expected format in error message", () => {
+      expect(() => validateProjectId("   ")).toThrow(/Expected non-empty string/);
     });
   });
 

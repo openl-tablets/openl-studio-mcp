@@ -117,14 +117,12 @@
 **OpenL API**: `POST /projects/{projectId}/files/{fileName}?comment={comment}`
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `projectId`, `fileName`, `fileContent` (base64), `comment`
+- ✅ Covered: `projectId`, `fileName`, `localFilePath`, `comment`
 - ✅ Content-Type header handled correctly (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
 
 **Recommendations**:
 - **CRITICAL**: Re-enable this tool - it's essential for project management
 - Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_upload_file`) - needs implementation fixes
-- Consider adding validation for file size limits
-- Add support for file path validation (ensure it matches project structure)
 
 ---
 
@@ -134,13 +132,11 @@
 **OpenL API**: `GET /projects/{projectId}/files/{fileName}?version={commitHash}`
 
 **Extra/Missed Inputs**:
-- ✅ Covered: `projectId`, `fileName`, `version` (optional commit hash)
+- ✅ Covered: `projectId`, `fileName`, `version`, `outputFilePath`
 
 **Recommendations**:
 - **CRITICAL**: Re-enable this tool - it's essential for project management
 - Tool is commented out in `tool-handlers.ts` (marked as `TEMPORARILY DISABLED - openl_download_file`) - needs implementation fixes
-- Consider adding file type detection/validation in response
-- Add metadata in response: file size, last modified date, commit hash
 
 ---
 
@@ -609,8 +605,8 @@
 | 10 | `openl_create_project_branch` | Project | ✅ Complete | `POST /projects/{projectId}/branches` | Create new branch from revision |
 | 11 | `openl_list_project_local_changes` | Project | ✅ Complete | `GET /history/project` (session-based) | List local change history (requires project open) |
 | 12 | `openl_restore_project_local_change` | Project | ✅ Complete | `POST /history/restore` with `historyId` | Restore project to previous local version |
-| 13 | `openl_upload_file` | Project | 🔴 Disabled | `POST /projects/{projectId}/files/{fileName}?comment={comment}` | Upload Excel files to project |
-| 14 | `openl_download_file` | Project | 🔴 Disabled | `GET /projects/{projectId}/files/{fileName}?version={commitHash}` | Download Excel files from project |
+| 13 | `openl_upload_file` | Project | 🔴 Disabled | `POST /projects/{projectId}/files/{fileName}?comment={comment}` | Upload Excel files from `localFilePath` |
+| 14 | `openl_download_file` | Project | 🔴 Disabled | `GET /projects/{projectId}/files/{fileName}?version={commitHash}` | Download Excel files to `outputFilePath` |
 | 15 | `openl_list_tables` | Rules | ✅ Complete | `GET /projects/{projectId}/tables?kind={kind[]}&name={name}` | List all tables/rules in project |
 | 16 | `openl_get_table` | Rules | ✅ Complete | `GET /projects/{projectId}/tables/{tableId}` | Get detailed table structure and data |
 | 17 | `openl_update_table` | Rules | ✅ Complete | `PUT /projects/{projectId}/tables/{tableId}` | Replace entire table structure |
@@ -621,8 +617,8 @@
 | 22 | `openl_redeploy_project` | Deployment | ✅ Complete | `POST /deployments/{deploymentId}` | Redeploy with new version |
 | 23 | `openl_repository_project_revisions` | Repository | ✅ Complete | `GET /repos/{repository}/projects/{projectName}/history` | Get project revision history |
 | 24 | `openl_revert_version` | Version Control | 🔴 Disabled | `POST /projects/{projectId}/revert` (may not exist) | Revert project to previous Git commit |
-| 25 | `openl_get_file_history` | Version Control | 🔴 Disabled | Not found in API docs | Get Git commit history for specific file |
-| 26 | `openl_get_project_history` | Version Control | 🔴 Disabled | Not found in API docs | Get Git commit history for entire project |
+| 25 | `openl_get_file_history` | Version Control | 🔴 Disabled | `GET /projects/{projectId}/files/{filePath}/history` | Get Git commit history for specific file |
+| 26 | `openl_get_project_history` | Version Control | 🔴 Disabled | `GET /projects/{projectId}/history` | Get Git commit history for entire project |
 | 27 | `openl_start_project_tests` | Project | ✅ Complete | `POST /projects/{projectId}/tests/run` | Start project test execution |
 | 28 | `openl_get_test_results_summary` | Project | ✅ Complete | `GET /projects/{projectId}/tests/summary` | Get brief test execution summary |
 | 29 | `openl_get_test_results` | Project | ✅ Complete | `GET /projects/{projectId}/tests/summary` | Get full test execution results |
