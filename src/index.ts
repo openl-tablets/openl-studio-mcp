@@ -28,6 +28,9 @@ import {
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
+import { writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // Import our modular components
 import { OpenLClient } from "./client.js";
@@ -115,7 +118,7 @@ class OpenLMCPServer {
         {
           uri: "openl://projects/{projectId}",
           name: "OpenL Project Details",
-          description: "Get details for a specific project (use base64-encoded projectId format from openl_list_projects)",
+          description: "Get details for a specific project (use projectId from openl_list_projects)",
           mimeType: "application/json",
         },
         {
@@ -286,13 +289,21 @@ class OpenLMCPServer {
               const fileBuffer = await this.client.downloadFile(projectId, filePath);
               mimeType = "application/octet-stream";
 
-              // Return base64-encoded file content
+              const tempFileName = `openl-resource-${Date.now()}-${Math.random().toString(16).slice(2)}-${filePath.split("/").pop() || "file.bin"}`;
+              const tempFilePath = join(tmpdir(), tempFileName);
+              await writeFile(tempFilePath, fileBuffer);
+
               return {
                 contents: [
                   {
                     uri,
-                    mimeType,
-                    text: fileBuffer.toString("base64"),
+                    mimeType: "application/json",
+                    text: safeStringify({
+                      filePath,
+                      downloadedTo: tempFilePath,
+                      size: fileBuffer.length,
+                      mode: "binary-file-path",
+                    }),
                   },
                 ],
               };

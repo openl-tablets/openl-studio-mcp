@@ -813,43 +813,26 @@ Content with {variable} placeholders...
 
 ### Project ID Handling
 
-**Challenge**: OpenL 6.0.0+ uses base64-encoded project IDs in URLs
+**Challenge**: OpenL 6.0.0+ uses project IDs directly in URL paths.
 
-**Solution**: Accept all three formats, convert as needed
+**Solution**: Accept current and legacy textual formats and normalize only for path safety.
 
 **Formats Supported**:
 1. **Dash format**: `"design-Example 1 - Bank Rating"` (user-friendly)
-2. **Colon format**: `"design:Example 1 - Bank Rating"` (decoded)
-3. **Base64 format**: `"ZGVzaWduOkV4YW1wbGUgMSAtIEJhbmsgUmF0aW5n"` (OpenL API)
+2. **Colon format**: `"design:Example 1 - Bank Rating"` (legacy)
 
-**Conversion**:
+**Normalization**:
 ```typescript
-parseProjectId(projectId: string): [string, string] {
-  // Try colon format
-  if (projectId.includes(':')) {
-    const [repo, name] = projectId.split(':', 2);
-    return [repo, name];
-  }
-  // Try dash format
-  const match = projectId.match(/^([^-]+)-(.+)$/);
-  if (match) return [match[1], match[2]];
-  // Try base64
-  const decoded = Buffer.from(projectId, 'base64').toString('utf-8');
-  const [repo, name] = decoded.split(':', 2);
-  return [repo, name];
-}
-
-toBase64ProjectId(projectId: string): string {
-  const [repo, name] = this.parseProjectId(projectId);
-  const colonFormat = `${repo}:${name}`;
-  return Buffer.from(colonFormat, 'utf-8').toString('base64');
+buildProjectPath(projectId: string): string {
+  const encodedProjectId = encodeURIComponent(projectId.trim());
+  return `/projects/${encodedProjectId}`;
 }
 ```
 
 **Benefits**:
 - Backward compatibility
 - User-friendly IDs in openl_list_projects
-- Automatic conversion for API calls
+- Predictable URL-safe path construction
 
 ## Build and Deployment
 
@@ -1182,6 +1165,13 @@ annotations: {
    - Usage analytics
    - Error tracking
    - OpenTelemetry integration
+
+6. **MCP Tool Descriptor Sync and Validation**:
+   - Auto-generate `mcps/<server>/tools/*.json` from `src/tools.ts` as part of build or a dedicated `sync` script.
+   - Include `name`, `description`, `inputSchema`, and `_meta` in generated descriptors to keep agent-facing metadata consistent.
+   - Add CI check to fail when active tools in `TOOLS` are missing descriptors or have empty descriptions.
+   - Add descriptor metadata (`schemaVersion`, `generatedAt`) for traceability and easier debugging.
+   - Document fallback behavior: if descriptor files are missing, use `src/tools.ts` definitions as the source of truth.
 
 ---
 

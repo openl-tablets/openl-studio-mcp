@@ -18,8 +18,8 @@ import {
   mockBranches,
 } from "./mocks/openl-api-mocks.js";
 
-const encodeProjectPath = (repository: string, projectName: string): string =>
-  encodeURIComponent(Buffer.from(`${repository}:${projectName}`).toString("base64"));
+const projectId = "design:insurance-rules:hash123";
+const encodeProjectPath = (id: string): string => encodeURIComponent(id);
 
 describe("MCP Server Tools", () => {
   let client: OpenLClient;
@@ -59,7 +59,11 @@ describe("MCP Server Tools", () => {
   it("should execute openl_list_projects", async () => {
     const repos: RepositoryInfo[] = [{ id: "design", name: "Design Repository", aclId: "acl-design" }];
     mockAxios.onGet("/repos").reply(200, repos);
-    mockAxios.onGet("/projects", { params: { repository: "design", page: 0, size: 50 } }).reply(200, mockProjects);
+    const projectsWithStringIds = (mockProjects as ProjectViewModel[]).map((project) => ({
+      ...project,
+      id: projectId,
+    }));
+    mockAxios.onGet("/projects", { params: { repository: "design", page: 0, size: 50 } }).reply(200, projectsWithStringIds);
 
     const result = await executeTool(
       "openl_list_projects",
@@ -70,16 +74,16 @@ describe("MCP Server Tools", () => {
   });
 
   it("should execute openl_get_project", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     const project = mockProjects[0] as ProjectViewModel;
     mockAxios.onGet(`/projects/${encoded}`).reply(200, project);
 
-    const result = await executeTool("openl_get_project", { projectId: "design-insurance-rules" }, client);
+    const result = await executeTool("openl_get_project", { projectId }, client);
     expect(result.content[0].text).toContain("insurance-rules");
   });
 
   it("should execute openl_open_project", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     mockAxios.onGet(`/projects/${encoded}`).reply(200, {
       id: "design:insurance-rules:hash123",
       name: "insurance-rules",
@@ -91,33 +95,33 @@ describe("MCP Server Tools", () => {
     });
     mockAxios.onPatch(`/projects/${encoded}`, { status: "OPENED" }).reply(204);
 
-    const result = await executeTool("openl_open_project", { projectId: "design-insurance-rules" }, client);
+    const result = await executeTool("openl_open_project", { projectId }, client);
     expect(result.content[0].text).toContain("opened");
   });
 
   it("should execute openl_list_tables", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     mockAxios.onGet(`/projects/${encoded}/tables`).reply(200, mockTables);
 
-    const result = await executeTool("openl_list_tables", { projectId: "design-insurance-rules" }, client);
+    const result = await executeTool("openl_list_tables", { projectId }, client);
     expect(result.content[0].text).toContain("Rules.xls_1234");
   });
 
   it("should execute openl_get_table", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     const tableId = "Rules.xls_1234";
     mockAxios.onGet(`/projects/${encoded}/tables/${encodeURIComponent(tableId)}`).reply(200, mockDecisionTable);
 
     const result = await executeTool(
       "openl_get_table",
-      { projectId: "design-insurance-rules", tableId },
+      { projectId, tableId },
       client
     );
     expect(result.content[0].text).toContain("Rules.xls_1234");
   });
 
   it("should execute openl_update_table", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     const view = {
       ...mockDecisionTable,
       id: "Rules.xls_1234",
@@ -129,14 +133,14 @@ describe("MCP Server Tools", () => {
 
     const result = await executeTool(
       "openl_update_table",
-      { projectId: "design-insurance-rules", tableId: "Rules.xls_1234", view },
+      { projectId, tableId: "Rules.xls_1234", view },
       client
     );
     expect(result.content[0].text).toContain("Successfully updated table");
   });
 
   it("should execute openl_append_table", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     const appendData = {
       tableType: "Datatype",
       fields: [{ name: "email", type: "String", required: true }],
@@ -147,7 +151,7 @@ describe("MCP Server Tools", () => {
 
     const result = await executeTool(
       "openl_append_table",
-      { projectId: "design-insurance-rules", tableId: "Customer_1234", appendData },
+      { projectId, tableId: "Customer_1234", appendData },
       client
     );
     expect(result.content[0].text).toContain("Successfully appended");
@@ -163,12 +167,12 @@ describe("MCP Server Tools", () => {
   });
 
   it("should execute openl_create_project_branch", async () => {
-    const encoded = encodeProjectPath("design", "insurance-rules");
+    const encoded = encodeProjectPath(projectId);
     mockAxios.onPost(`/projects/${encoded}/branches`, { branch: "feature/test-branch" }).reply(200);
 
     const result = await executeTool(
       "openl_create_project_branch",
-      { projectId: "design-insurance-rules", branchName: "feature/test-branch" },
+      { projectId, branchName: "feature/test-branch" },
       client
     );
     expect(result.content[0].text).toContain("Successfully created branch");
@@ -189,7 +193,7 @@ describe("MCP Server Tools", () => {
     const result = await executeTool(
       "openl_deploy_project",
       {
-        projectId: "design-insurance-rules",
+        projectId,
         deploymentName: "insurance-rules",
         productionRepositoryId: "Production Repository",
       },

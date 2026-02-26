@@ -97,7 +97,7 @@ describeIntegration('OpenL Studio 6.0.0 Live Integration Tests', () => {
       expect(Array.isArray(projects)).toBe(true);
       expect(projects.length).toBeGreaterThan(0);
 
-      // Verify project ID format (should be base64-encoded)
+      // Verify project ID format
       const firstProject = projects[0];
       expect(firstProject.id).toBeDefined();
       expect(firstProject.name).toBeDefined();

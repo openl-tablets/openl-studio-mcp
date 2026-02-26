@@ -138,6 +138,6 @@ The integration tests assume:
 - At least one repository (e.g., "design")
 - At least one project in the repository
 - At least one table in the first project
-- Projects have valid base64-encoded IDs
+- Projects have valid project IDs compatible with `/projects/{projectId}`
 
 If your OpenL instance differs, adjust test expectations accordingly.

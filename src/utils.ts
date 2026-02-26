@@ -380,12 +380,10 @@ export function extractApiErrorInfo(
 /**
  * Parse project ID from OpenL API response
  *
- * OpenL Studio API 6.0.0+ returns project IDs as base64-encoded strings in the format:
- * "repository:projectName" (e.g., "design:Example 1 - Bank Rating")
- *
- * Older versions may return project IDs as objects with {repository, projectName} structure.
- *
- * This function handles both formats and returns a consistent structure.
+ * Project IDs are opaque backend values in current API contracts. For legacy call sites
+ * that require repository/projectName segments, this helper accepts:
+ * - object format: { repository, projectName }
+ * - colon string: "repository:projectName"
  *
  * @param id - Project ID from API (string or object)
  * @returns Parsed project ID with repository and projectName
@@ -403,58 +401,21 @@ export function parseProjectId(id: string | { repository: string; projectName: s
     };
   }
 
-  // Handle string format (OpenL Studio 6.0.0+)
+  // Handle string format in explicit "repository:projectName" form
   if (typeof id === "string") {
-    try {
-      // Decode base64
-      const decoded = Buffer.from(id, "base64").toString("utf-8");
+    const colonIndex = id.indexOf(":");
+    if (colonIndex > 0 && colonIndex < id.length - 1) {
+      const repository = id.substring(0, colonIndex);
+      const projectName = id.substring(colonIndex + 1);
 
-      // Parse "repository:projectName:hashCode" format
-      const parts = decoded.split(":");
-      if (parts.length === 3) {
-        // Format: repository:projectName:hashCode
-        const repository = parts[0];
-        const projectName = parts[1];
-        const hashCode = parts[2];
-
-        if (!repository || !projectName || !hashCode) {
-          throw new Error(`Invalid project ID format: empty repository, projectName, or hashCode in "${decoded}"`);
-        }
-
+      if (repository && projectName) {
         return { repository, projectName };
-      } else if (parts.length === 2) {
-        // Fallback: support old format "repository:projectName" for backward compatibility
-        const repository = parts[0];
-        const projectName = parts[1];
-
-        if (!repository || !projectName) {
-          throw new Error(`Invalid project ID format: empty repository or project name in "${decoded}"`);
-        }
-
-        return { repository, projectName };
-      } else {
-        throw new Error(`Invalid project ID format: expected "repository:projectName:hashCode" or "repository:projectName", got "${decoded}"`);
       }
-    } catch {
-      // If base64 decode fails, it might be a plain string already
-      // Try parsing as "repository:projectName" or "repository:projectName:hashCode" format
-      const colonIndex = id.indexOf(":");
-      if (colonIndex > 0 && colonIndex < id.length - 1) {
-        const repository = id.substring(0, colonIndex);
-        // Take everything after first colon as projectName
-        // This handles cases like "repository:projectName", "repository:projectName:hashCode", 
-        // or "repository:Project:With:Colons" (all colons after first are part of projectName)
-        const projectName = id.substring(colonIndex + 1);
-
-        if (repository && projectName) {
-          return { repository, projectName };
-        }
-      }
-
-      throw new Error(
-        `Invalid project ID format: "${id}". Expected base64-encoded "repository:projectName:hashCode" or object {repository, projectName}`
-      );
     }
+
+    throw new Error(
+      `Invalid project ID format: "${id}". Expected "repository:projectName" or object {repository, projectName}`
+    );
   }
 
   throw new Error(
@@ -466,12 +427,11 @@ export function parseProjectId(id: string | { repository: string; projectName: s
  * Create a user-friendly project ID string from repository and project name
  *
  * Format: "repository-projectName" (e.g., "design-Example 1 - Bank Rating")
- * This format is for backward compatibility. The default format is base64-encoded.
- * Note: This function creates a legacy format - prefer using base64 format from API responses.
+ * This format is legacy and should not be used as opaque backend project IDs.
  *
  * @param repository - Repository name
  * @param projectName - Project name
- * @returns User-friendly project ID string (legacy format, not base64)
+ * @returns User-friendly project ID string (legacy format)
  */
 export function createProjectId(repository: string, projectName: string): string {
   return `${repository}-${projectName}`;

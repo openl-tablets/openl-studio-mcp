@@ -34,8 +34,8 @@ export const PaginationParams = z.object({
   offset: z.number().int().nonnegative().optional().default(0),
 });
 
-// Project ID: base64-encoded format from openl_list_projects() response
-export const projectIdSchema = z.string().describe("Project ID - base64-encoded format (default). Use the exact 'projectId' value returned from openl_list_projects() API response. Do not modify or reformat this value. The API returns projectId in base64 format: base64('repository:projectName:hashCode').");
+// Project ID: opaque backend identifier from openl_list_projects() response
+export const projectIdSchema = z.string().describe("Project ID returned by backend. Use the exact 'projectId' value from openl_list_projects() response without modification or reformatting.");
 
 export const repositoryNameSchema = z.string().describe("Repository name (display name, not ID). Use the 'name' field from openl_list_repositories() response (e.g., if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use 'Design Repository' here, NOT 'design-repo').");
 
@@ -160,7 +160,7 @@ export const createBranchSchema = z.object({
 }).strict();
 
 export const deployProjectSchema = z.object({
-  projectId: projectIdSchema.describe("Project ID to deploy - base64-encoded format (default). Use the exact 'projectId' value from openl_list_projects() response (e.g., base64-encoded string)."),
+  projectId: projectIdSchema.describe("Project ID to deploy. Use the exact 'projectId' value from openl_list_projects() response."),
   deploymentName: z.string().describe("Name for the deployment (e.g., 'InsuranceRules', 'AutoPremium'). This will be the deployment identifier."),
   productionRepositoryId: z.string().describe("Target production repository name (display name, not ID). Use the 'name' field from openl_list_deploy_repositories() response (e.g., if list_deploy_repositories returns {id: 'production-deploy', name: 'Production Deployment'}, use 'Production Deployment' here, NOT 'production-deploy'). Must be configured in OpenL Studio."),
   comment: commentSchema.describe("Deployment reason comment (e.g., 'Deploy version 1.2.0', 'Production release')"),
@@ -199,7 +199,7 @@ export const saveProjectSchema = z.object({
 export const uploadFileSchema = z.object({
   projectId: projectIdSchema,
   fileName: z.string().describe("Path where the file should be uploaded in the project (.xlsx or .xls). Can be a simple filename (e.g., 'Rules.xlsx'), subdirectory path (e.g., 'rules/Premium.xlsx'), or full path (e.g., 'Example 1 - Bank Rating/Bank Rating.xlsx'). To replace an existing file, use the exact 'file' field value from list_tables()."),
-  fileContent: z.string().describe("Base64-encoded file content"),
+  localFilePath: z.string().describe("Absolute or workspace-relative path to local binary file to upload (.xlsx or .xls)."),
   comment: z.string().optional().describe("Optional comment for when the file is eventually saved/committed to Git (e.g., 'Updated CA premium rates'). The upload itself does NOT create a commit - use openl_save_project to save changes."),
   response_format: ResponseFormat.optional(),
 }).strict();
@@ -208,6 +208,7 @@ export const downloadFileSchema = z.object({
   projectId: projectIdSchema,
   fileName: z.string().describe("Name of the Excel file to download. MUST use the exact 'file' field value from list_tables() response (e.g., 'Rules.xlsx', 'rules/Insurance.xlsx'). Do NOT construct paths manually or guess file names - always get the path from list_tables() first."),
   version: z.string().optional().describe("Git commit hash to download specific version (e.g., '7a3f2b1c...'). Omit for latest version (HEAD)"),
+  outputFilePath: z.string().describe("Absolute or workspace-relative path where downloaded binary file should be written."),
   response_format: ResponseFormat.optional(),
 }).strict();
 
@@ -235,9 +236,9 @@ export const createRuleSchema = z.object({
 
 export const createProjectTableSchema = z.object({
   projectId: projectIdSchema,
-  moduleName: z.string().min(1).describe("Name of the module where the table will be created (e.g., 'Rules', 'Data', 'Insurance'). This is typically the Excel file name without extension or a folder name."),
+  moduleName: z.string().min(1).describe("Name of an existing project module where the table will be created (for example, 'Rules')."),
   sheetName: z.string().optional().describe("Name of the sheet where the table will be created within the Excel file. If not provided, the table name will be used as the sheet name."),
-  table: z.record(z.string(), z.any()).describe("Complete table structure (EditableTableView). Must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure."),
+  table: z.record(z.string(), z.any()).describe("Complete table structure (EditableTableView). Must include at least tableType, kind, and name, plus type-specific data (for example rules/headers for Rules tables, rows for Spreadsheet, fields for Datatype). id is optional for create requests."),
   response_format: ResponseFormat.optional(),
 }).strict();
 

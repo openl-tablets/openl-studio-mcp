@@ -120,7 +120,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     name: "openl_list_projects",
     description:
-      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field (base64-encoded format from API) to use with other tools. Projects with repository 'local' are local-only (not connected to remote Git); open/save/close and other status-changing tools do not work for them. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
+      "List all projects with optional filters (repository, status, tags). Returns project names, status (OPENED/CLOSED), metadata, and a convenient 'projectId' field from API to use with other tools. Projects with repository 'local' are local-only (not connected to remote Git); open/save/close and other status-changing tools do not work for them. IMPORTANT: The 'projectId' is returned exactly as provided by the API and should be used without modification. Use repository name (not ID) - e.g., 'Design Repository' instead of 'design-repo'. Example: if list_repositories returns {id: 'design-repo', name: 'Design Repository'}, use repository: 'Design Repository' (the name). Use this to discover and filter projects before opening them for editing.",
     inputSchema: schemas.z.toJSONSchema(schemas.listProjectsSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -220,7 +220,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_download_file",
-    description: "Download an Excel file from OpenL project. Can download latest version (HEAD) or specific historical version using Git commit hash. Returns base64-encoded file content. IMPORTANT: Use the exact 'file' field from list_tables() response as the fileName parameter (e.g., 'Example 2 - Corporate Rating/Corporate Rating.xlsx' or 'rules/Premium.xlsx'). The tool automatically handles path normalization by stripping the project name prefix when needed.",
+    description: "Download an Excel file from OpenL project. Can download latest version (HEAD) or specific historical version using Git commit hash. Saves binary content to local path provided in outputFilePath and returns file metadata. IMPORTANT: Use the exact 'file' field from list_tables() response as the fileName parameter (e.g., 'Example 2 - Corporate Rating/Corporate Rating.xlsx' or 'rules/Premium.xlsx').",
     inputSchema: schemas.z.toJSONSchema(schemas.downloadFileSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",
@@ -276,7 +276,7 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "openl_create_project_table",
-    description: "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (Excel file/folder name) and complete table structure (EditableTableView). The table structure must include: id (can be generated), tableType, kind, name, plus type-specific data (rules for Rules/SimpleRules/SmartRules, rows for Spreadsheet, fields for Datatype). Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
+    description: "Create a new table/rule in OpenL project using BETA API (Create New Project Table). This is the recommended tool for creating new OpenL tables programmatically. Use cases: Create Rules (decision tables), Spreadsheet tables, Datatype definitions, Test tables, or other table types. Requires moduleName (existing project module name) and complete table structure (EditableTableView). The table structure must include at least tableType, kind, name, plus type-specific data (rules/headers for Rules tables, rows for Spreadsheet, fields for Datatype). id is optional for create requests. Use get_table() on an existing table as a reference for the structure. This tool uses the Create New Project Table (BETA) API endpoint.",
     inputSchema: schemas.z.toJSONSchema(schemas.createProjectTableSchema) as Record<string, unknown>,
     _meta: {
       version: "1.0.0",

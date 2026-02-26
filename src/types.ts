@@ -42,7 +42,7 @@ export interface ProjectViewModel {
   branch?: string;
   revision?: string;
   path: string;
-  // OpenL 6.0.0+ returns base64-encoded string, older versions return object
+  // OpenL returns a string project ID (legacy servers may return object format)
   id: ProjectId | string;
   status: ProjectStatus;
   tags?: Record<string, string>;
@@ -60,12 +60,15 @@ export type TableType =
   | "SmartLookup"     // Two-dimensional lookup with smart matching
   // Spreadsheet (most common - calculations)
   | "Spreadsheet"     // Multi-step calculations with formulas
+  | "SimpleSpreadsheet" // Simplified spreadsheet format
   // Other types (rarely used)
   | "Method"          // Custom Java-like methods
   | "TBasic"          // Complex flow control algorithms
   | "Data"            // Relational data tables
   | "Datatype"        // Custom data structure definitions
+  | "Vocabulary"      // Datatype vocabulary table
   | "Test"            // Unit test tables
+  | "RawSource"       // Raw table source format
   | "Run"             // Test suite execution
   | "Properties"      // Dimension properties configuration
   | "Configuration";  // Environment settings
@@ -110,12 +113,13 @@ export interface TableProperty {
 }
 
 export interface EditableTableView {
-  id: string;
+  id?: string;
   tableType: TableType;
   kind: TableKind;
   name: string;
   technicalName?: string;
-  properties?: TableProperty[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  properties?: Record<string, any>;
   uri?: string;
   isBusinessView?: boolean;
   editable?: boolean;
@@ -270,7 +274,7 @@ export interface DeploymentViewModel_Short {
 
 /** Deploy project request (OpenAPI 3.0.1) */
 export interface DeployProjectRequest {
-  projectId: string;              // Base64-encoded project ID
+  projectId: string;              // Project ID from backend
   deploymentName: string;         // Name for the deployment
   productionRepositoryId: string;
   comment?: string;
@@ -278,7 +282,7 @@ export interface DeployProjectRequest {
 
 /** Redeploy project request (OpenAPI 3.0.1) */
 export interface RedeployProjectRequest {
-  projectId: string;              // Base64-encoded project ID
+  projectId: string;              // Project ID from backend
   comment?: string;
 }
 

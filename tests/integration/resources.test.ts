@@ -215,15 +215,16 @@ describe.skip("Resource URI Integration Tests", () => {
           params: { uri: `openl://projects/${projectId}/files/${filePath}` },
         }, {});
 
-        expect(result.contents[0].mimeType).toBe("application/octet-stream");
+        expect(result.contents[0].mimeType).toBe("application/json");
 
-        // File content should be base64 encoded
-        const base64Content = result.contents[0].text;
-        expect(typeof base64Content).toBe("string");
-        expect(base64Content.length).toBeGreaterThan(0);
+        // File content is returned as binary-file-path metadata JSON
+        const metaText = result.contents[0].text;
+        expect(typeof metaText).toBe("string");
+        expect(metaText.length).toBeGreaterThan(0);
 
-        // Should be valid base64
-        expect(() => Buffer.from(base64Content, "base64")).not.toThrow();
+        const meta = JSON.parse(metaText);
+        expect(meta.mode).toBe("binary-file-path");
+        expect(meta).toHaveProperty("downloadedTo");
       }
     });
   });
@@ -305,7 +306,7 @@ describe.skip("Resource URI Integration Tests", () => {
           params: { uri: `openl://projects/${projectId}/files/${filePath}` },
         }, {});
 
-        expect(result.contents[0].mimeType).toBe("application/octet-stream");
+        expect(result.contents[0].mimeType).toBe("application/json");
       }
     });
   });
