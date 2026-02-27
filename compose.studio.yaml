@@ -5,22 +5,19 @@ services:
     container_name: openl-studio
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${OPENL_STUDIO_PORT:-8080}:8080"
+      - "127.0.0.1:8080:8080"
 
   mcp-server:
-    image: ${MCP_IMAGE:-openl-studio-mcp-mcp-server:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    pull_policy: ${MCP_PULL_POLICY:-missing}
+    image: ghcr.io/openl-tablets/openl-studio-mcp:latest
+    pull_policy: always
     container_name: mcp-server
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${MCP_PORT:-3000}:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       PORT: 3000
-      OPENL_BASE_URL: ${OPENL_BASE_URL:-http://studio:8080}
-      NODE_ENV: ${NODE_ENV:-production}
+      OPENL_BASE_URL: http://studio:8080
+      NODE_ENV: production
     depends_on:
       - studio
     deploy:

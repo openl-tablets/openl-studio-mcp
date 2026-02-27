@@ -24,12 +24,15 @@ The easiest way is to run everything through Docker.
 
 ### Step 1: Start OpenL Studio + MCP Server
 
+You only need a local copy of `compose.studio.yaml`.
+
 ```bash
-cd $PROJECT_ROOT
 docker compose -f compose.studio.yaml up -d
 ```
 
 This will start:
+- OpenL Studio image from GitHub Container Registry: `ghcr.io/openl-tablets/webstudio:x`
+- MCP server image from GitHub Container Registry: `ghcr.io/openl-tablets/openl-studio-mcp:latest`
 - OpenL Studio UI at `http://localhost:8080`
 - MCP server at `http://localhost:3000`
 

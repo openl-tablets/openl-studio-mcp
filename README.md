@@ -17,11 +17,15 @@ Built with MCP SDK v1.26+ featuring type-safe validation (Zod) and comprehensive
 
 ### Run OpenL Studio + MCP with Docker
 
+You only need a local copy of `compose.studio.yaml`.
+
 ```bash
 docker compose -f compose.studio.yaml up -d
 ```
 
 This starts:
+- OpenL Studio image from GHCR: `ghcr.io/openl-tablets/webstudio:x`
+- MCP image from GHCR: `ghcr.io/openl-tablets/openl-studio-mcp:latest`
 - OpenL Studio at `http://localhost:8080`
 - MCP server at `http://localhost:3000`
 
