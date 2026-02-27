@@ -15,20 +15,17 @@ Built with MCP SDK v1.26+ featuring type-safe validation (Zod) and comprehensive
 
 ## Quick Start
 
+### Run OpenL Studio + MCP with Docker
+
 ```bash
-npm install
-npm run build
-
-# Configure
-export OPENL_BASE_URL="<your-base-url>"
-export OPENL_USERNAME="<your-username>"
-export OPENL_PASSWORD="<your-password>"
-
-# Run
-npm start
+docker compose -f compose.studio.yaml up -d
 ```
 
-For detailed setup instructions, see [Quick Start Guide](docs/getting-started/quick-start.md).
+This starts:
+- OpenL Studio at `http://localhost:8080`
+- MCP server at `http://localhost:3000`
+
+For a fast setup, use [Method 1 (Docker Compose, recommended) in the Quick Start guide](docs/getting-started/quick-start.md#-method-1-docker-compose-recommended).
 
 ## Documentation Structure
 
@@ -124,13 +121,6 @@ npm test               # Run all tests
 npm run lint           # Check code quality
 npm run watch          # Dev mode with auto-rebuild
 ```
-
-**Test Coverage** (35.22% overall):
-- validators.ts: 96.15%
-- utils.ts: 97.95%
-- auth.ts: 63.01%
-- client.ts: 45.32%
-- formatters.ts: 44.19%
 
 See [Contributing Guide](docs/development/contributing.md) for development guidelines and [Testing Guide](docs/development/testing.md) for test suites.
 
