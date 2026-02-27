@@ -1,0 +1,40 @@
+services:
+  studio:
+    image: ghcr.io/openl-tablets/webstudio:x
+    pull_policy: always
+    container_name: openl-studio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OPENL_STUDIO_PORT:-8080}:8080"
+
+  mcp-server:
+    image: ${MCP_IMAGE:-openl-studio-mcp-mcp-server:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: ${MCP_PULL_POLICY:-missing}
+    container_name: mcp-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MCP_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      OPENL_BASE_URL: ${OPENL_BASE_URL:-http://studio:8080}
+      NODE_ENV: ${NODE_ENV:-production}
+    depends_on:
+      - studio
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    stdin_open: true
+    tty: true

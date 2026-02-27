@@ -1,8 +1,8 @@
 # 🚀 Quick Start: Running Everything Together
 
-This guide will help you start OpenL Studio and MCP server for working with Claude Desktop or Cursor IDE.
+This guide will help you start OpenL Studio and MCP server for working with Claude Desktop / Cursor IDE / Copilot.
 
-**Note**: This guide uses `$PROJECT_ROOT` to refer to the OpenL Studio project directory. Set it before running commands:
+**Note**: This guide uses `$PROJECT_ROOT` to refer to the `openl-studio-mcp` directory. Set it before running commands:
 
 ```bash
 export PROJECT_ROOT="<path-to-project>"
@@ -14,7 +14,7 @@ Or replace `$PROJECT_ROOT` with your actual project path in all commands below.
 
 1. **OpenL Studio** - Rules server (port 8080)
 2. **MCP Server** - Bridge between AI clients and OpenL (runs automatically)
-3. **AI Client** - Claude Desktop or Cursor IDE
+3. **AI Client** - Claude Desktop / Cursor IDE or similar
 
 ---
 
@@ -22,17 +22,16 @@ Or replace `$PROJECT_ROOT` with your actual project path in all commands below.
 
 The easiest way is to run everything through Docker.
 
-### Step 1: Start OpenL Studio
+### Step 1: Start OpenL Studio + MCP Server
 
 ```bash
 cd $PROJECT_ROOT
-docker compose up
+docker compose -f compose.studio.yaml up -d
 ```
 
 This will start:
-- PostgreSQL database
-- OpenL Studio at `http://localhost:8080/studio`
-- Rule Services at `http://localhost:8080/services`
+- OpenL Studio UI at `http://localhost:8080`
+- MCP server at `http://localhost:3000`
 
 **Wait 1-2 minutes** for everything to start. You'll see readiness messages in the logs.
 
@@ -40,17 +39,40 @@ This will start:
 
 Open in browser: http://localhost:8080
 
-You should see a page with links to Studio and Services.
-
-**Login:**
-- Username: `admin`
-- Password: `admin`
-
 ### Step 3: Configure MCP Server
 
-Follow the setup guide for your AI client:
-- **Claude Desktop**: See [MCP Connection Guide](../setup/mcp-connection-guide.md#scenario-3-connecting-to-remote-mcp-using-claude-desktop) (Remote) or [Docker Setup](../setup/mcp-connection-guide.md#scenario-4-connecting-to-mcp-in-docker-using-claude-desktop) (Docker)
-- **Cursor IDE**: See [MCP Connection Guide](../setup/mcp-connection-guide.md#scenario-1-connecting-to-remote-mcp-using-cursor) (Remote) or [Docker Setup](../setup/mcp-connection-guide.md#scenario-2-connecting-to-mcp-in-docker-using-cursor) (Docker)
+For `compose.studio.yaml`, OpenL Studio runs in single-user mode, so no authentication is required.
+
+For all agents that support direct HTTP/SSE MCP connection (for example Cursor, VS Code, and similar clients), use a named MCP server config like this:
+
+```json
+{
+  "mcpServers": {
+    "openl-mcp-server-docker": {
+      "url": "http://localhost:3000/mcp/sse",
+      "transport": "sse"
+    }
+  }
+}
+```
+
+For Claude Desktop, use `mcp-remote` (stdio proxy):
+
+```json
+{
+  "mcpServers": {
+    "openl-mcp-server-docker": {
+      "command": "<your path to node>",
+      "args": [
+        "<your path to mcp-remote>",
+        "http://localhost:3000/mcp/sse"
+      ]
+    }
+  }
+}
+```
+
+For client-specific config format, see [MCP Connection Guide](../setup/mcp-connection-guide.md).
 
 ### Step 4: Test Connection
 
@@ -92,11 +114,8 @@ The script will automatically:
 
 ### Step 3: Verify It Works
 
-Open: http://localhost:8080/webstudio
+Open: http://localhost:8080
 
-**Login:**
-- Username: `admin`
-- Password: `admin`
 
 ### Step 4: Configure MCP Server
 
@@ -236,8 +255,8 @@ export OPENL_PASSWORD="admin"
    ```
 2. If Docker Compose:
    ```bash
-   docker compose ps  # Check container status
-   docker compose logs studio  # View logs
+   docker compose -f compose.studio.yaml ps  # Check container status
+   docker compose -f compose.studio.yaml logs studio  # View logs
    ```
 3. If local run - check that Jetty process is running
 
@@ -286,7 +305,7 @@ For more detailed troubleshooting, see [Troubleshooting Guide](../guides/trouble
 ```bash
 # Terminal 1: Start OpenL Studio
 cd $PROJECT_ROOT
-docker compose up
+docker compose -f compose.studio.yaml up
 
 # Wait 1-2 minutes for everything to start
 
@@ -332,10 +351,10 @@ export OPENL_PASSWORD="admin"
 
 ```bash
 # Stop Docker containers
-docker compose down
+docker compose -f compose.studio.yaml down
 
 # View OpenL logs
-docker compose logs -f studio
+docker compose -f compose.studio.yaml logs -f studio
 
 # Rebuild MCP server
 cd $PROJECT_ROOT
