@@ -1,0 +1,58 @@
+# This workflow is triggered when a release tag (e.g. 1.2.3) is pushed.
+# It builds multi-platform Docker images (amd64 + arm64), publishes them to
+# GitHub Container Registry.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  IMAGE: ghcr.io/openl-tablets/openl-studio-mcp:${{ github.ref_name }}
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Prepare for multi-platform docker build
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt --install all
+          docker buildx create --use
+
+      - name: Build and push Docker image
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+          docker buildx build \
+            -t "${IMAGE}" \
+            --platform linux/amd64,linux/arm64/v8 \
+            --push \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label "org.opencontainers.image.version=${{ github.ref_name }}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.title=OpenL MCP Server" \
+            --label "org.opencontainers.image.description=Model Context Protocol server for OpenL Studio" \
+            .
